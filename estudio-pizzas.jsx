@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, {
+  useState, useMemo, useEffect, createContext, useContext,
+} from "react";
 
 /* ============================ DATOS ============================ */
 // Valor de celda:
@@ -202,12 +204,66 @@ const PIZZAS = [
   ]},
 ];
 
-const INK = "#161616";
 const ACCENT = "#FF6600";
-const PAPER = "#F4F1EA";
-const SURFACE = "#FFFFFF";
-const LINE = "#E3DDD0";
 const DISPLAY = "'Oswald','Arial Narrow','Helvetica Neue',sans-serif";
+
+/* ============================ TEMAS ============================ */
+const THEMES = {
+  light: {
+    ink: "#161616", onInk: "#FFFFFF",
+    paper: "#F4F1EA", surface: "#FFFFFF", line: "#E3DDD0",
+    zebra: "#FAF8F3", chip: "#F4F1EA", toggleBg: "#E7E2D7",
+    muted: "#8a8478", subtle: "#9b958a", faint: "#a39c8e",
+    header: "#161616", headerSub: "#bdb6a8", tabBar: "#262421", tabIdle: "#8b857a",
+    okBg: "#E7F6EA", okFg: "#1c6b2e", badBg: "#FBE9E7", badFg: "#9b2c20",
+  },
+  dark: {
+    ink: "#F2EFE8", onInk: "#161616",
+    paper: "#171614", surface: "#242220", line: "#3A3732",
+    zebra: "#2A2825", chip: "#33302B", toggleBg: "#3A3732",
+    muted: "#A29A8C", subtle: "#8D867A", faint: "#7E786D",
+    header: "#0E0D0C", headerSub: "#8d867a", tabBar: "#0A0908", tabIdle: "#6f695f",
+    okBg: "#1E3A26", okFg: "#7FD695", badBg: "#43201C", badFg: "#F1998D",
+  },
+};
+const ThemeCtx = createContext(THEMES.light);
+const useT = () => useContext(ThemeCtx);
+
+/* ===================== PERSISTENCIA (localStorage) ===================== */
+function load(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw);
+  } catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* sin espacio o modo privado */ }
+}
+
+/* ===================== SONIDO Y VIBRACIÓN ===================== */
+let audioCtx = null;
+function tone(freq, start, dur, type, vol) {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, audioCtx.currentTime + start);
+  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(audioCtx.currentTime + start);
+  o.stop(audioCtx.currentTime + start + dur);
+}
+function feedback(ok, soundOn) {
+  if (soundOn) {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      if (ok) { tone(660, 0, 0.09, "sine", 0.12); tone(880, 0.09, 0.14, "sine", 0.12); }
+      else { tone(180, 0, 0.22, "square", 0.08); }
+    } catch { /* sin soporte de audio */ }
+  }
+  if (navigator.vibrate) navigator.vibrate(ok ? 25 : [90, 50, 90]);
+}
 
 /* ============================ ÍCONOS ============================ */
 function Ing({ name, size = 22 }) {
@@ -235,12 +291,13 @@ function Ing({ name, size = 22 }) {
 
 /* ===================== PUNTOS DE PORCIÓN ===================== */
 function Amount({ value, big = false }) {
+  const t = useT();
   if (value === null || value === undefined) {
-    return <span className="italic" style={{ color: "#9b958a", fontSize: big ? 13 : 11 }}>base</span>;
+    return <span className="italic" style={{ color: t.subtle, fontSize: big ? 13 : 11 }}>base</span>;
   }
   if (typeof value === "number") {
     return (
-      <span className="font-bold" style={{ fontFamily: DISPLAY, fontSize: big ? 22 : 17, color: INK }}>
+      <span className="font-bold" style={{ fontFamily: DISPLAY, fontSize: big ? 22 : 17, color: t.ink }}>
         {value}
       </span>
     );
@@ -262,15 +319,16 @@ function Amount({ value, big = false }) {
 
 /* ===================== CONTROL DE TAMAÑO ===================== */
 function SizeToggle({ size, setSize }) {
+  const t = useT();
   return (
-    <div className="inline-flex rounded-full p-1" style={{ background: "#E7E2D7" }}>
+    <div className="inline-flex rounded-full p-1" style={{ background: t.toggleBg }}>
       {["10", "14"].map((s) => (
         <button key={s} onClick={() => setSize(s)}
           className="px-4 py-1 rounded-full text-sm font-bold transition-colors"
           style={{
             fontFamily: DISPLAY,
-            background: size === s ? INK : "transparent",
-            color: size === s ? "#fff" : "#6b6459",
+            background: size === s ? t.ink : "transparent",
+            color: size === s ? t.onInk : t.muted,
           }}>
           {s}"
         </button>
@@ -281,18 +339,19 @@ function SizeToggle({ size, setSize }) {
 
 /* ===================== TARJETA DE CONSTRUCCIÓN ===================== */
 function BuildList({ pizza, size, animate = false, show = true }) {
+  const t = useT();
   return (
     <div className="flex flex-col" style={{ gap: 6 }}>
       {pizza.build.map((row, i) => {
-        const [ing, t, f] = row;
-        const val = size === "10" ? t : f;
+        const [ing, tt, f] = row;
+        const val = size === "10" ? tt : f;
         return (
           <div key={i}
             className="flex items-center rounded-xl"
             style={{
               gap: 10, padding: "7px 10px",
-              background: i % 2 ? "#FAF8F3" : "#fff",
-              border: `1px solid ${LINE}`,
+              background: i % 2 ? t.zebra : t.surface,
+              border: `1px solid ${t.line}`,
               opacity: show ? 1 : 0,
               transform: show ? "translateY(0)" : "translateY(8px)",
               transition: animate ? "opacity .35s ease, transform .35s ease" : "none",
@@ -303,8 +362,8 @@ function BuildList({ pizza, size, animate = false, show = true }) {
               <Ing name={ing} size={22} />
             </span>
             <span className="flex-1 leading-tight">
-              <span className="font-semibold" style={{ color: INK, fontSize: 14 }}>{ing}</span>
-              <span className="block" style={{ color: "#9a9488", fontSize: 11 }}>{ES[ing]}</span>
+              <span className="font-semibold" style={{ color: t.ink, fontSize: 14 }}>{ing}</span>
+              <span className="block" style={{ color: t.muted, fontSize: 11 }}>{ES[ing]}</span>
             </span>
             <span className="flex items-center justify-end" style={{ minWidth: 54 }}>
               <Amount value={val} />
@@ -318,10 +377,21 @@ function BuildList({ pizza, size, animate = false, show = true }) {
 
 /* ============================ REPASO ============================ */
 function Repaso({ size, setSize }) {
+  const t = useT();
   const [open, setOpen] = useState(null);
+  const [query, setQuery] = useState("");
+
   const preview = (p) =>
     p.build.map((r) => r[0]).filter((n, i, a) => a.indexOf(n) === i)
       .filter((n) => !["Pizza Sauce", "Mozzarella"].includes(n)).slice(0, 4);
+
+  const q = query.trim().toLowerCase();
+  const results = q === "" ? PIZZAS.map((_, i) => i) : PIZZAS.map((p, i) => {
+    const inName = p.name.toLowerCase().includes(q);
+    const inIngs = p.build.some(([ing]) =>
+      ing.toLowerCase().includes(q) || (ES[ing] || "").toLowerCase().includes(q));
+    return inName || inIngs ? i : -1;
+  }).filter((i) => i !== -1);
 
   if (open !== null) {
     const p = PIZZAS[open];
@@ -332,12 +402,12 @@ function Repaso({ size, setSize }) {
           ‹ Todas las pizzas
         </button>
         <div className="flex items-center justify-between mb-1">
-          <h2 className="font-bold tracking-tight" style={{ fontFamily: DISPLAY, fontSize: 26, color: INK }}>
+          <h2 className="font-bold tracking-tight" style={{ fontFamily: DISPLAY, fontSize: 26, color: t.ink }}>
             {p.name}
           </h2>
           <SizeToggle size={size} setSize={setSize} />
         </div>
-        <p className="mb-3" style={{ color: "#8a8478", fontSize: 12 }}>
+        <p className="mb-3" style={{ color: t.muted, fontSize: 12 }}>
           Arma en este orden, de arriba (la base) hacia abajo.
         </p>
         <BuildList pizza={p} size={size} />
@@ -347,36 +417,56 @@ function Repaso({ size, setSize }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <p style={{ color: "#8a8478", fontSize: 13 }}>Toca una pizza para ver cómo se arma.</p>
+      <div className="flex items-center justify-between mb-3" style={{ gap: 10 }}>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar pizza o ingrediente…"
+          className="flex-1 rounded-full px-4 py-2 outline-none"
+          style={{
+            background: t.surface, border: `1.5px solid ${t.line}`,
+            color: t.ink, fontSize: 14,
+          }}
+        />
         <SizeToggle size={size} setSize={setSize} />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {PIZZAS.map((p, i) => (
-          <button key={i} onClick={() => setOpen(i)}
-            className="text-left rounded-2xl p-3 active:scale-95 transition-transform"
-            style={{ background: SURFACE, border: `1px solid ${LINE}` }}>
-            <div className="h-1.5 w-8 rounded-full mb-2" style={{ background: ACCENT }} />
-            <div className="font-bold leading-tight mb-2" style={{ fontFamily: DISPLAY, fontSize: 16, color: INK }}>
-              {p.name}
-            </div>
-            <div className="flex" style={{ gap: 4 }}>
-              {preview(p).map((n, k) => (
-                <span key={k} className="flex items-center justify-center"
-                  style={{ width: 24, height: 24, borderRadius: 8, background: "#F4F1EA" }}>
-                  <Ing name={n} size={17} />
-                </span>
-              ))}
-            </div>
-          </button>
-        ))}
-      </div>
+      {results.length === 0 ? (
+        <p className="text-center py-10" style={{ color: t.muted, fontSize: 14 }}>
+          Ninguna pizza lleva "{query}".
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {results.map((i) => {
+            const p = PIZZAS[i];
+            return (
+              <button key={i} onClick={() => setOpen(i)}
+                className="text-left rounded-2xl p-3 active:scale-95 transition-transform"
+                style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+                <div className="h-1.5 w-8 rounded-full mb-2" style={{ background: ACCENT }} />
+                <div className="font-bold leading-tight mb-2" style={{ fontFamily: DISPLAY, fontSize: 16, color: t.ink }}>
+                  {p.name}
+                </div>
+                <div className="flex" style={{ gap: 4 }}>
+                  {preview(p).map((n, k) => (
+                    <span key={k} className="flex items-center justify-center"
+                      style={{ width: 24, height: 24, borderRadius: 8, background: t.chip }}>
+                      <Ing name={n} size={17} />
+                    </span>
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 /* ============================ TARJETAS ============================ */
 function Tarjetas({ size, setSize }) {
+  const t = useT();
   const [order, setOrder] = useState(() => shuffle([...Array(PIZZAS.length).keys()]));
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -388,17 +478,17 @@ function Tarjetas({ size, setSize }) {
   return (
     <div className="mx-auto w-full max-w-xl">
       <div className="flex items-center justify-between mb-3">
-        <span style={{ color: "#8a8478", fontSize: 13 }}>
+        <span style={{ color: t.muted, fontSize: 13 }}>
           Tarjeta {idx + 1} de {order.length}
         </span>
         <SizeToggle size={size} setSize={setSize} />
       </div>
 
-      <div className="rounded-2xl p-4 mb-3" style={{ background: SURFACE, border: `1px solid ${LINE}`, minHeight: 320 }}>
-        <div className="text-center mb-1" style={{ color: "#a39c8e", fontSize: 11, letterSpacing: 1 }}>
+      <div className="rounded-2xl p-4 mb-3" style={{ background: t.surface, border: `1px solid ${t.line}`, minHeight: 320 }}>
+        <div className="text-center mb-1" style={{ color: t.faint, fontSize: 11, letterSpacing: 1 }}>
           ¿QUÉ LLEVA Y CUÁNTO?
         </div>
-        <h2 className="text-center font-bold mb-4" style={{ fontFamily: DISPLAY, fontSize: 30, color: INK }}>
+        <h2 className="text-center font-bold mb-4" style={{ fontFamily: DISPLAY, fontSize: 30, color: t.ink }}>
           {p.name}
         </h2>
 
@@ -408,14 +498,14 @@ function Tarjetas({ size, setSize }) {
               {p.build.map((r) => r[0]).filter((n, i, a) => a.indexOf(n) === i)
                 .filter((n) => !["Pizza Sauce", "Mozzarella"].includes(n)).map((n, k) => (
                   <span key={k} className="flex items-center justify-center"
-                    style={{ width: 34, height: 34, borderRadius: 10, background: "#F4F1EA" }}>
+                    style={{ width: 34, height: 34, borderRadius: 10, background: t.chip }}>
                     <Ing name={n} size={22} />
                   </span>
                 ))}
             </div>
             <button onClick={() => setRevealed(true)}
-              className="px-6 py-2.5 rounded-full font-bold text-white active:scale-95 transition-transform"
-              style={{ background: INK, fontFamily: DISPLAY, fontSize: 16 }}>
+              className="px-6 py-2.5 rounded-full font-bold active:scale-95 transition-transform"
+              style={{ background: t.ink, color: t.onInk, fontFamily: DISPLAY, fontSize: 16 }}>
               Revelar receta
             </button>
           </div>
@@ -427,7 +517,7 @@ function Tarjetas({ size, setSize }) {
       <div className="flex" style={{ gap: 10 }}>
         <button onClick={reshuffle}
           className="px-4 py-2.5 rounded-full font-semibold active:scale-95 transition-transform"
-          style={{ border: `1.5px solid ${INK}`, color: INK, fontSize: 14 }}>
+          style={{ border: `1.5px solid ${t.ink}`, color: t.ink, fontSize: 14 }}>
           Barajar
         </button>
         <button onClick={next}
@@ -436,6 +526,137 @@ function Tarjetas({ size, setSize }) {
           Siguiente ›
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ===================== ORDENAR PASOS ===================== */
+function Ordenar({ size, setSize, soundOn, onMiss }) {
+  const t = useT();
+  const [pi, setPi] = useState(() => Math.floor(Math.random() * PIZZAS.length));
+  const [placedCount, setPlacedCount] = useState(0);
+  const [used, setUsed] = useState(() => new Set());
+  const [errors, setErrors] = useState(0);
+  const [wrongIdx, setWrongIdx] = useState(null);
+
+  const p = PIZZAS[pi];
+  const shuffled = useMemo(() => shuffle(p.build.map((_, i) => i)), [pi]);
+  const done = placedCount >= p.build.length;
+
+  const valFor = (row) => JSON.stringify(size === "10" ? row[1] : row[2]);
+
+  const nextPizza = () => {
+    let n = Math.floor(Math.random() * PIZZAS.length);
+    if (n === pi) n = (n + 1) % PIZZAS.length;
+    setPi(n); setPlacedCount(0); setUsed(new Set()); setErrors(0); setWrongIdx(null);
+  };
+
+  const tap = (bi) => {
+    if (done || used.has(bi)) return;
+    const expected = p.build[placedCount];
+    const cand = p.build[bi];
+    const ok = bi === placedCount ||
+      (cand[0] === expected[0] && valFor(cand) === valFor(expected));
+    if (ok) {
+      feedback(true, soundOn);
+      setUsed((u) => new Set(u).add(bi));
+      setPlacedCount((c) => c + 1);
+      setWrongIdx(null);
+    } else {
+      feedback(false, soundOn);
+      setErrors((e) => e + 1);
+      setWrongIdx(bi);
+      onMiss(p.name);
+      setTimeout(() => setWrongIdx(null), 500);
+    }
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-xl">
+      <div className="flex items-center justify-between mb-3">
+        <span style={{ color: t.muted, fontSize: 13 }}>
+          Toca los pasos en el orden correcto.
+        </span>
+        <SizeToggle size={size} setSize={setSize} />
+      </div>
+
+      <div className="rounded-2xl p-4 mb-3" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 24, color: t.ink }}>
+            {p.name}
+          </h2>
+          <span className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 15, color: errors ? CUP.red : t.muted }}>
+            Errores: {errors}
+          </span>
+        </div>
+
+        {/* Pizza en construcción */}
+        <div className="rounded-xl p-2 mb-4" style={{ background: t.zebra, border: `1px dashed ${t.line}`, minHeight: 56 }}>
+          {placedCount === 0 ? (
+            <p className="text-center py-3" style={{ color: t.faint, fontSize: 12 }}>
+              Masa lista. ¿Qué va primero?
+            </p>
+          ) : (
+            <div className="flex flex-col" style={{ gap: 4 }}>
+              {p.build.slice(0, placedCount).map((row, i) => (
+                <div key={i} className="flex items-center rounded-lg px-2 py-1" style={{ gap: 8, background: t.surface }}>
+                  <span style={{ color: t.faint, fontSize: 11, width: 18 }}>{i + 1}.</span>
+                  <Ing name={row[0]} size={17} />
+                  <span className="flex-1 font-semibold" style={{ color: t.ink, fontSize: 13 }}>{row[0]}</span>
+                  <Amount value={size === "10" ? row[1] : row[2]} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {done ? (
+          <div className="text-center py-4">
+            <div className="font-bold mb-1" style={{ fontFamily: DISPLAY, fontSize: 30, color: errors === 0 ? CUP.green : ACCENT }}>
+              {errors === 0 ? "¡Perfecta!" : "¡Lista!"}
+            </div>
+            <p className="mb-4" style={{ color: t.muted, fontSize: 14 }}>
+              {errors === 0 ? "La armaste sin un solo error." : `La armaste con ${errors} ${errors === 1 ? "error" : "errores"}.`}
+            </p>
+            <button onClick={nextPizza}
+              className="px-6 py-2.5 rounded-full font-bold text-white active:scale-95 transition-transform"
+              style={{ background: ACCENT, fontFamily: DISPLAY, fontSize: 16 }}>
+              Otra pizza ›
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {shuffled.filter((bi) => !used.has(bi)).map((bi) => {
+              const row = p.build[bi];
+              const isWrong = wrongIdx === bi;
+              return (
+                <button key={bi} onClick={() => tap(bi)}
+                  className="flex items-center text-left rounded-xl px-3 py-2 active:scale-[.98] transition-transform"
+                  style={{
+                    gap: 8,
+                    background: isWrong ? t.badBg : t.surface,
+                    border: `1.5px solid ${isWrong ? CUP.red : t.line}`,
+                  }}>
+                  <Ing name={row[0]} size={20} />
+                  <span className="flex-1 leading-tight">
+                    <span className="font-semibold block" style={{ color: isWrong ? t.badFg : t.ink, fontSize: 13 }}>{row[0]}</span>
+                    <span style={{ color: t.muted, fontSize: 11 }}>{ES[row[0]]}</span>
+                  </span>
+                  <Amount value={size === "10" ? row[1] : row[2]} />
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {!done && (
+        <button onClick={nextPizza}
+          className="px-4 py-2 rounded-full font-semibold active:scale-95 transition-transform"
+          style={{ border: `1.5px solid ${t.ink}`, color: t.ink, fontSize: 13 }}>
+          Saltar esta pizza
+        </button>
+      )}
     </div>
   );
 }
@@ -471,7 +692,7 @@ function buildQuestions() {
     }
     qs.push({
       q: `¿Cuántos lleva una ${c.pizza} de ${sz}?`,
-      sub: `${ES[c.ing]} (${c.ing})`, icon: c.ing,
+      sub: `${ES[c.ing]} (${c.ing})`, icon: c.ing, pizza: c.pizza,
       options: shuffle([...opts]).map(String), answer: String(correct),
     });
   });
@@ -488,7 +709,7 @@ function buildQuestions() {
     if (reals.length < 3) return;
     qs.push({
       q: `¿Cuál de estos NO va en la ${p.name}?`,
-      sub: "Elige el ingrediente que NO pertenece.",
+      sub: "Elige el ingrediente que NO pertenece.", pizza: p.name,
       options: shuffle([...reals, intruder]), answer: intruder, withIcons: true,
     });
   });
@@ -500,7 +721,7 @@ function buildQuestions() {
     const others = sample(PIZZAS.filter((x) => x.name !== p.name), 3).map((x) => x.name);
     qs.push({
       q: "¿Qué pizza usa estos ingredientes?",
-      iconRow: tops, sub: tops.map((t) => ES[t]).join(" · "),
+      iconRow: tops, sub: tops.map((t) => ES[t]).join(" · "), pizza: p.name,
       options: shuffle([p.name, ...others]), answer: p.name,
     });
   });
@@ -508,21 +729,49 @@ function buildQuestions() {
   return shuffle(qs).slice(0, 10);
 }
 
-function Examen() {
+const TIMEOUT_PICK = "__timeout__";
+const QUESTION_SECONDS = 20;
+
+function Examen({ soundOn, onMiss, onExamDone }) {
+  const t = useT();
   const [questions, setQuestions] = useState(buildQuestions);
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState(null);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
+  const [timerOn, setTimerOn] = useState(() => load("pt-timer", true));
+  const [timeLeft, setTimeLeft] = useState(QUESTION_SECONDS);
   const q = questions[i];
+
+  useEffect(() => { save("pt-timer", timerOn); }, [timerOn]);
+  useEffect(() => { setTimeLeft(QUESTION_SECONDS); }, [i, timerOn]);
+
+  useEffect(() => {
+    if (!timerOn || picked !== null || done) return;
+    if (timeLeft <= 0) {
+      setPicked(TIMEOUT_PICK);
+      feedback(false, soundOn);
+      onMiss(q.pizza);
+      return;
+    }
+    const id = setTimeout(() => setTimeLeft((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timerOn, picked, done, timeLeft]);
 
   const choose = (opt) => {
     if (picked !== null) return;
     setPicked(opt);
-    if (opt === q.answer) setScore((s) => s + 1);
+    const ok = opt === q.answer;
+    feedback(ok, soundOn);
+    if (ok) setScore((s) => s + 1);
+    else onMiss(q.pizza);
   };
   const next = () => {
-    if (i + 1 >= questions.length) { setDone(true); return; }
+    if (i + 1 >= questions.length) {
+      setDone(true);
+      onExamDone(score, questions.length);
+      return;
+    }
     setI(i + 1); setPicked(null);
   };
   const restart = () => {
@@ -534,67 +783,105 @@ function Examen() {
     const msg = pct >= 80 ? "¡Te las sabes! Listo para la línea."
       : pct >= 50 ? "Vas bien. Repasa las que fallaste." : "A repasar un poco más. ¡Tú puedes!";
     return (
-      <div className="mx-auto w-full max-w-xl text-center rounded-2xl p-6" style={{ background: SURFACE, border: `1px solid ${LINE}` }}>
-        <div style={{ color: "#a39c8e", fontSize: 12, letterSpacing: 1 }}>RESULTADO</div>
+      <div className="mx-auto w-full max-w-xl text-center rounded-2xl p-6" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+        <div style={{ color: t.faint, fontSize: 12, letterSpacing: 1 }}>RESULTADO</div>
         <div className="font-bold my-2" style={{ fontFamily: DISPLAY, fontSize: 52, color: ACCENT }}>
           {score}/{questions.length}
         </div>
-        <p className="mb-5" style={{ color: INK, fontSize: 15 }}>{msg}</p>
+        <p className="mb-5" style={{ color: t.ink, fontSize: 15 }}>{msg}</p>
         <button onClick={restart}
-          className="px-6 py-2.5 rounded-full font-bold text-white active:scale-95 transition-transform"
-          style={{ background: INK, fontFamily: DISPLAY, fontSize: 16 }}>
+          className="px-6 py-2.5 rounded-full font-bold active:scale-95 transition-transform"
+          style={{ background: t.ink, color: t.onInk, fontFamily: DISPLAY, fontSize: 16 }}>
           Otro examen
         </button>
       </div>
     );
   }
 
+  const timeFrac = timeLeft / QUESTION_SECONDS;
+
   return (
     <div className="mx-auto w-full max-w-xl">
       <div className="flex items-center justify-between mb-3">
-        <span style={{ color: "#8a8478", fontSize: 13 }}>Pregunta {i + 1} de {questions.length}</span>
-        <span className="font-bold" style={{ fontFamily: DISPLAY, color: ACCENT, fontSize: 15 }}>
-          Puntos: {score}
-        </span>
+        <span style={{ color: t.muted, fontSize: 13 }}>Pregunta {i + 1} de {questions.length}</span>
+        <div className="flex items-center" style={{ gap: 10 }}>
+          <button onClick={() => setTimerOn(!timerOn)}
+            className="px-3 py-1 rounded-full font-semibold"
+            style={{
+              fontSize: 12, border: `1.5px solid ${timerOn ? ACCENT : t.line}`,
+              color: timerOn ? ACCENT : t.muted, background: "transparent",
+            }}>
+            ⏱ {timerOn ? "Con tiempo" : "Sin tiempo"}
+          </button>
+          <span className="font-bold" style={{ fontFamily: DISPLAY, color: ACCENT, fontSize: 15 }}>
+            Puntos: {score}
+          </span>
+        </div>
       </div>
+
       {/* barra de progreso */}
-      <div className="h-1.5 rounded-full mb-4" style={{ background: "#E7E2D7" }}>
+      <div className="h-1.5 rounded-full mb-2" style={{ background: t.toggleBg }}>
         <div className="h-1.5 rounded-full" style={{ background: ACCENT, width: `${(i / questions.length) * 100}%`, transition: "width .3s" }} />
       </div>
 
-      <div className="rounded-2xl p-4 mb-4" style={{ background: SURFACE, border: `1px solid ${LINE}` }}>
-        <h2 className="font-bold mb-1" style={{ fontFamily: DISPLAY, fontSize: 21, color: INK, lineHeight: 1.1 }}>
+      {/* cronómetro */}
+      {timerOn && picked === null && (
+        <div className="flex items-center mb-3" style={{ gap: 8 }}>
+          <div className="h-2 rounded-full flex-1" style={{ background: t.toggleBg }}>
+            <div className="h-2 rounded-full" style={{
+              width: `${timeFrac * 100}%`,
+              background: timeLeft <= 5 ? CUP.red : timeLeft <= 10 ? CUP.orange : CUP.green,
+              transition: "width 1s linear, background .3s",
+            }} />
+          </div>
+          <span className="font-bold" style={{
+            fontFamily: DISPLAY, fontSize: 16, minWidth: 30, textAlign: "right",
+            color: timeLeft <= 5 ? CUP.red : t.ink,
+          }}>
+            {timeLeft}s
+          </span>
+        </div>
+      )}
+
+      <div className="rounded-2xl p-4 mb-4" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+        <h2 className="font-bold mb-1" style={{ fontFamily: DISPLAY, fontSize: 21, color: t.ink, lineHeight: 1.1 }}>
           {q.q}
         </h2>
         {q.icon && (
           <div className="flex items-center my-2" style={{ gap: 8 }}>
             <Ing name={q.icon} size={26} />
-            <span className="font-semibold" style={{ color: INK, fontSize: 15 }}>{q.sub}</span>
+            <span className="font-semibold" style={{ color: t.ink, fontSize: 15 }}>{q.sub}</span>
           </div>
         )}
         {q.iconRow && (
           <div className="flex flex-wrap my-3" style={{ gap: 8 }}>
             {q.iconRow.map((n, k) => (
               <span key={k} className="flex items-center justify-center"
-                style={{ width: 40, height: 40, borderRadius: 12, background: "#F4F1EA" }}>
+                style={{ width: 40, height: 40, borderRadius: 12, background: t.chip }}>
                 <Ing name={n} size={26} />
               </span>
             ))}
           </div>
         )}
         {q.sub && !q.icon && (
-          <p style={{ color: "#8a8478", fontSize: 12 }}>{q.sub}</p>
+          <p style={{ color: t.muted, fontSize: 12 }}>{q.sub}</p>
         )}
       </div>
+
+      {picked === TIMEOUT_PICK && (
+        <p className="text-center font-semibold mb-3" style={{ color: CUP.red, fontSize: 14 }}>
+          ⏱ ¡Se acabó el tiempo!
+        </p>
+      )}
 
       <div className="flex flex-col" style={{ gap: 10 }}>
         {q.options.map((opt, k) => {
           const isAnswer = opt === q.answer;
           const isPicked = opt === picked;
-          let bg = SURFACE, bd = LINE, fg = INK;
+          let bg = t.surface, bd = t.line, fg = t.ink;
           if (picked !== null) {
-            if (isAnswer) { bg = "#E7F6EA"; bd = CUP.green; fg = "#1c6b2e"; }
-            else if (isPicked) { bg = "#FBE9E7"; bd = CUP.red; fg = "#9b2c20"; }
+            if (isAnswer) { bg = t.okBg; bd = CUP.green; fg = t.okFg; }
+            else if (isPicked) { bg = t.badBg; bd = CUP.red; fg = t.badFg; }
           }
           return (
             <button key={k} onClick={() => choose(opt)} disabled={picked !== null}
@@ -620,58 +907,206 @@ function Examen() {
   );
 }
 
+/* ============================ PROGRESO ============================ */
+function Progreso({ stats, onClear }) {
+  const t = useT();
+  const exams = [...stats.exams].reverse();
+  const misses = Object.entries(stats.misses).sort((a, b) => b[1] - a[1]);
+  const best = stats.exams.reduce((m, e) => Math.max(m, Math.round((e.score / e.total) * 100)), 0);
+  const avg = stats.exams.length
+    ? Math.round(stats.exams.reduce((s, e) => s + (e.score / e.total) * 100, 0) / stats.exams.length)
+    : 0;
+
+  const fmt = (ts) => new Date(ts).toLocaleDateString("es", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+
+  if (stats.exams.length === 0 && misses.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-xl text-center rounded-2xl p-8" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+        <div style={{ fontSize: 40 }}>📊</div>
+        <h2 className="font-bold my-2" style={{ fontFamily: DISPLAY, fontSize: 22, color: t.ink }}>
+          Aún no hay progreso
+        </h2>
+        <p style={{ color: t.muted, fontSize: 14 }}>
+          Haz un examen o practica en "Orden" y aquí verás tu historial y las pizzas que más fallas.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-xl">
+      {/* resumen */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {[
+          ["Exámenes", stats.exams.length],
+          ["Mejor", `${best}%`],
+          ["Promedio", `${avg}%`],
+        ].map(([label, val], k) => (
+          <div key={k} className="rounded-2xl p-3 text-center" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+            <div className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 26, color: ACCENT }}>{val}</div>
+            <div style={{ color: t.muted, fontSize: 11, letterSpacing: 0.5 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* pizzas más falladas */}
+      {misses.length > 0 && (
+        <div className="rounded-2xl p-4 mb-4" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+          <h3 className="font-bold mb-3" style={{ fontFamily: DISPLAY, fontSize: 17, color: t.ink }}>
+            Pizzas que más fallas
+          </h3>
+          <div className="flex flex-col" style={{ gap: 8 }}>
+            {misses.slice(0, 6).map(([name, n]) => {
+              const max = misses[0][1];
+              return (
+                <div key={name} className="flex items-center" style={{ gap: 10 }}>
+                  <span className="font-semibold" style={{ color: t.ink, fontSize: 13, width: 150, flexShrink: 0 }}>{name}</span>
+                  <div className="flex-1 h-2.5 rounded-full" style={{ background: t.toggleBg }}>
+                    <div className="h-2.5 rounded-full" style={{ background: CUP.red, width: `${(n / max) * 100}%` }} />
+                  </div>
+                  <span className="font-bold" style={{ fontFamily: DISPLAY, color: t.ink, fontSize: 14, width: 24, textAlign: "right" }}>{n}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3" style={{ color: t.faint, fontSize: 11 }}>
+            Cuenta los fallos en el examen y en el modo Orden. Repasa esas recetas.
+          </p>
+        </div>
+      )}
+
+      {/* historial */}
+      {exams.length > 0 && (
+        <div className="rounded-2xl p-4 mb-4" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+          <h3 className="font-bold mb-3" style={{ fontFamily: DISPLAY, fontSize: 17, color: t.ink }}>
+            Últimos exámenes
+          </h3>
+          <div className="flex flex-col" style={{ gap: 6 }}>
+            {exams.slice(0, 10).map((e, k) => {
+              const pct = Math.round((e.score / e.total) * 100);
+              return (
+                <div key={k} className="flex items-center justify-between rounded-xl px-3 py-2"
+                  style={{ background: k % 2 ? t.zebra : "transparent" }}>
+                  <span style={{ color: t.muted, fontSize: 12 }}>{fmt(e.date)}</span>
+                  <span className="font-bold" style={{
+                    fontFamily: DISPLAY, fontSize: 16,
+                    color: pct >= 80 ? CUP.green : pct >= 50 ? CUP.orange : CUP.red,
+                  }}>
+                    {e.score}/{e.total}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <button onClick={() => {
+        if (window.confirm("¿Borrar todo tu progreso? Esto no se puede deshacer.")) onClear();
+      }}
+        className="px-4 py-2 rounded-full font-semibold active:scale-95 transition-transform"
+        style={{ border: `1.5px solid ${CUP.red}`, color: CUP.red, fontSize: 13 }}>
+        Borrar progreso
+      </button>
+    </div>
+  );
+}
+
 /* ============================ APP ============================ */
 export default function App() {
   const [mode, setMode] = useState("repaso");
   const [size, setSize] = useState("10");
+  const [themeName, setThemeName] = useState(() => load("pt-theme", "light"));
+  const [soundOn, setSoundOn] = useState(() => load("pt-sound", true));
+  const [stats, setStats] = useState(() => load("pt-stats", { exams: [], misses: {} }));
+
+  const t = THEMES[themeName] || THEMES.light;
+
+  useEffect(() => { save("pt-theme", themeName); }, [themeName]);
+  useEffect(() => { save("pt-sound", soundOn); }, [soundOn]);
+  useEffect(() => { save("pt-stats", stats); }, [stats]);
+
+  const recordMiss = (pizzaName) => setStats((s) => ({
+    ...s,
+    misses: { ...s.misses, [pizzaName]: (s.misses[pizzaName] || 0) + 1 },
+  }));
+  const recordExam = (score, total) => setStats((s) => ({
+    ...s,
+    exams: [...s.exams, { date: Date.now(), score, total }].slice(-50),
+  }));
+  const clearStats = () => setStats({ exams: [], misses: {} });
 
   const tabs = [
     ["repaso", "Repaso"],
     ["tarjetas", "Tarjetas"],
+    ["orden", "Orden"],
     ["examen", "Examen"],
+    ["progreso", "Progreso"],
   ];
 
   return (
-    <div style={{ background: PAPER, minHeight: "100vh", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');`}</style>
+    <ThemeCtx.Provider value={t}>
+      <div style={{ background: t.paper, minHeight: "100vh", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');`}</style>
 
-      <div className="mx-auto w-full max-w-[480px] md:max-w-4xl md:py-8 md:px-6">
-        <div className="md:rounded-2xl md:overflow-hidden md:shadow-xl" style={{ background: PAPER }}>
-        {/* Cabecera estilo carta de cocina */}
-        <header style={{ background: INK, padding: "14px 18px" }}>
-          <div className="flex items-baseline" style={{ gap: 8 }}>
-            <span className="font-bold text-white" style={{ fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.5 }}>
-              PIZZA TRAINER
-            </span>
-            <span className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 22, color: ACCENT }}>
-              SECTION 1
-            </span>
+        <div className="mx-auto w-full max-w-[480px] md:max-w-4xl md:py-8 md:px-6">
+          <div className="md:rounded-2xl md:overflow-hidden md:shadow-xl" style={{ background: t.paper }}>
+            {/* Cabecera estilo carta de cocina */}
+            <header className="flex items-center justify-between" style={{ background: t.header, padding: "14px 18px" }}>
+              <div>
+                <div className="flex items-baseline" style={{ gap: 8 }}>
+                  <span className="font-bold text-white" style={{ fontFamily: DISPLAY, fontSize: 22, letterSpacing: 0.5 }}>
+                    PIZZA TRAINER
+                  </span>
+                  <span className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 22, color: ACCENT }}>
+                    SECTION 1
+                  </span>
+                </div>
+                <div style={{ color: t.headerSub, fontSize: 11 }}>14 pizzas · arma sin equivocarte</div>
+              </div>
+              <div className="flex items-center" style={{ gap: 6 }}>
+                <button onClick={() => setSoundOn(!soundOn)}
+                  aria-label={soundOn ? "Silenciar" : "Activar sonido"}
+                  className="flex items-center justify-center rounded-full active:scale-90 transition-transform"
+                  style={{ width: 36, height: 36, fontSize: 17, background: "rgba(255,255,255,.1)" }}>
+                  {soundOn ? "🔊" : "🔇"}
+                </button>
+                <button onClick={() => setThemeName(themeName === "light" ? "dark" : "light")}
+                  aria-label={themeName === "light" ? "Modo oscuro" : "Modo claro"}
+                  className="flex items-center justify-center rounded-full active:scale-90 transition-transform"
+                  style={{ width: 36, height: 36, fontSize: 17, background: "rgba(255,255,255,.1)" }}>
+                  {themeName === "light" ? "🌙" : "☀️"}
+                </button>
+              </div>
+            </header>
+
+            {/* Pestañas */}
+            <div className="flex" style={{ background: t.tabBar }}>
+              {tabs.map(([key, label]) => (
+                <button key={key} onClick={() => setMode(key)}
+                  className="flex-1 py-3 font-bold transition-colors"
+                  style={{
+                    fontFamily: DISPLAY, fontSize: 13.5, letterSpacing: 0.4,
+                    color: mode === key ? "#fff" : t.tabIdle,
+                    borderBottom: mode === key ? `3px solid ${ACCENT}` : "3px solid transparent",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <main className="p-4 pb-10 md:p-6 md:pb-12">
+              {mode === "repaso" && <Repaso size={size} setSize={setSize} />}
+              {mode === "tarjetas" && <Tarjetas size={size} setSize={setSize} />}
+              {mode === "orden" && <Ordenar size={size} setSize={setSize} soundOn={soundOn} onMiss={recordMiss} />}
+              {mode === "examen" && <Examen soundOn={soundOn} onMiss={recordMiss} onExamDone={recordExam} />}
+              {mode === "progreso" && <Progreso stats={stats} onClear={clearStats} />}
+            </main>
           </div>
-          <div style={{ color: "#bdb6a8", fontSize: 11 }}>14 pizzas · arma sin equivocarte</div>
-        </header>
-
-        {/* Pestañas */}
-        <div className="flex" style={{ background: "#262421" }}>
-          {tabs.map(([key, label]) => (
-            <button key={key} onClick={() => setMode(key)}
-              className="flex-1 py-3 font-bold transition-colors"
-              style={{
-                fontFamily: DISPLAY, fontSize: 15, letterSpacing: 0.5,
-                color: mode === key ? "#fff" : "#8b857a",
-                borderBottom: mode === key ? `3px solid ${ACCENT}` : "3px solid transparent",
-              }}>
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <main className="p-4 pb-10 md:p-6 md:pb-12">
-          {mode === "repaso" && <Repaso size={size} setSize={setSize} />}
-          {mode === "tarjetas" && <Tarjetas size={size} setSize={setSize} />}
-          {mode === "examen" && <Examen />}
-        </main>
         </div>
       </div>
-    </div>
+    </ThemeCtx.Provider>
   );
 }

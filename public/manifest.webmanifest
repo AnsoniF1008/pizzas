@@ -1,0 +1,24 @@
+{
+  "name": "Pizza Trainer",
+  "short_name": "Pizzas",
+  "description": "Aprende a armar las 14 pizzas de la Sección 1: repaso, tarjetas, examen y más.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#161616",
+  "theme_color": "#161616",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
