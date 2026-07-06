@@ -326,7 +326,7 @@ function Repaso({ size, setSize }) {
   if (open !== null) {
     const p = PIZZAS[open];
     return (
-      <div>
+      <div className="mx-auto w-full max-w-xl">
         <button onClick={() => setOpen(null)}
           className="flex items-center text-sm font-semibold mb-3" style={{ color: ACCENT, gap: 4 }}>
           ‹ Todas las pizzas
@@ -351,7 +351,7 @@ function Repaso({ size, setSize }) {
         <p style={{ color: "#8a8478", fontSize: 13 }}>Toca una pizza para ver cómo se arma.</p>
         <SizeToggle size={size} setSize={setSize} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {PIZZAS.map((p, i) => (
           <button key={i} onClick={() => setOpen(i)}
             className="text-left rounded-2xl p-3 active:scale-95 transition-transform"
@@ -386,7 +386,7 @@ function Tarjetas({ size, setSize }) {
   const reshuffle = () => { setOrder(shuffle([...Array(PIZZAS.length).keys()])); setIdx(0); setRevealed(false); };
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-xl">
       <div className="flex items-center justify-between mb-3">
         <span style={{ color: "#8a8478", fontSize: 13 }}>
           Tarjeta {idx + 1} de {order.length}
@@ -534,7 +534,7 @@ function Examen() {
     const msg = pct >= 80 ? "¡Te las sabes! Listo para la línea."
       : pct >= 50 ? "Vas bien. Repasa las que fallaste." : "A repasar un poco más. ¡Tú puedes!";
     return (
-      <div className="text-center rounded-2xl p-6" style={{ background: SURFACE, border: `1px solid ${LINE}` }}>
+      <div className="mx-auto w-full max-w-xl text-center rounded-2xl p-6" style={{ background: SURFACE, border: `1px solid ${LINE}` }}>
         <div style={{ color: "#a39c8e", fontSize: 12, letterSpacing: 1 }}>RESULTADO</div>
         <div className="font-bold my-2" style={{ fontFamily: DISPLAY, fontSize: 52, color: ACCENT }}>
           {score}/{questions.length}
@@ -550,7 +550,7 @@ function Examen() {
   }
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-xl">
       <div className="flex items-center justify-between mb-3">
         <span style={{ color: "#8a8478", fontSize: 13 }}>Pregunta {i + 1} de {questions.length}</span>
         <span className="font-bold" style={{ fontFamily: DISPLAY, color: ACCENT, fontSize: 15 }}>
@@ -635,7 +635,8 @@ export default function App() {
     <div style={{ background: PAPER, minHeight: "100vh", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');`}</style>
 
-      <div className="mx-auto" style={{ maxWidth: 480 }}>
+      <div className="mx-auto w-full max-w-[480px] md:max-w-4xl md:py-8 md:px-6">
+        <div className="md:rounded-2xl md:overflow-hidden md:shadow-xl" style={{ background: PAPER }}>
         {/* Cabecera estilo carta de cocina */}
         <header style={{ background: INK, padding: "14px 18px" }}>
           <div className="flex items-baseline" style={{ gap: 8 }}>
@@ -664,11 +665,12 @@ export default function App() {
           ))}
         </div>
 
-        <main className="p-4 pb-10">
+        <main className="p-4 pb-10 md:p-6 md:pb-12">
           {mode === "repaso" && <Repaso size={size} setSize={setSize} />}
           {mode === "tarjetas" && <Tarjetas size={size} setSize={setSize} />}
           {mode === "examen" && <Examen />}
         </main>
+        </div>
       </div>
     </div>
   );
