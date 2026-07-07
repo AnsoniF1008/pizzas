@@ -12,6 +12,7 @@ const CUP = {
   green: "#27AE45",
   red: "#E03A2F",
   orange: "#F39C12",
+  yellow: "#F5D410",
   white: "#FFFFFF",
 };
 
@@ -50,6 +51,22 @@ const ICON = {
   "BBQ Sauce": "🥣",
   "BBQ Drizzle": "🥣",
   "Buffalo Ranch": "🥣",
+  "Dough": "🫓",
+  "Garlicky Greengo": "🥣",
+  "Taco Meat": "🌮",
+  "Shredded Lettuce": "🥬",
+  "Diced Tomato": "🍅",
+  "Ranch Drizzle": "🥣",
+  "Old World Pepperoni": "PEP",
+  "Pineapple Salsa": "🍍",
+  "Penne": "🍝",
+  "Fettuccine": "🍝",
+  "Spaghetti": "🍝",
+  "Meatballs": "🧆",
+  "Marinara": "🍅",
+  "Milk": "🥛",
+  "Italian Breadcrumbs": "🍞",
+  "Blackened Ckn": "🍗",
 };
 
 const ES = {
@@ -65,11 +82,24 @@ const ES = {
   "Cilantro": "Cilantro", "Garlic": "Ajo", "Olive Oil": "Aceite de oliva",
   "Potatoes": "Papas", "Artichoke": "Alcachofa", "Alfredo Sauce": "Salsa alfredo",
   "BBQ Sauce": "Salsa BBQ", "BBQ Drizzle": "Chorrito de BBQ", "Buffalo Ranch": "Búfalo ranch",
+  "Dough": "Masa", "Garlicky Greengo": "Salsa greengo con ajo", "Taco Meat": "Carne de taco",
+  "Shredded Lettuce": "Lechuga rallada", "Diced Tomato": "Tomate picado",
+  "Ranch Drizzle": "Ranch o ranch de jalapeño", "Old World Pepperoni": "Pepperoni old world",
+  "Pineapple Salsa": "Salsa de piña", "Penne": "Penne", "Fettuccine": "Fetuchini",
+  "Spaghetti": "Espagueti", "Meatballs": "Albóndigas", "Marinara": "Salsa marinara",
+  "Milk": "Leche", "Italian Breadcrumbs": "Pan rallado italiano",
+  "Blackened Ckn": "Pollo ennegrecido",
 };
 
+// Ingredientes que no se muestran en las vistas previas ni se usan como opciones del examen.
+const BASE_INGS = ["Pizza Sauce", "Mozzarella", "Dough"];
+
 const B = null;
+// sec: [n1, n2] -> las primeras n1 filas son Sección 1 (base), las n2 siguientes
+// Sección 2 (ingredientes) y el resto Sección 3 (terminado). afterCut: pasos
+// que van DESPUÉS de hornear y cortar.
 const PIZZAS = [
-  { name: "CARL'S KING", build: [
+  { name: "CARL'S KING", sec: [2, 7], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Canad. Bacon", 3, 5],
@@ -81,7 +111,7 @@ const PIZZAS = [
     ["Mushrooms", ["red",1], ["red",2]],
     ["Mozzarella", ["white",1], ["white",2]],
   ]},
-  { name: "BIG DON'S", build: [
+  { name: "BIG DON'S", sec: [2, 2], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Canad. Bacon", 3, 5],
@@ -90,7 +120,7 @@ const PIZZAS = [
     ["Mozzarella", ["white",1], ["white",2]],
     ["Cheddar", ["orange",1], ["orange",2]],
   ]},
-  { name: "BUFFALO CHICKEN", build: [
+  { name: "BUFFALO CHICKEN", sec: [2, 4], build: [
     ["Buffalo Ranch", B, B],
     ["Smoked Mozz.", ["green",1], ["green",2]],
     ["Chicken", ["green",1], ["green",2]],
@@ -99,7 +129,7 @@ const PIZZAS = [
     ["Garlic", B, B],
     ["Buffalo Ranch", B, B],
   ]},
-  { name: "WYATT'S BBQ", build: [
+  { name: "WYATT'S BBQ", sec: [2, 4], build: [
     ["BBQ Sauce", B, B],
     ["Smoked Mozz.", ["green",1], ["green",2]],
     ["Chicken", ["green",1], ["green",2]],
@@ -109,7 +139,7 @@ const PIZZAS = [
     ["Cheddar", ["orange",1], ["orange",2]],
     ["BBQ Drizzle", B, B],
   ]},
-  { name: "HAWAIIAN", build: [
+  { name: "HAWAIIAN", sec: [2, 4], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Canad. Bacon", 8, 16],
@@ -119,7 +149,7 @@ const PIZZAS = [
     ["Mozzarella", ["white",1], ["white",2]],
     ["Cheddar", ["orange",1], ["orange",2]],
   ]},
-  { name: "VEGGIE", build: [
+  { name: "VEGGIE", sec: [3, 5], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Spinach", B, B],
     ["Mozzarella", ["green",1], ["blue",1]],
@@ -131,7 +161,7 @@ const PIZZAS = [
     ["Mozzarella", ["white",1], ["white",2]],
     ["Romano", ["orange",1], ["orange",1]],
   ]},
-  { name: "PEPPERONI SUPREME", build: [
+  { name: "PEPPERONI SUPREME", sec: [2, 3], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Pepperonis", 20, 38],
@@ -139,7 +169,7 @@ const PIZZAS = [
     ["Mushrooms", ["red",1], ["red",2]],
     ["Smoked Mozz.", ["white",1], ["white",2]],
   ]},
-  { name: "BIG CHEESY", build: [
+  { name: "BIG CHEESY", sec: [1, 3], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Gouda", ["white",1], ["white",2]],
     ["Smoked Mozz.", ["green",1], ["green",1]],
@@ -147,7 +177,7 @@ const PIZZAS = [
     ["Romano", ["orange",1], ["orange",1]],
     ["Cheddar", ["orange",1], ["orange",2]],
   ]},
-  { name: "MARGHERITA", build: [
+  { name: "MARGHERITA", sec: [2, 3], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["blue",1], ["blue",2]],
     ["Basil", ["orange",1], ["orange",1]],
@@ -156,7 +186,7 @@ const PIZZAS = [
     ["Romano", ["orange",1], ["orange",1]],
     ["Olive Oil", B, B],
   ]},
-  { name: "BLANCO", build: [
+  { name: "BLANCO", sec: [3, 6], build: [
     ["Olive Oil", B, B],
     ["Garlic", B, B],
     ["Romano", B, B],
@@ -169,7 +199,7 @@ const PIZZAS = [
     ["Romano", B, B],
     ["Olive Oil", B, B],
   ]},
-  { name: "MADELYN'S ALFREDO", build: [
+  { name: "MADELYN'S ALFREDO", sec: [3, 2], build: [
     ["Alfredo Sauce", B, B],
     ["Spinach", B, B],
     ["Mozzarella", ["green",1], ["blue",1]],
@@ -178,7 +208,7 @@ const PIZZAS = [
     ["Mozzarella", ["white",1], ["white",2]],
     ["Cheddar", ["orange",1], ["orange",2]],
   ]},
-  { name: "TUSCANY", build: [
+  { name: "TUSCANY", sec: [3, 5], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Spinach", B, B],
     ["Mozzarella", ["green",1], ["blue",1]],
@@ -190,18 +220,173 @@ const PIZZAS = [
     ["Mozzarella", ["white",1], ["white",2]],
     ["Feta", ["orange",1], ["orange",2]],
   ]},
-  { name: "PEPPERONI", build: [
+  { name: "PEPPERONI", sec: [2, 1], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["blue",1], ["blue",2]],
     ["Pepperonis", 12, 24],
   ]},
-  { name: "POTATO HEAD", build: [
+  { name: "POTATO HEAD", sec: [2, 2], build: [
     ["Alfredo Sauce", B, B],
     ["Mozzarella", ["blue",1], ["blue",2]],
     ["Potatoes", 13, 27],
     ["Bacon", ["orange",1], ["orange",2]],
     ["Cheddar", ["orange",1], ["orange",2]],
   ]},
+  { name: "TACO PIZZA", sec: [3, 1],
+    note: "Carne de taco: mezcla 2.5 lb de carne molida cocida con 1 oz de sazón de taco, revuelve bien y guárdala en una bandeja ⅓ honda, etiquetada.",
+    build: [
+      ["Dough", "6.5 oz", "12 oz"],
+      ["Garlicky Greengo", "2 oz", "4 oz"],
+      ["Mozzarella", ["green",1], ["blue",1]],
+      ["Taco Meat", ["green",1], [["green",1],["red",1]]],
+    ],
+    afterCut: [
+      ["Shredded Lettuce", "1 oz", "2 oz"],
+      ["Diced Tomato", "1½ oz · ~3 rodajas", "2.5 oz · 4-5 rodajas"],
+      ["Cheddar", ["yellow",1], ["yellow",2]],
+      ["Ranch Drizzle", "4-5 líneas", "6-8 líneas"],
+    ],
+  },
+  { name: "SMOKIN' LUAU", sec: [3, 3],
+    note: "Pasa por el horno y termina con una pizca de cilantro.",
+    build: [
+      ["Dough", "6.5 oz", "12 oz"],
+      ["Pizza Sauce", "2 oz", "4 oz"],
+      ["Mozzarella", ["green",1], ["blue",1]],
+      ["Old World Pepperoni", 12, 24],
+      ["Bacon", ["yellow",1], ["yellow",2]],
+      ["Pineapple Salsa", ["red",1], ["red",2]],
+      ["Mozzarella", ["white",1], ["white",2]],
+    ],
+    afterCut: [
+      ["Cilantro", "pizca", "pizca"],
+    ],
+  },
+];
+
+const fullBuild = (p) => (p.afterCut ? [...p.build, ...p.afterCut] : p.build);
+
+const SECTIONS = [
+  { label: "SECCIÓN 1 · LA BASE", desc: "Masa, salsa y el primer queso." },
+  { label: "SECCIÓN 2 · INGREDIENTES", desc: "Proteínas y vegetales, en este orden." },
+  { label: "SECCIÓN 3 · TERMINADO", desc: "Quesos finales y drizzles. De aquí va al horno." },
+  { label: "DESPUÉS DE HORNEAR Y CORTAR", desc: "Se agrega fuera del horno, ya cortada." },
+];
+
+/* ============================ PASTAS Y ENTRADAS ============================ */
+const PASTA_NOTE = "Toda pasta se sirve con pan de queso y se decora con una pizca de parmesano y perejil.";
+
+const PASTAS = [
+  {
+    name: "BAKED MAC & CHEESE", tipo: "Pasta",
+    ings: [
+      ["Penne", "6 oz tibio"],
+      ["Cheddar", "⅛ taza"],
+      ["Smoked Mozz.", "⅛ taza"],
+      ["Gouda", "⅛ taza"],
+      ["Ital. Sausage", "1.5 oz"],
+      ["Alfredo Sauce", "3 oz"],
+      ["Italian Breadcrumbs", "para cubrir"],
+    ],
+    como: [
+      "Mezcla el penne tibio, los 3 quesos y la salchicha con 3 oz de salsa alfredo.",
+      "Pasa la mezcla a una cazuela (casserole).",
+      "Cubre por encima con pan rallado italiano.",
+      "Horno completo (full oven).",
+    ],
+  },
+  {
+    name: "FETTUCCINE PRIMAVERA", tipo: "Pasta",
+    ings: [
+      ["Spinach", "1 puñado"],
+      ["Artichoke", "3 corazones"],
+      ["Mushrooms", "½ taza"],
+      ["Garlic", "1 pizca"],
+      ["Olive Oil", "poquito"],
+      ["Marinara", "2 oz"],
+      ["Alfredo Sauce", "2 oz"],
+      ["Fettuccine", "6 oz tibio"],
+    ],
+    como: [
+      "Pon espinaca, alcachofa, champiñones y ajo con un poquito de aceite de oliva.",
+      "Horno completo (full oven) para saltear los vegetales.",
+      "Mezcla con 2 oz de marinara, 2 oz de alfredo y el fetuchini tibio.",
+    ],
+  },
+  {
+    name: "CHICKEN ALFREDO", tipo: "Pasta",
+    ings: [
+      ["Chicken", "porción de 3 oz"],
+      ["Fettuccine", "6 oz tibio"],
+      ["Alfredo Sauce", "4 oz"],
+    ],
+    como: [
+      "Pasa el pollo por medio horno (½ oven).",
+      "Mezcla con el fetuchini tibio y 4 oz de salsa alfredo.",
+    ],
+  },
+  {
+    name: "SPAGHETTI: MEATBALLS O MARINARA", tipo: "Pasta",
+    ings: [
+      ["Meatballs", "3 (si es con albóndigas)"],
+      ["Spaghetti", "6 oz tibio"],
+      ["Marinara", "4 oz"],
+    ],
+    como: [
+      "Con albóndigas: pasa las 3 albóndigas por horno completo.",
+      "Sirve el espagueti tibio con 4 oz de marinara (y las albóndigas encima).",
+      "Solo marinara: espagueti tibio + 4 oz de marinara, sin albóndigas.",
+    ],
+  },
+  {
+    name: "BLACKENED CHICKEN CAPRI", tipo: "Pasta",
+    ings: [
+      ["Blackened Ckn", "3 oz"],
+      ["Artichoke", "3 corazones"],
+      ["Mushrooms", "¼ taza"],
+      ["Olive Oil", "poquito"],
+      ["Fettuccine", "6 oz tibio"],
+      ["Alfredo Sauce", "4 oz"],
+      ["Spinach", "cama para servir"],
+    ],
+    como: [
+      "Pon el pollo ennegrecido, alcachofa y champiñones con aceite de oliva.",
+      "Horno completo (full oven).",
+      "Mezcla con el fetuchini tibio y 4 oz de salsa alfredo.",
+      "Sirve sobre una cama de espinaca.",
+    ],
+  },
+  {
+    name: "TOMATO BASIL SOUP", tipo: "Entrada",
+    ings: [
+      ["Marinara", "4 oz"],
+      ["Alfredo Sauce", "4 oz"],
+      ["Romano", "⅛ taza"],
+      ["Milk", "2 oz"],
+      ["Basil", "¼ taza"],
+    ],
+    como: [
+      "Mezcla marinara, alfredo, romano, leche y albahaca.",
+      "Pasa por ¾ de horno.",
+      "Decora con una flor de albahaca y una pizca de romano.",
+      "Se sirve con pan de queso.",
+    ],
+  },
+  {
+    name: "MEATBALLER", tipo: "Entrada",
+    ings: [
+      ["Meatballs", "4"],
+      ["Olive Oil", "1 cdta para cubrir"],
+      ["Romano", "para cubrir"],
+      ["Marinara", "3 oz encima"],
+    ],
+    como: [
+      "Cubre las 4 albóndigas con aceite de oliva y luego con romano.",
+      "Horno completo en cazuela (casserole).",
+      "Ponles 3 oz de marinara encima y pasa por ¾ de horno.",
+      "Decora con flor de albahaca y pizca de parmesano. Se sirve con pan de ajo.",
+    ],
+  },
 ];
 
 const ACCENT = "#FF6600";
@@ -302,16 +487,29 @@ function Amount({ value, big = false }) {
       </span>
     );
   }
-  const [color, n] = value;
+  if (typeof value === "string") {
+    return (
+      <span className="font-semibold text-right leading-tight" style={{ color: t.ink, fontSize: big ? 14 : 12 }}>
+        {value}
+      </span>
+    );
+  }
+  // [color, n] o mezcla de vasitos: [[color, n], [color, n]]
+  const groups = Array.isArray(value[0]) ? value : [value];
   const r = big ? 9 : 7;
   return (
-    <span className="inline-flex items-center" style={{ gap: 3 }}>
-      {Array.from({ length: n }).map((_, i) => (
-        <span key={i} style={{
-          width: r, height: r, borderRadius: "50%", background: CUP[color],
-          border: color === "white" ? "1.5px solid #b9b9b9" : "1px solid rgba(0,0,0,.15)",
-          display: "inline-block",
-        }} />
+    <span className="inline-flex items-center" style={{ gap: 4 }}>
+      {groups.map(([color, n], gi) => (
+        <span key={gi} className="inline-flex items-center" style={{ gap: 3 }}>
+          {gi > 0 && <span style={{ color: t.muted, fontSize: 11 }}>+</span>}
+          {Array.from({ length: n }).map((_, i) => (
+            <span key={i} style={{
+              width: r, height: r, borderRadius: "50%", background: CUP[color],
+              border: color === "white" ? "1.5px solid #b9b9b9" : "1px solid rgba(0,0,0,.15)",
+              display: "inline-block",
+            }} />
+          ))}
+        </span>
       ))}
     </span>
   );
@@ -338,39 +536,81 @@ function SizeToggle({ size, setSize }) {
 }
 
 /* ===================== TARJETA DE CONSTRUCCIÓN ===================== */
-function BuildList({ pizza, size, animate = false, show = true }) {
+function SectionHeader({ idx }) {
   const t = useT();
+  const s = SECTIONS[idx];
+  const colors = [CUP.blue, CUP.green, ACCENT, CUP.red];
+  return (
+    <div className="flex items-center mt-2" style={{ gap: 8 }}>
+      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: colors[idx] }} />
+      <span className="leading-tight">
+        <span className="block font-bold" style={{ fontFamily: DISPLAY, fontSize: 12.5, letterSpacing: 0.8, color: t.ink }}>
+          {s.label}
+        </span>
+        <span className="block" style={{ color: t.muted, fontSize: 10.5 }}>{s.desc}</span>
+      </span>
+    </div>
+  );
+}
+
+function BuildList({ pizza, size, animate = false, show = true, sections = true }) {
+  const t = useT();
+  const [s1, s2len] = pizza.sec || [pizza.build.length, 0];
+  const boundary2 = s1 + s2len;
+
+  const renderRow = (row, i, delayIdx) => {
+    const [ing, tt, f] = row;
+    const val = size === "10" ? tt : f;
+    return (
+      <div key={`r${i}`}
+        className="flex items-center rounded-xl"
+        style={{
+          gap: 10, padding: "7px 10px",
+          background: i % 2 ? t.zebra : t.surface,
+          border: `1px solid ${t.line}`,
+          opacity: show ? 1 : 0,
+          transform: show ? "translateY(0)" : "translateY(8px)",
+          transition: animate ? "opacity .35s ease, transform .35s ease" : "none",
+          transitionDelay: animate ? `${delayIdx * 55}ms` : "0ms",
+        }}>
+        <span className="flex items-center justify-center"
+          style={{ width: 26, height: 26, flexShrink: 0 }}>
+          <Ing name={ing} size={22} />
+        </span>
+        <span className="flex-1 leading-tight">
+          <span className="font-semibold" style={{ color: t.ink, fontSize: 14 }}>{ing}</span>
+          <span className="block" style={{ color: t.muted, fontSize: 11 }}>{ES[ing]}</span>
+        </span>
+        <span className="flex items-center justify-end" style={{ minWidth: 54, maxWidth: 130 }}>
+          <Amount value={val} />
+        </span>
+      </div>
+    );
+  };
+
+  const items = [];
+  let delayIdx = 0;
+  pizza.build.forEach((row, i) => {
+    if (sections) {
+      if (i === 0) items.push(<SectionHeader key="h0" idx={0} />);
+      if (i === s1 && s2len > 0) items.push(<SectionHeader key="h1" idx={1} />);
+      if (i === boundary2 && i < pizza.build.length) items.push(<SectionHeader key="h2" idx={2} />);
+    }
+    items.push(renderRow(row, i, delayIdx++));
+  });
+  if (sections && pizza.afterCut) {
+    items.push(<SectionHeader key="h3" idx={3} />);
+    pizza.afterCut.forEach((row, i) => items.push(renderRow(row, pizza.build.length + i, delayIdx++)));
+  }
+
   return (
     <div className="flex flex-col" style={{ gap: 6 }}>
-      {pizza.build.map((row, i) => {
-        const [ing, tt, f] = row;
-        const val = size === "10" ? tt : f;
-        return (
-          <div key={i}
-            className="flex items-center rounded-xl"
-            style={{
-              gap: 10, padding: "7px 10px",
-              background: i % 2 ? t.zebra : t.surface,
-              border: `1px solid ${t.line}`,
-              opacity: show ? 1 : 0,
-              transform: show ? "translateY(0)" : "translateY(8px)",
-              transition: animate ? "opacity .35s ease, transform .35s ease" : "none",
-              transitionDelay: animate ? `${i * 55}ms` : "0ms",
-            }}>
-            <span className="flex items-center justify-center"
-              style={{ width: 26, height: 26, flexShrink: 0 }}>
-              <Ing name={ing} size={22} />
-            </span>
-            <span className="flex-1 leading-tight">
-              <span className="font-semibold" style={{ color: t.ink, fontSize: 14 }}>{ing}</span>
-              <span className="block" style={{ color: t.muted, fontSize: 11 }}>{ES[ing]}</span>
-            </span>
-            <span className="flex items-center justify-end" style={{ minWidth: 54 }}>
-              <Amount value={val} />
-            </span>
-          </div>
-        );
-      })}
+      {items}
+      {sections && pizza.note && (
+        <p className="rounded-xl px-3 py-2 mt-1" style={{ background: t.zebra, border: `1px dashed ${t.line}`, color: t.muted, fontSize: 12 }}>
+          💡 {pizza.note}
+        </p>
+      )}
     </div>
   );
 }
@@ -382,13 +622,13 @@ function Repaso({ size, setSize }) {
   const [query, setQuery] = useState("");
 
   const preview = (p) =>
-    p.build.map((r) => r[0]).filter((n, i, a) => a.indexOf(n) === i)
-      .filter((n) => !["Pizza Sauce", "Mozzarella"].includes(n)).slice(0, 4);
+    fullBuild(p).map((r) => r[0]).filter((n, i, a) => a.indexOf(n) === i)
+      .filter((n) => !BASE_INGS.includes(n)).slice(0, 4);
 
   const q = query.trim().toLowerCase();
   const results = q === "" ? PIZZAS.map((_, i) => i) : PIZZAS.map((p, i) => {
     const inName = p.name.toLowerCase().includes(q);
-    const inIngs = p.build.some(([ing]) =>
+    const inIngs = fullBuild(p).some(([ing]) =>
       ing.toLowerCase().includes(q) || (ES[ing] || "").toLowerCase().includes(q));
     return inName || inIngs ? i : -1;
   }).filter((i) => i !== -1);
@@ -408,7 +648,7 @@ function Repaso({ size, setSize }) {
           <SizeToggle size={size} setSize={setSize} />
         </div>
         <p className="mb-3" style={{ color: t.muted, fontSize: 12 }}>
-          Arma en este orden, de arriba (la base) hacia abajo.
+          Arma en este orden, de arriba hacia abajo. Cada pizza pasa por las 3 secciones de la línea antes de entrar al horno.
         </p>
         <BuildList pizza={p} size={size} />
       </div>
@@ -495,8 +735,8 @@ function Tarjetas({ size, setSize }) {
         {!revealed ? (
           <div className="flex flex-col items-center justify-center" style={{ minHeight: 200, gap: 14 }}>
             <div className="flex flex-wrap justify-center" style={{ gap: 8, maxWidth: 240 }}>
-              {p.build.map((r) => r[0]).filter((n, i, a) => a.indexOf(n) === i)
-                .filter((n) => !["Pizza Sauce", "Mozzarella"].includes(n)).map((n, k) => (
+              {fullBuild(p).map((r) => r[0]).filter((n, i, a) => a.indexOf(n) === i)
+                .filter((n) => !BASE_INGS.includes(n)).map((n, k) => (
                   <span key={k} className="flex items-center justify-center"
                     style={{ width: 34, height: 34, borderRadius: 10, background: t.chip }}>
                     <Ing name={n} size={22} />
@@ -540,8 +780,9 @@ function Ordenar({ size, setSize, soundOn, onMiss }) {
   const [wrongIdx, setWrongIdx] = useState(null);
 
   const p = PIZZAS[pi];
-  const shuffled = useMemo(() => shuffle(p.build.map((_, i) => i)), [pi]);
-  const done = placedCount >= p.build.length;
+  const steps = useMemo(() => fullBuild(p), [pi]);
+  const shuffled = useMemo(() => shuffle(steps.map((_, i) => i)), [pi]);
+  const done = placedCount >= steps.length;
 
   const valFor = (row) => JSON.stringify(size === "10" ? row[1] : row[2]);
 
@@ -553,8 +794,8 @@ function Ordenar({ size, setSize, soundOn, onMiss }) {
 
   const tap = (bi) => {
     if (done || used.has(bi)) return;
-    const expected = p.build[placedCount];
-    const cand = p.build[bi];
+    const expected = steps[placedCount];
+    const cand = steps[bi];
     const ok = bi === placedCount ||
       (cand[0] === expected[0] && valFor(cand) === valFor(expected));
     if (ok) {
@@ -598,7 +839,7 @@ function Ordenar({ size, setSize, soundOn, onMiss }) {
             </p>
           ) : (
             <div className="flex flex-col" style={{ gap: 4 }}>
-              {p.build.slice(0, placedCount).map((row, i) => (
+              {steps.slice(0, placedCount).map((row, i) => (
                 <div key={i} className="flex items-center rounded-lg px-2 py-1" style={{ gap: 8, background: t.surface }}>
                   <span style={{ color: t.faint, fontSize: 11, width: 18 }}>{i + 1}.</span>
                   <Ing name={row[0]} size={17} />
@@ -627,7 +868,7 @@ function Ordenar({ size, setSize, soundOn, onMiss }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {shuffled.filter((bi) => !used.has(bi)).map((bi) => {
-              const row = p.build[bi];
+              const row = steps[bi];
               const isWrong = wrongIdx === bi;
               return (
                 <button key={bi} onClick={() => tap(bi)}
@@ -677,8 +918,8 @@ function buildQuestions() {
 
   // 1) preguntas de número (item contado)
   const counted = [];
-  PIZZAS.forEach((p) => p.build.forEach(([ing, t, f]) => {
-    if (typeof t === "number") counted.push({ pizza: p.name, ing, t, f });
+  PIZZAS.forEach((p) => fullBuild(p).forEach(([ing, t, f]) => {
+    if (typeof t === "number" && typeof f === "number") counted.push({ pizza: p.name, ing, t, f });
   }));
   sample(counted, 4).forEach((c) => {
     const useFourteen = Math.random() < 0.5;
@@ -698,14 +939,14 @@ function buildQuestions() {
   });
 
   // 2) ¿cuál NO va en esta pizza?
-  const allTops = [...new Set(PIZZAS.flatMap((p) => p.build.map((r) => r[0])))]
-    .filter((n) => ICON[n]);
+  const allTops = [...new Set(PIZZAS.flatMap((p) => fullBuild(p).map((r) => r[0])))]
+    .filter((n) => ICON[n] && !BASE_INGS.includes(n));
   sample(PIZZAS, 3).forEach((p) => {
-    const own = [...new Set(p.build.map((r) => r[0]))];
+    const own = [...new Set(fullBuild(p).map((r) => r[0]))];
     const intruders = allTops.filter((n) => !own.includes(n));
     if (intruders.length === 0) return;
     const intruder = sample(intruders, 1)[0];
-    const reals = sample(own.filter((n) => !["Pizza Sauce", "Mozzarella"].includes(n)), 3);
+    const reals = sample(own.filter((n) => !BASE_INGS.includes(n)), 3);
     if (reals.length < 3) return;
     qs.push({
       q: `¿Cuál de estos NO va en la ${p.name}?`,
@@ -716,8 +957,8 @@ function buildQuestions() {
 
   // 3) identifica la pizza por sus ingredientes
   sample(PIZZAS, 3).forEach((p) => {
-    const tops = [...new Set(p.build.map((r) => r[0]))]
-      .filter((n) => !["Pizza Sauce", "Mozzarella"].includes(n)).slice(0, 4);
+    const tops = [...new Set(fullBuild(p).map((r) => r[0]))]
+      .filter((n) => !BASE_INGS.includes(n)).slice(0, 4);
     const others = sample(PIZZAS.filter((x) => x.name !== p.name), 3).map((x) => x.name);
     qs.push({
       q: "¿Qué pizza usa estos ingredientes?",
@@ -907,6 +1148,109 @@ function Examen({ soundOn, onMiss, onExamDone }) {
   );
 }
 
+/* ============================ PASTAS ============================ */
+function Pastas() {
+  const t = useT();
+  const [open, setOpen] = useState(null);
+
+  if (open !== null) {
+    const p = PASTAS[open];
+    return (
+      <div className="mx-auto w-full max-w-xl">
+        <button onClick={() => setOpen(null)}
+          className="flex items-center text-sm font-semibold mb-3" style={{ color: ACCENT, gap: 4 }}>
+          ‹ Todas las pastas
+        </button>
+        <div className="flex items-center justify-between mb-1" style={{ gap: 10 }}>
+          <h2 className="font-bold tracking-tight" style={{ fontFamily: DISPLAY, fontSize: 24, color: t.ink }}>
+            {p.name}
+          </h2>
+          <span className="rounded-full px-3 py-1 font-bold flex-shrink-0"
+            style={{ fontFamily: DISPLAY, fontSize: 12, background: p.tipo === "Entrada" ? CUP.orange : ACCENT, color: "#fff" }}>
+            {p.tipo.toUpperCase()}
+          </span>
+        </div>
+
+        <h3 className="font-bold mt-3 mb-2" style={{ fontFamily: DISPLAY, fontSize: 14, letterSpacing: 0.8, color: t.muted }}>
+          INGREDIENTES
+        </h3>
+        <div className="flex flex-col" style={{ gap: 6 }}>
+          {p.ings.map(([ing, qty], i) => (
+            <div key={i} className="flex items-center rounded-xl"
+              style={{ gap: 10, padding: "7px 10px", background: i % 2 ? t.zebra : t.surface, border: `1px solid ${t.line}` }}>
+              <span className="flex items-center justify-center" style={{ width: 26, height: 26, flexShrink: 0 }}>
+                <Ing name={ing} size={22} />
+              </span>
+              <span className="flex-1 leading-tight">
+                <span className="font-semibold" style={{ color: t.ink, fontSize: 14 }}>{ing}</span>
+                <span className="block" style={{ color: t.muted, fontSize: 11 }}>{ES[ing]}</span>
+              </span>
+              <span className="font-semibold text-right" style={{ color: t.ink, fontSize: 12, maxWidth: 140 }}>{qty}</span>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="font-bold mt-4 mb-2" style={{ fontFamily: DISPLAY, fontSize: 14, letterSpacing: 0.8, color: t.muted }}>
+          CÓMO SE ARMA
+        </h3>
+        <div className="flex flex-col" style={{ gap: 6 }}>
+          {p.como.map((paso, i) => (
+            <div key={i} className="flex items-start rounded-xl"
+              style={{ gap: 10, padding: "8px 10px", background: t.surface, border: `1px solid ${t.line}` }}>
+              <span className="flex items-center justify-center rounded-full font-bold flex-shrink-0"
+                style={{ width: 22, height: 22, fontFamily: DISPLAY, fontSize: 12, background: ACCENT, color: "#fff" }}>
+                {i + 1}
+              </span>
+              <span style={{ color: t.ink, fontSize: 13.5, lineHeight: 1.35 }}>{paso}</span>
+            </div>
+          ))}
+        </div>
+
+        {p.tipo === "Pasta" && (
+          <p className="rounded-xl px-3 py-2 mt-3" style={{ background: t.zebra, border: `1px dashed ${t.line}`, color: t.muted, fontSize: 12 }}>
+            💡 {PASTA_NOTE}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="mb-3" style={{ color: t.muted, fontSize: 13 }}>
+        Toca una pasta o entrada para ver sus cantidades y cómo se arma.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {PASTAS.map((p, i) => (
+          <button key={i} onClick={() => setOpen(i)}
+            className="text-left rounded-2xl p-3 active:scale-95 transition-transform"
+            style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+            <div className="h-1.5 w-8 rounded-full mb-2"
+              style={{ background: p.tipo === "Entrada" ? CUP.orange : ACCENT }} />
+            <div className="font-bold leading-tight mb-1" style={{ fontFamily: DISPLAY, fontSize: 15, color: t.ink }}>
+              {p.name}
+            </div>
+            <div className="mb-2" style={{ color: t.faint, fontSize: 10.5, letterSpacing: 0.5 }}>
+              {p.tipo.toUpperCase()}
+            </div>
+            <div className="flex" style={{ gap: 4 }}>
+              {p.ings.slice(0, 4).map(([n], k) => (
+                <span key={k} className="flex items-center justify-center"
+                  style={{ width: 24, height: 24, borderRadius: 8, background: t.chip }}>
+                  <Ing name={n} size={17} />
+                </span>
+              ))}
+            </div>
+          </button>
+        ))}
+      </div>
+      <p className="rounded-xl px-3 py-2 mt-4" style={{ background: t.zebra, border: `1px dashed ${t.line}`, color: t.muted, fontSize: 12 }}>
+        💡 {PASTA_NOTE}
+      </p>
+    </div>
+  );
+}
+
 /* ============================ PROGRESO ============================ */
 function Progreso({ stats, onClear }) {
   const t = useT();
@@ -1043,6 +1387,7 @@ export default function App() {
     ["tarjetas", "Tarjetas"],
     ["orden", "Orden"],
     ["examen", "Examen"],
+    ["pastas", "Pastas"],
     ["progreso", "Progreso"],
   ];
 
@@ -1064,7 +1409,7 @@ export default function App() {
                     SECTION 1
                   </span>
                 </div>
-                <div style={{ color: t.headerSub, fontSize: 11 }}>14 pizzas · arma sin equivocarte</div>
+                <div style={{ color: t.headerSub, fontSize: 11 }}>16 pizzas · pastas y entradas · arma sin equivocarte</div>
               </div>
               <div className="flex items-center" style={{ gap: 6 }}>
                 <button onClick={() => setSoundOn(!soundOn)}
@@ -1083,12 +1428,12 @@ export default function App() {
             </header>
 
             {/* Pestañas */}
-            <div className="flex" style={{ background: t.tabBar }}>
+            <div className="flex overflow-x-auto" style={{ background: t.tabBar }}>
               {tabs.map(([key, label]) => (
                 <button key={key} onClick={() => setMode(key)}
-                  className="flex-1 py-3 font-bold transition-colors"
+                  className="flex-1 py-3 px-2 font-bold transition-colors whitespace-nowrap"
                   style={{
-                    fontFamily: DISPLAY, fontSize: 13.5, letterSpacing: 0.4,
+                    fontFamily: DISPLAY, fontSize: 13, letterSpacing: 0.3, minWidth: 64,
                     color: mode === key ? "#fff" : t.tabIdle,
                     borderBottom: mode === key ? `3px solid ${ACCENT}` : "3px solid transparent",
                   }}>
@@ -1102,6 +1447,7 @@ export default function App() {
               {mode === "tarjetas" && <Tarjetas size={size} setSize={setSize} />}
               {mode === "orden" && <Ordenar size={size} setSize={setSize} soundOn={soundOn} onMiss={recordMiss} />}
               {mode === "examen" && <Examen soundOn={soundOn} onMiss={recordMiss} onExamDone={recordExam} />}
+              {mode === "pastas" && <Pastas />}
               {mode === "progreso" && <Progreso stats={stats} onClear={clearStats} />}
             </main>
           </div>

@@ -3,3 +3,5 @@ dist/
 .firebase/
 *.log
 firebase-debug.log
+adjuntos/
+adjuntos.zip
