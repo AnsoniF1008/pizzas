@@ -67,6 +67,22 @@ const ICON = {
   "Milk": "🥛",
   "Italian Breadcrumbs": "🍞",
   "Blackened Ckn": "🍗",
+  "Mixed Greens": "🥬",
+  "Romaine Lettuce": "🥬",
+  "Croutons": "🍞",
+  "Kalamata Olive": "🫒",
+  "Sundried Tomato": "🍅",
+  "Cucumber": "🥒",
+  "Parmesan": "🧀",
+  "Walnuts": "🥜",
+  "Sundried Cranberries": "🫐",
+  "Goat Cheese": "🧀",
+  "Ham": "🥓",
+  "Salami/Pepp/Ham": "🍖",
+  "Ranch": "🥣",
+  "Italian Dressing": "🥣",
+  "Chives": "🌿",
+  "Roma Tomato": "🍅",
 };
 
 const ES = {
@@ -89,6 +105,14 @@ const ES = {
   "Spaghetti": "Espagueti", "Meatballs": "Albóndigas", "Marinara": "Salsa marinara",
   "Milk": "Leche", "Italian Breadcrumbs": "Pan rallado italiano",
   "Blackened Ckn": "Pollo ennegrecido",
+  "Mixed Greens": "Mezcla de lechugas", "Romaine Lettuce": "Lechuga romana",
+  "Croutons": "Crutones", "Kalamata Olive": "Aceitunas kalamata",
+  "Sundried Tomato": "Tomate deshidratado", "Cucumber": "Pepino",
+  "Parmesan": "Parmesano", "Walnuts": "Nueces",
+  "Sundried Cranberries": "Arándanos deshidratados", "Goat Cheese": "Queso de cabra empanizado",
+  "Ham": "Jamón", "Salami/Pepp/Ham": "Kit de salami, pepperoni y jamón",
+  "Ranch": "Aderezo ranch", "Italian Dressing": "Aderezo italiano con parmesano",
+  "Chives": "Cebollín", "Roma Tomato": "Tomate roma",
 };
 
 // Ingredientes que no se muestran en las vistas previas ni se usan como opciones del examen.
@@ -99,7 +123,7 @@ const B = null;
 // Sección 2 (ingredientes) y el resto Sección 3 (terminado). afterCut: pasos
 // que van DESPUÉS de hornear y cortar.
 const PIZZAS = [
-  { name: "CARL'S KING", sec: [2, 7], build: [
+  { name: "CARL'S KING", sec: [5, 4], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Canad. Bacon", 3, 5],
@@ -111,7 +135,7 @@ const PIZZAS = [
     ["Mushrooms", ["red",1], ["red",2]],
     ["Mozzarella", ["white",1], ["white",2]],
   ]},
-  { name: "BIG DON'S", sec: [2, 2], build: [
+  { name: "BIG DON'S", sec: [4, 0], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Canad. Bacon", 3, 5],
@@ -120,7 +144,7 @@ const PIZZAS = [
     ["Mozzarella", ["white",1], ["white",2]],
     ["Cheddar", ["orange",1], ["orange",2]],
   ]},
-  { name: "BUFFALO CHICKEN", sec: [2, 4], build: [
+  { name: "BUFFALO CHICKEN", sec: [3, 1], build: [
     ["Buffalo Ranch", B, B],
     ["Smoked Mozz.", ["green",1], ["green",2]],
     ["Chicken", ["green",1], ["green",2]],
@@ -129,7 +153,7 @@ const PIZZAS = [
     ["Garlic", B, B],
     ["Buffalo Ranch", B, B],
   ]},
-  { name: "WYATT'S BBQ", sec: [2, 4], build: [
+  { name: "WYATT'S BBQ", sec: [3, 2], build: [
     ["BBQ Sauce", B, B],
     ["Smoked Mozz.", ["green",1], ["green",2]],
     ["Chicken", ["green",1], ["green",2]],
@@ -139,7 +163,7 @@ const PIZZAS = [
     ["Cheddar", ["orange",1], ["orange",2]],
     ["BBQ Drizzle", B, B],
   ]},
-  { name: "HAWAIIAN", sec: [2, 4], build: [
+  { name: "HAWAIIAN", sec: [3, 3], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Canad. Bacon", 8, 16],
@@ -160,8 +184,8 @@ const PIZZAS = [
     ["Mushrooms", ["red",1], ["red",2]],
     ["Mozzarella", ["white",1], ["white",2]],
     ["Romano", ["orange",1], ["orange",1]],
-  ]},
-  { name: "PEPPERONI SUPREME", sec: [2, 3], build: [
+  ], afterCut: [["Parmesan", "pizca", "pizca"]]},
+  { name: "PEPPERONI SUPREME", sec: [3, 2], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Pepperonis", 20, 38],
@@ -169,15 +193,15 @@ const PIZZAS = [
     ["Mushrooms", ["red",1], ["red",2]],
     ["Smoked Mozz.", ["white",1], ["white",2]],
   ]},
-  { name: "BIG CHEESY", sec: [1, 3], build: [
+  { name: "BIG CHEESY", sec: [4, 0], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Gouda", ["white",1], ["white",2]],
     ["Smoked Mozz.", ["green",1], ["green",1]],
     ["Mozzarella", ["green",1], ["blue",1]],
     ["Romano", ["orange",1], ["orange",1]],
     ["Cheddar", ["orange",1], ["orange",2]],
-  ]},
-  { name: "MARGHERITA", sec: [2, 3], build: [
+  ], afterCut: [["Parmesan", "pizca", "pizca"]]},
+  { name: "MARGHERITA", sec: [2, 2], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["blue",1], ["blue",2]],
     ["Basil", ["orange",1], ["orange",1]],
@@ -185,8 +209,8 @@ const PIZZAS = [
     ["Garlic", B, B],
     ["Romano", ["orange",1], ["orange",1]],
     ["Olive Oil", B, B],
-  ]},
-  { name: "BLANCO", sec: [3, 6], build: [
+  ], afterCut: [["Parmesan", "pizca", "pizca"]]},
+  { name: "BLANCO", sec: [5, 2], build: [
     ["Olive Oil", B, B],
     ["Garlic", B, B],
     ["Romano", B, B],
@@ -198,8 +222,8 @@ const PIZZAS = [
     ["Bacon", ["orange",1], ["orange",1]],
     ["Romano", B, B],
     ["Olive Oil", B, B],
-  ]},
-  { name: "MADELYN'S ALFREDO", sec: [3, 2], build: [
+  ], afterCut: [["Parmesan", "pizca", "pizca"]]},
+  { name: "MADELYN'S ALFREDO", sec: [4, 1], build: [
     ["Alfredo Sauce", B, B],
     ["Spinach", B, B],
     ["Mozzarella", ["green",1], ["blue",1]],
@@ -219,19 +243,19 @@ const PIZZAS = [
     ["Artichoke", 3, 6],
     ["Mozzarella", ["white",1], ["white",2]],
     ["Feta", ["orange",1], ["orange",2]],
-  ]},
-  { name: "PEPPERONI", sec: [2, 1], build: [
+  ], afterCut: [["Parmesan", "pizca", "pizca"]]},
+  { name: "PEPPERONI", sec: [3, 0], build: [
     ["Pizza Sauce", ["blue",1], ["blue",2]],
     ["Mozzarella", ["blue",1], ["blue",2]],
     ["Pepperonis", 12, 24],
   ]},
-  { name: "POTATO HEAD", sec: [2, 2], build: [
+  { name: "POTATO HEAD", sec: [2, 1], build: [
     ["Alfredo Sauce", B, B],
     ["Mozzarella", ["blue",1], ["blue",2]],
     ["Potatoes", 13, 27],
     ["Bacon", ["orange",1], ["orange",2]],
     ["Cheddar", ["orange",1], ["orange",2]],
-  ]},
+  ], afterCut: [["Chives", "pizca", "pizca"]]},
   { name: "TACO PIZZA", sec: [3, 1],
     note: "Carne de taco: mezcla 2.5 lb de carne molida cocida con 1 oz de sazón de taco, revuelve bien y guárdala en una bandeja ⅓ honda, etiquetada.",
     build: [
@@ -267,10 +291,10 @@ const PIZZAS = [
 const fullBuild = (p) => (p.afterCut ? [...p.build, ...p.afterCut] : p.build);
 
 const SECTIONS = [
-  { label: "SECCIÓN 1 · LA BASE", desc: "Masa, salsa y el primer queso." },
-  { label: "SECCIÓN 2 · INGREDIENTES", desc: "Proteínas y vegetales, en este orden." },
-  { label: "SECCIÓN 3 · TERMINADO", desc: "Quesos finales y drizzles. De aquí va al horno." },
-  { label: "DESPUÉS DE HORNEAR Y CORTAR", desc: "Se agrega fuera del horno, ya cortada." },
+  { label: "SECCIÓN 1", desc: "Primera estación de la línea: salsa o base, queso y proteínas principales." },
+  { label: "SECCIÓN 2", desc: "Segunda estación: vegetales y toppings del medio." },
+  { label: "SECCIÓN 3", desc: "Tercera estación: los toques finales. De aquí la pizza entra al horno." },
+  { label: "DESPUÉS DE HORNEAR Y CORTAR", desc: "Se agrega fuera del horno, con la pizza ya cortada." },
 ];
 
 /* ============================ PASTAS Y ENTRADAS ============================ */
@@ -387,7 +411,166 @@ const PASTAS = [
       "Decora con flor de albahaca y pizca de parmesano. Se sirve con pan de ajo.",
     ],
   },
+  {
+    name: "HOUSE SALAD", tipo: "Ensalada", note: "Aderezo: a elección del cliente.",
+    ings: [
+      ["Mixed Greens", "base"],
+      ["Roma Tomato", "6 · lunch 3"],
+      ["Cucumber", "6 · lunch 3"],
+      ["Black Olives", "6 · lunch 3"],
+      ["Croutons", "6 · lunch 3"],
+    ],
+    como: [
+      "Base de mezcla de lechugas en el bowl.",
+      "Agrega 6 piezas de cada topping (en tamaño lunch van 3 de cada uno).",
+      "Sirve con el aderezo que elija el cliente.",
+    ],
+  },
+  {
+    name: "CAESAR SALAD", tipo: "Ensalada", note: "Aderezo: Caesar.",
+    ings: [
+      ["Romaine Lettuce", "base"],
+      ["Parmesan", "¼ taza"],
+      ["Croutons", "6 · lunch 3"],
+    ],
+    como: [
+      "Base de lechuga romana en el bowl.",
+      "Agrega ¼ de taza de parmesano y 6 crutones (lunch: 3).",
+      "Sirve con aderezo Caesar.",
+    ],
+  },
+  {
+    name: "GREEK SALAD", tipo: "Ensalada", note: "Aderezo: vinagreta balsámica.",
+    ings: [
+      ["Romaine Lettuce", "base"],
+      ["Roma Tomato", "6"],
+      ["Cucumber", "6"],
+      ["Kalamata Olive", "6"],
+      ["Sundried Tomato", "¼ taza"],
+      ["Feta", "⅛ taza"],
+    ],
+    como: [
+      "Base de lechuga romana en el bowl.",
+      "Agrega 6 tomates, 6 pepinos y 6 aceitunas kalamata.",
+      "Termina con ¼ taza de tomate deshidratado y ⅛ taza de feta.",
+      "Sirve con vinagreta balsámica.",
+    ],
+  },
+  {
+    name: "HAWAIIAN SALAD", tipo: "Ensalada", note: "Aderezo: walnut raspberry (nuez y frambuesa).",
+    ings: [
+      ["Mixed Greens", "base"],
+      ["Sundried Tomato", "¼ taza"],
+      ["Pineapple", "¼ taza"],
+      ["Cashews", "¼ taza"],
+      ["Sundried Cranberries", "¼ taza"],
+    ],
+    como: [
+      "Base de mezcla de lechugas en el bowl.",
+      "Agrega ¼ de taza de cada topping: tomate deshidratado, piña, marañón y arándanos deshidratados.",
+      "Sirve con aderezo walnut raspberry.",
+    ],
+  },
+  {
+    name: "CRUSTED GOAT CHEESE SALAD", tipo: "Ensalada", note: "Aderezo: vinagreta balsámica.",
+    ings: [
+      ["Spinach", "base"],
+      ["Sundried Cranberries", "¼ taza"],
+      ["Walnuts", "¼ taza"],
+      ["Bacon", "¼ taza"],
+      ["Goat Cheese", "1 pieza"],
+    ],
+    como: [
+      "1º En el bowl: espinaca, ¼ taza de arándanos, ¼ taza de nueces y ¼ taza de tocineta.",
+      "2º Pasa el queso de cabra empanizado por horno completo.",
+      "Colócalo encima y sirve con vinagreta balsámica.",
+    ],
+  },
+  {
+    name: "CRUST SALAD", tipo: "Ensalada", note: "Aderezo: ranch.",
+    ings: [
+      ["Mixed Greens", "base"],
+      ["Roma Tomato", "6"],
+      ["Artichoke", "3 corazones"],
+      ["Bacon", "¼ taza"],
+      ["Chicken", "3 oz"],
+      ["Feta", "¼ taza"],
+    ],
+    como: [
+      "1º En el bowl: mezcla de lechugas, 6 tomates, 3 corazones de alcachofa y ¼ taza de tocineta.",
+      "2º Pasa el pollo (3 oz) por medio horno y agrégalo.",
+      "3º Termina con ¼ taza de feta encima. Sirve con ranch.",
+    ],
+  },
+  {
+    name: "CHICKEN CLUB", tipo: "Sándwich",
+    ings: [
+      ["Mozzarella", "¼ taza por lado"],
+      ["Chicken", "porción de 3 oz"],
+      ["Bacon", "¼ taza"],
+      ["Cheddar", "⅛ taza"],
+      ["Shredded Lettuce", "al gusto"],
+      ["Tomatoes", "4 rodajas"],
+      ["Ranch", "ligero (lt)"],
+    ],
+    como: [
+      "Pon ¼ taza de mozzarella en cada lado del pan plano.",
+      "Agrega el pollo, la tocineta y el cheddar.",
+      "Pasa por medio horno (½ oven).",
+      "Al salir: lechuga rallada, 4 rodajas de tomate y un toque de ranch.",
+    ],
+  },
+  {
+    name: "BAKED ITALIAN", tipo: "Sándwich",
+    ings: [
+      ["Mozzarella", "¼ taza por lado"],
+      ["Salami/Pepp/Ham", "1 kit"],
+      ["Shredded Lettuce", "al gusto"],
+      ["Tomatoes", "4 rodajas"],
+      ["Italian Dressing", "al gusto"],
+    ],
+    como: [
+      "Pon ¼ taza de mozzarella en cada lado del pan plano.",
+      "Agrega el kit de salami, pepperoni y jamón.",
+      "Pasa por medio horno (½ oven).",
+      "Al salir: lechuga rallada, 4 rodajas de tomate y aderezo italiano con parmesano.",
+    ],
+  },
+  {
+    name: "BAKED HAM & CHEESE", tipo: "Sándwich",
+    ings: [
+      ["Mozzarella", "¼ taza por lado"],
+      ["Ham", "5 piezas"],
+      ["Cheddar", "¼ taza"],
+      ["Shredded Lettuce", "al gusto"],
+      ["Tomatoes", "4 rodajas"],
+      ["Ranch", "al gusto"],
+    ],
+    como: [
+      "Pon ¼ taza de mozzarella en cada lado del pan plano.",
+      "Agrega 5 piezas de jamón y ¼ taza de cheddar.",
+      "Pasa por medio horno (½ oven).",
+      "Al salir: lechuga rallada, 4 rodajas de tomate y ranch.",
+    ],
+  },
+  {
+    name: "MEATBALL SUB", tipo: "Sándwich",
+    ings: [
+      ["Meatballs", "4"],
+      ["Pizza Sauce", "2 oz"],
+      ["Mozzarella", "¼ taza por lado"],
+      ["Romano", "encima al final"],
+    ],
+    como: [
+      "Pasa las 4 albóndigas con 2 oz de salsa de pizza por horno completo.",
+      "Pon ¼ taza de mozzarella en cada lado del pan plano.",
+      "Arma el sub y pásalo por medio horno (½ oven).",
+      "Termina con romano encima.",
+    ],
+  },
 ];
+
+const SUB_NOTE = "Todos los sándwiches se decoran con parmesano y se sirven con papitas kettle.";
 
 const ACCENT = "#FF6600";
 const DISPLAY = "'Oswald','Arial Narrow','Helvetica Neue',sans-serif";
@@ -1148,10 +1331,14 @@ function Examen({ soundOn, onMiss, onExamDone }) {
   );
 }
 
-/* ============================ PASTAS ============================ */
+/* ============================ MENÚ (pastas, ensaladas, sándwiches) ============================ */
+const TIPO_COLOR = { Pasta: "#FF6600", Ensalada: "#27AE45", "Sándwich": "#2E86DE", Entrada: "#F39C12" };
+const TIPOS = ["Todo", "Pasta", "Ensalada", "Sándwich", "Entrada"];
+
 function Pastas() {
   const t = useT();
   const [open, setOpen] = useState(null);
+  const [tipo, setTipo] = useState("Todo");
 
   if (open !== null) {
     const p = PASTAS[open];
@@ -1159,17 +1346,20 @@ function Pastas() {
       <div className="mx-auto w-full max-w-xl">
         <button onClick={() => setOpen(null)}
           className="flex items-center text-sm font-semibold mb-3" style={{ color: ACCENT, gap: 4 }}>
-          ‹ Todas las pastas
+          ‹ Todo el menú
         </button>
         <div className="flex items-center justify-between mb-1" style={{ gap: 10 }}>
           <h2 className="font-bold tracking-tight" style={{ fontFamily: DISPLAY, fontSize: 24, color: t.ink }}>
             {p.name}
           </h2>
           <span className="rounded-full px-3 py-1 font-bold flex-shrink-0"
-            style={{ fontFamily: DISPLAY, fontSize: 12, background: p.tipo === "Entrada" ? CUP.orange : ACCENT, color: "#fff" }}>
+            style={{ fontFamily: DISPLAY, fontSize: 12, background: TIPO_COLOR[p.tipo] || ACCENT, color: "#fff" }}>
             {p.tipo.toUpperCase()}
           </span>
         </div>
+        {p.note && (
+          <p className="mb-2 font-semibold" style={{ color: ACCENT, fontSize: 13 }}>{p.note}</p>
+        )}
 
         <h3 className="font-bold mt-3 mb-2" style={{ fontFamily: DISPLAY, fontSize: 14, letterSpacing: 0.8, color: t.muted }}>
           INGREDIENTES
@@ -1211,22 +1401,42 @@ function Pastas() {
             💡 {PASTA_NOTE}
           </p>
         )}
+        {p.tipo === "Sándwich" && (
+          <p className="rounded-xl px-3 py-2 mt-3" style={{ background: t.zebra, border: `1px dashed ${t.line}`, color: t.muted, fontSize: 12 }}>
+            💡 {SUB_NOTE}
+          </p>
+        )}
       </div>
     );
   }
 
+  const items = PASTAS.map((p, i) => ({ p, i })).filter(({ p }) => tipo === "Todo" || p.tipo === tipo);
+
   return (
     <div>
+      <div className="flex flex-wrap items-center mb-3" style={{ gap: 6 }}>
+        {TIPOS.map((tp) => (
+          <button key={tp} onClick={() => setTipo(tp)}
+            className="px-3 py-1 rounded-full font-bold transition-colors"
+            style={{
+              fontFamily: DISPLAY, fontSize: 12.5,
+              background: tipo === tp ? (TIPO_COLOR[tp] || t.ink) : t.toggleBg,
+              color: tipo === tp ? "#fff" : t.muted,
+            }}>
+            {tp === "Todo" ? "Todo" : `${tp}s`}
+          </button>
+        ))}
+      </div>
       <p className="mb-3" style={{ color: t.muted, fontSize: 13 }}>
-        Toca una pasta o entrada para ver sus cantidades y cómo se arma.
+        Toca un plato para ver sus cantidades y cómo se arma.
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {PASTAS.map((p, i) => (
+        {items.map(({ p, i }) => (
           <button key={i} onClick={() => setOpen(i)}
             className="text-left rounded-2xl p-3 active:scale-95 transition-transform"
             style={{ background: t.surface, border: `1px solid ${t.line}` }}>
             <div className="h-1.5 w-8 rounded-full mb-2"
-              style={{ background: p.tipo === "Entrada" ? CUP.orange : ACCENT }} />
+              style={{ background: TIPO_COLOR[p.tipo] || ACCENT }} />
             <div className="font-bold leading-tight mb-1" style={{ fontFamily: DISPLAY, fontSize: 15, color: t.ink }}>
               {p.name}
             </div>
@@ -1244,9 +1454,126 @@ function Pastas() {
           </button>
         ))}
       </div>
-      <p className="rounded-xl px-3 py-2 mt-4" style={{ background: t.zebra, border: `1px dashed ${t.line}`, color: t.muted, fontSize: 12 }}>
-        💡 {PASTA_NOTE}
+    </div>
+  );
+}
+
+/* ============================ CORTES ============================ */
+function CutDiagram({ kind, size = 110 }) {
+  const t = useT();
+  const stroke = t.ink;
+  const dash = { stroke, strokeWidth: 1.6, strokeDasharray: "5 4", fill: "none" };
+  const solid = { stroke, strokeWidth: 3.5, fill: "none" };
+  const R = 46, C = 55;
+
+  if (kind === "calzone-p" || kind === "calzone-l") {
+    // media luna
+    return (
+      <svg width={size} height={size * 0.62} viewBox="0 0 110 68">
+        <path d={`M 9 60 A ${R} ${R} 0 0 1 101 60 Z`} {...solid} />
+        {kind === "calzone-p" ? (
+          <>
+            <line x1="40" y1="20" x2="40" y2="60" {...dash} />
+            <line x1="47" y1="17" x2="74" y2="60" {...dash} />
+          </>
+        ) : (
+          <>
+            <line x1="34" y1="24" x2="34" y2="60" {...dash} />
+            <line x1="41" y1="20" x2="55" y2="60" {...dash} />
+            <line x1="69" y1="20" x2="55" y2="60" {...dash} />
+            <line x1="76" y1="24" x2="76" y2="60" {...dash} />
+          </>
+        )}
+      </svg>
+    );
+  }
+
+  const lines = [];
+  if (kind === "square-1") {
+    lines.push([C, C - R, C, C + R, true], [C - R, C, C + R, C, true]);
+  } else if (kind === "square-2") {
+    [-15, 15].forEach((o) => {
+      lines.push([C + o, C - R, C + o, C + R, true], [C - R, C + o, C + R, C + o, true]);
+    });
+  } else if (kind === "square-3") {
+    [-23, 0, 23].forEach((o) => {
+      lines.push([C + o, C - R, C + o, C + R, true], [C - R, C + o, C + R, C + o, true]);
+    });
+  } else if (kind === "bread") {
+    for (let i = 1; i <= 7; i++) {
+      const x = C - R + (i * 2 * R) / 8;
+      lines.push([x, C - R, x, C + R, true]);
+    }
+    lines.push([C - R, C, C + R, C, true]);
+  } else if (kind === "triangle-6") {
+    for (let i = 0; i < 3; i++) {
+      const a = (i * Math.PI) / 3 + Math.PI / 6;
+      lines.push([C - R * Math.cos(a), C - R * Math.sin(a), C + R * Math.cos(a), C + R * Math.sin(a), true]);
+    }
+  } else if (kind === "triangle-8") {
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 4;
+      lines.push([C - R * Math.cos(a), C - R * Math.sin(a), C + R * Math.cos(a), C + R * Math.sin(a), true]);
+    }
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 110 110">
+      <defs>
+        <clipPath id={`clip-${kind}`}><circle cx={C} cy={C} r={R - 1} /></clipPath>
+      </defs>
+      <circle cx={C} cy={C} r={R} {...solid} />
+      <g clipPath={`url(#clip-${kind})`}>
+        {lines.map(([x1, y1, x2, y2], i) => (
+          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} {...dash} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+const CUTS = [
+  { kind: "square-1", title: 'KIDS · 6"', desc: "Corte cuadrado: 1 corte vertical y 1 horizontal." },
+  { kind: "square-2", title: 'PERSONAL · 10"', desc: "Corte cuadrado: 2 cortes verticales y 2 horizontales." },
+  { kind: "square-3", title: 'LARGE 14" / XL 16"', desc: "Corte cuadrado: 3 cortes verticales y 3 horizontales." },
+  { kind: "calzone-p", title: "CALZONE PERSONAL", desc: "2 cortes. Se sirve con 1 marinara." },
+  { kind: "calzone-l", title: "CALZONE GRANDE", desc: "4 cortes. Se sirve con 2 marinaras." },
+  { kind: "bread", title: "GARLIC CHEESE BREAD", desc: "7 cortes verticales y 1 horizontal." },
+  { kind: "triangle-6", title: "TRIÁNGULO · PERSONAL", desc: "Corte de triángulo (stuffed crust): 6 porciones." },
+  { kind: "triangle-8", title: "TRIÁNGULO · LARGE", desc: "Corte de triángulo (stuffed crust): 8 porciones." },
+];
+
+function Cortes() {
+  const t = useT();
+  return (
+    <div className="mx-auto w-full max-w-2xl">
+      <p className="mb-3" style={{ color: t.muted, fontSize: 13 }}>
+        Cómo se corta cada producto al salir del horno.
       </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+        {CUTS.map((c, i) => (
+          <div key={i} className="rounded-2xl p-3 text-center flex flex-col items-center"
+            style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+            <CutDiagram kind={c.kind} />
+            <div className="font-bold mt-1" style={{ fontFamily: DISPLAY, fontSize: 14, color: t.ink }}>
+              {c.title}
+            </div>
+            <div style={{ color: t.muted, fontSize: 11.5, lineHeight: 1.3 }}>{c.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl p-4" style={{ background: t.surface, border: `1px solid ${t.line}` }}>
+        <h3 className="font-bold mb-2" style={{ fontFamily: DISPLAY, fontSize: 16, color: t.ink }}>
+          Toques al salir del horno
+        </h3>
+        <ul className="flex flex-col" style={{ gap: 8, color: t.ink, fontSize: 13.5, lineHeight: 1.4 }}>
+          <li>🧀 <b>Parmesano encima:</b> Big Cheesy, Blanco, Margherita, Tuscany, Veggie y Green Goat.</li>
+          <li>🌿 <b>Cebollín (chives) encima:</b> Mr. Potato Head.</li>
+          <li>🥣 <b>Calzones:</b> personal con 1 marinara, grande con 2 marinaras.</li>
+          <li>🧄 <b>Garlic knots, cheese bread y stuffed crust:</b> espolvorear queso parmesano con perejil.</li>
+        </ul>
+      </div>
     </div>
   );
 }
@@ -1387,7 +1714,8 @@ export default function App() {
     ["tarjetas", "Tarjetas"],
     ["orden", "Orden"],
     ["examen", "Examen"],
-    ["pastas", "Pastas"],
+    ["pastas", "Menú"],
+    ["cortes", "Cortes"],
     ["progreso", "Progreso"],
   ];
 
@@ -1409,7 +1737,7 @@ export default function App() {
                     SECTION 1
                   </span>
                 </div>
-                <div style={{ color: t.headerSub, fontSize: 11 }}>16 pizzas · pastas y entradas · arma sin equivocarte</div>
+                <div style={{ color: t.headerSub, fontSize: 11 }}>pizzas · pastas · ensaladas · sándwiches · cortes</div>
               </div>
               <div className="flex items-center" style={{ gap: 6 }}>
                 <button onClick={() => setSoundOn(!soundOn)}
@@ -1448,6 +1776,7 @@ export default function App() {
               {mode === "orden" && <Ordenar size={size} setSize={setSize} soundOn={soundOn} onMiss={recordMiss} />}
               {mode === "examen" && <Examen soundOn={soundOn} onMiss={recordMiss} onExamDone={recordExam} />}
               {mode === "pastas" && <Pastas />}
+              {mode === "cortes" && <Cortes />}
               {mode === "progreso" && <Progreso stats={stats} onClear={clearStats} />}
             </main>
           </div>
