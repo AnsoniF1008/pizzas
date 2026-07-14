@@ -101,6 +101,13 @@
   .panel .btn{width:100%;font-size:18px;padding:14px}
   .hiddenX{display:none!important}
 
+  .evalList{list-style:none;font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:left;
+    margin:14px 0 6px;line-height:1.7;max-height:210px;overflow-y:auto;padding:0}
+  .evalList li{border-bottom:1px dashed rgba(0,0,0,.18);padding:5px 2px}
+  .evalList li:last-child{border-bottom:none}
+  #evalPts{margin:10px 0 16px}
+  #scene.cutting{cursor:crosshair}
+
   @media (max-width:640px){
     #ticket{width:194px;font-size:11px;top:66px;left:10px}
     #queue{left:212px;max-width:calc(100vw - 224px);top:66px}
@@ -152,12 +159,14 @@
 <div class="overlay" id="startOverlay">
   <div class="panel">
     <h2>🍕 Turno de servicio</h2>
-    <p>Las comandas entran solas y cada una tiene su tiempo:<br>
-    pizzas del menú, <b>personalizadas</b> y <b>mitad y mitad</b>.<br>
-    En las mitad y mitad, cada topping va en SU lado —<br>
-    la línea del centro te guía.<br><br>
-    3 pizzas perdidas = fin del turno.<br>
-    Bonus por entregar rápido.</p>
+    <p><b>Tú armas la pizza de verdad:</b> elige el ingrediente<br>
+    en la bandeja (o tócalo en la línea) y luego toca la pizza.<br>
+    El juego NO te corrige — puedes equivocarte.<br><br>
+    Después de hornear, <b>corta arrastrando el cuchillo</b><br>
+    (10" = 4 cortes · 14" = 6 cortes, rectos).<br><br>
+    Al entregar, el cliente evalúa: toppings faltantes o de más,<br>
+    orden del chart, cocción y cortes.<br>
+    <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).</p>
     <button class="btn bake" id="btnStart">Iniciar servicio</button>
   </div>
 </div>
@@ -174,10 +183,20 @@
   </div>
 </div>
 
+<div class="overlay hiddenX" id="evalOverlay">
+  <div class="panel">
+    <h2 id="evalTitle">😋 ¡Cliente feliz!</h2>
+    <p id="evalName" style="margin:6px 0 0"></p>
+    <ul class="evalList" id="evalList"></ul>
+    <div class="stats" id="evalPts"></div>
+    <button class="btn serve" id="btnNext">Siguiente</button>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ============================================================
-   PIZZA TRAINER 3D v5 — personalizadas y mitad & mitad
+   PIZZA TRAINER 3D v6 — armado libre, cortes y evaluación del cliente
    ============================================================ */
 
 /* ---------- INGREDIENTES ---------- */
@@ -221,6 +240,12 @@ const ING = {
   caram_onions:  {name:'Caram. Onions',  css:'#9c6a33', type:'scatter', color:0x9c6a33, piece:'arc',  n:7, s:.04},
   garlic:        {name:'Garlic',         css:'#f3ead9', type:'scatter', color:0xf3ead9, piece:'crumb', n:12, s:.012},
   artichoke:     {name:'Artichoke',      css:'#8ba05a', type:'count',  color:0x8ba05a, piece:'wedge', s:.05},
+
+  greengo:        {name:'Garlicky Greengo', css:'#8fae4a', type:'layer',   color:0x8fae4a},
+  taco_meat:      {name:'Taco Meat',        css:'#6e4526', type:'scatter', color:0x6e4526, piece:'crumb', n:12, s:.024},
+  lettuce:        {name:'Shredded Lettuce', css:'#7fbf4e', type:'scatter', color:0x7fbf4e, piece:'leaf', n:12, s:.03},
+  pineapple_salsa:{name:'Pineapple Salsa',  css:'#e8b93c', type:'scatter', color:0xe8b93c, piece:'crumb', n:10, s:.02},
+  ranch_driz:     {name:'Ranch (drizzle)',  css:'#efe2c8', type:'drizzle', color:0xefe2c8},
 };
 
 /* ---------- DISTRIBUCIÓN DE LA LÍNEA ---------- */
@@ -237,6 +262,8 @@ const LAYOUT_SMALL = [
   ['cilantro',    'basil'],
   ['caram_onions','cranberries'],
   ['sausage',     'cashews'],
+  ['taco_meat',   'lettuce'],
+  ['pineapple_salsa','tomatoes'],
 ];
 const LAYOUT_LARGE = [
   ['potatoes', .30],
@@ -251,6 +278,8 @@ const BOTTLES = [
   {ids:['olive_oil'],                   color:0xcdc06a},
   {ids:['buffalo_ranch','buffalo_driz'],color:0xe8934a},
   {ids:['bbq_sauce','bbq_driz'],        color:0x5e3413},
+  {ids:['greengo'],                     color:0x8fae4a},
+  {ids:['ranch_driz'],                  color:0xefe2c8},
 ];
 
 /* ---------- RECETAS DEL CHART ---------- */
@@ -270,6 +299,8 @@ const RECIPES = [
   {name:"Tuscany", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('red_onions',1,2),S('black_olives',1,2),S('green_olives',1,2),S('artichoke',3,6),S('mozzarella',1,2),S('feta',1,2)]},
   {name:"Pepperoni", steps:[S('pizza_sauce',1,2),S('mozzarella',1,2),S('pepperoni',12,24)]},
   {name:"Potato Head", steps:[S('alfredo',1,1),S('mozzarella',1,2),S('potatoes',13,27),S('bacon',1,2),S('cheddar',1,2)]},
+  {name:"Taco Pizza", steps:[S('greengo',1,2),S('mozzarella',1,1),S('taco_meat',1,2),S('lettuce',1,2),S('tomatoes',1,2),S('cheddar',1,2),S('ranch_driz',1,1)]},
+  {name:"Smokin' Luau", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('pepperoni',12,24),S('bacon',1,2),S('pineapple_salsa',1,2),S('mozzarella',1,2),S('cilantro',1,1)]},
 ];
 
 /* toppings disponibles para pizzas personalizadas (con su porción 10"/14") */
@@ -468,7 +499,7 @@ LAYOUT_LARGE.forEach(([id,w])=>{
   regHighlight('smoked_mozz', inner.material);
 })();
 BOTTLES.forEach((b,i)=>{
-  const bx = W/2 - .12, bz = .38 - i*.16;
+  const bx = W/2 - .12 - Math.floor(i/4)*.15, bz = .38 - (i%4)*.16;
   const body = new THREE.Mesh(new THREE.CylinderGeometry(.05,.055,.22,14),
     new THREE.MeshStandardMaterial({color:b.color, roughness:.5, emissive:b.color, emissiveIntensity:0}));
   body.position.set(bx, COUNTER_Y+.06+.11, bz);
@@ -510,7 +541,7 @@ workspace.add(placedGroup);
 let layerY = .04;
 
 /* half: null = completa | 'L' = mitad izquierda (x<0) | 'R' = derecha (x>0)
-   devuelve: true | 'out' (fuera de la pizza) | 'side' (mitad equivocada) */
+   devuelve: true | 'out' (fuera de la pizza) */
 function applyIngredient(id, point, half){
   const ing = ING[id];
   const innerR = PIZZA_R*.85;
@@ -545,8 +576,6 @@ function applyIngredient(id, point, half){
     if(!point) return 'out';
     const local = workspace.worldToLocal(point.clone());
     if(Math.hypot(local.x, local.z) > innerR*.94) return 'out';
-    if(half==='L' && local.x > -.01) return 'side';
-    if(half==='R' && local.x <  .01) return 'side';
     const p = PIECE[ing.piece](ing.color, ing.s);
     p.castShadow = true;
     p.position.set(local.x, layerY + .008, local.z);
@@ -651,11 +680,11 @@ function makeOrder(){
    ============================================================ */
 let mode = 'rush';
 let baked = false, bakeAnim = null;
-let freeSelected = 'pizza_sauce';
+let selected = null;          /* ingrediente elegido por el jugador */
 let trainOrder = null;
 
 const rush = {
-  running:false, queue:[], lives:3,
+  running:false, paused:false, queue:[], lives:3,
   score:0, served:0, streak:0, bestStreak:0,
   spawnTimer:0, spawnInterval:26, elapsed:0
 };
@@ -677,13 +706,33 @@ function currentOrder(){
   return null;
 }
 
+/* ---------- cortes ---------- */
+const cutsGroup = new THREE.Group();
+workspace.add(cutsGroup);
+let cuts = [];
+function reqCuts(){
+  const o = currentOrder();
+  return (o && o.size===10) ? 4 : (o ? 6 : (PIZZA_R < .5 ? 4 : 6));
+}
+
 function clearPizza(){
   while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
+  while(cutsGroup.children.length) cutsGroup.remove(cutsGroup.children[0]);
+  cuts = [];
   layerY = .04;
   baked = false; bakeAnim = null;
   crust.material.color.set(0xe8c98a);
-  $('#btnBake').disabled = true;
-  $('#btnServe').disabled = true;
+  syncButtons();
+}
+
+function syncButtons(){
+  const o = currentOrder();
+  if(mode==='free'){
+    $('#btnBake').disabled = false;
+    return;
+  }
+  $('#btnBake').disabled = !o || baked || !!bakeAnim;
+  $('#btnServe').disabled = !o;
 }
 
 function halfLabel(h){ return h==='L' ? '◐ ' : (h==='R' ? '◑ ' : ''); }
@@ -697,59 +746,76 @@ function activateOrder(o){
     $('#tNum').textContent = '';
     $('#tItems').innerHTML = '';
     $('#tBar').style.width = '100%';
-    renderTray();
+    syncButtons();
     return;
   }
+  if(!o.placed){ o.placed = []; o.seq = {F:[],L:[],R:[]}; }
   setPizzaSize(o.size);
   $('#tNum').textContent = '#'+String(o.num).padStart(3,'0');
   $('#tBase').textContent = '🍕 '+o.name;
-  $('#tSize').textContent = o.size+'" — '+o.steps.length+' pasos en orden';
+  $('#tSize').textContent = o.size+'" · '+o.steps.length+' pasos — tú decides cómo armarla';
   renderTicket();
-  renderTray();
+  syncButtons();
   const tk = $('#ticket');
   tk.classList.add('pop');
   setTimeout(()=>tk.classList.remove('pop'), 300);
 }
 
+/* asigna lo colocado a cada paso del chart (en orden, para mozzarella repetida etc.) */
+function stepCounts(o){
+  const groups = {};
+  (o.placed||[]).forEach(p=>{
+    const k = p.id+'|'+(o.split!=null ? p.half : 'F');
+    groups[k] = (groups[k]||0)+1;
+  });
+  const remaining = Object.assign({}, groups);
+  const counts = o.steps.map(s=>{
+    const k = s.id+'|'+(o.split!=null ? s.half : 'F');
+    const take = Math.min(s.need, remaining[k]||0);
+    remaining[k] = (remaining[k]||0) - take;
+    return take;
+  });
+  return {counts, leftovers:remaining, groups};
+}
+
 function renderTicket(){
   const o = currentOrder();
   if(!o){ $('#tItems').innerHTML=''; return; }
+  const {counts} = stepCounts(o);
   let html = '';
   o.steps.forEach((s,i)=>{
     if(o.split!=null){
       if(i===0) html += `<li class="sec">◐ Mitad izq — ${o.nameA}</li>`;
       if(i===o.split) html += `<li class="sec">◑ Mitad der — ${o.nameB}</li>`;
     }
-    const cls = i<o.idx ? 'done' : (i===o.idx ? 'active' : '');
-    html += `<li class="${cls}"><span>${ING[s.id].name}</span><span>${s.done}/${s.need}</span></li>`;
+    const cls = counts[i]>=s.need ? 'done' : '';
+    html += `<li class="${cls}"><span>${ING[s.id].name}</span><span>${counts[i]}/${s.need}</span></li>`;
   });
   $('#tItems').innerHTML = html;
 }
-/* idx se guarda dentro del pedido */
-function ensureIdx(o){ if(o.idx==null) o.idx = 0; }
 
 function renderTray(){
   const tray = $('#tray');
   tray.innerHTML = '';
-  const o = currentOrder();
-  if(mode!=='free' && o){
-    ensureIdx(o);
-    o.steps.forEach((s,i)=>{
-      const c = document.createElement('div');
-      c.className = 'chip'+(i===o.idx?' sel':'')+(i<o.idx?' done':'');
-      c.innerHTML = `<span class="dot" style="background:${ING[s.id].css}"></span>${halfLabel(s.half)}${ING[s.id].name}<small>${s.done}/${s.need}</small>`;
-      tray.appendChild(c);
-    });
-    const sel = tray.querySelector('.chip.sel');
-    if(sel) sel.scrollIntoView({inline:'center', behavior:'smooth', block:'nearest'});
-  } else if(mode==='free'){
-    Object.keys(ING).forEach(id=>{
-      const c = document.createElement('div');
-      c.className = 'chip'+(id===freeSelected?' sel':'');
-      c.innerHTML = `<span class="dot" style="background:${ING[id].css}"></span>${ING[id].name}`;
-      c.onclick = ()=>{ freeSelected = id; renderTray(); };
-      tray.appendChild(c);
-    });
+  Object.keys(ING).forEach(id=>{
+    const c = document.createElement('div');
+    c.className = 'chip'+(id===selected?' sel':'');
+    c.innerHTML = `<span class="dot" style="background:${ING[id].css}"></span>${ING[id].name}`;
+    c.onclick = ()=> selectIng(id);
+    tray.appendChild(c);
+  });
+}
+
+function selectIng(id){
+  selected = id;
+  const tray = $('#tray');
+  tray.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));
+  const chips = tray.children;
+  const ids = Object.keys(ING);
+  const i = ids.indexOf(id);
+  if(i>=0 && chips[i]){
+    chips[i].classList.add('sel');
+    chips[i].scrollIntoView({inline:'center', behavior:'smooth', block:'nearest'});
   }
 }
 
@@ -767,50 +833,55 @@ function renderLives(){
   $('#livesRow').textContent = '🍕'.repeat(rush.lives) + '✖'.repeat(3-rush.lives);
 }
 
-function activeIng(){
-  if(mode==='free') return freeSelected;
-  const o = currentOrder();
-  if(!o) return null;
-  ensureIdx(o);
-  return o.idx < o.steps.length ? o.steps[o.idx].id : null;
-}
-
 /* ---------- interacción con la pizza ---------- */
 function tapPizza(point){
-  if(mode==='free'){ applyIngredient(freeSelected, point, null); return; }
   const o = currentOrder();
-  if(!o){ toast('No hay comandas activas'); return; }
-  ensureIdx(o);
-  if(o.idx >= o.steps.length){
-    toast(baked ? '¡Entrégala!' : 'Receta completa — 🔥 Hornear');
-    return;
+  if(mode!=='free' && !o){ toast('No hay comandas activas'); return; }
+  if(!selected){ toast('Primero elige un ingrediente (bandeja o línea)'); return; }
+  let half = null;
+  if(o && o.split!=null){
+    const local = workspace.worldToLocal(point.clone());
+    half = local.x < 0 ? 'L' : 'R';
   }
-  if(baked){ toast('Ya está horneada'); return; }
-  const step = o.steps[o.idx];
-  const res = applyIngredient(step.id, point, step.half);
+  const res = applyIngredient(selected, point, half);
   if(res==='out'){ toast('Coloca dentro de la pizza'); return; }
-  if(res==='side'){
-    toast('⚠ ¡Mitad equivocada! '+ING[step.id].name+' va en la '+(step.half==='L'?'IZQUIERDA ◐':'DERECHA ◑'));
-    return;
-  }
-  step.done++;
-  if(step.done >= step.need){
-    o.idx++;
-    if(o.idx < o.steps.length){
-      const nx = o.steps[o.idx];
-      toast('Siguiente: '+halfLabel(nx.half)+ING[nx.id].name);
-    } else {
-      toast('✔ Receta completa — 🔥 Hornear');
-      $('#btnBake').disabled = false;
-    }
-  }
+  if(mode==='free') return;
+  o.placed.push({id:selected, half: half||'F'});
+  const hk = half||'F';
+  if(!o.seq[hk].includes(selected)) o.seq[hk].push(selected);
   renderTicket();
-  renderTray();
+}
+
+/* ---------- corte ---------- */
+function drawCut(a, b, color){
+  const dx = b.x-a.x, dz = b.z-a.z;
+  const len = Math.hypot(dx, dz);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(.014,.004,1),
+    new THREE.MeshStandardMaterial({color: color||0x3a2b18, roughness:.8}));
+  m.scale.z = len;
+  m.position.set((a.x+b.x)/2, layerY+.014, (a.z+b.z)/2);
+  m.rotation.y = Math.atan2(dx, dz);
+  cutsGroup.add(m);
+  return m;
+}
+
+function registerCut(a, b){
+  const dx = b.x-a.x, dz = b.z-a.z;
+  const len = Math.hypot(dx, dz);
+  if(len < PIZZA_R*1.1){ toast('Corte muy corto — cruza toda la pizza'); return; }
+  let ang = Math.atan2(dz, dx)*180/Math.PI;
+  ang = ((ang%180)+180)%180;
+  const dev = Math.min(ang%90, 90-(ang%90));
+  cuts.push({dev});
+  drawCut(a, b);
+  const need = reqCuts();
+  toast(`🔪 Corte ${Math.min(cuts.length,need)}/${need}` + (dev>14 ? ' — quedó chueco 😬' : ''));
 }
 
 /* ---------- servicio (rush) ---------- */
 function startRush(){
   rush.running = true;
+  rush.paused = false;
   rush.queue = [];
   rush.lives = 3;
   rush.score = 0; rush.served = 0; rush.streak = 0; rush.bestStreak = 0;
@@ -849,37 +920,125 @@ function endRush(){
   $('#overOverlay').classList.remove('hiddenX');
 }
 
+/* ---------- evaluación del cliente ---------- */
+function evaluate(o){
+  const complaints = [];
+  const sideTxt = h => o.split==null ? '' : (h==='L' ? ' en la mitad izquierda' : (h==='R' ? ' en la mitad derecha' : ''));
+
+  if(!baked){
+    complaints.push(bakeAnim
+      ? '¡La sacaste del horno a medias! Está a medio cocer'
+      : '¡Está CRUDA! Ni siquiera pasó por el horno');
+  } else {
+    const need = o.size===10 ? 4 : 6;
+    if(cuts.length===0) complaints.push('¡Me la entregaste SIN CORTAR!');
+    else if(cuts.length < need) complaints.push(`Faltaron cortes: hiciste ${cuts.length} de ${need}`);
+    else if(cuts.some(c=>c.dev>14)) complaints.push('Los cortes quedaron chuecos, las rebanadas son disparejas');
+  }
+
+  const groups = {};
+  (o.placed||[]).forEach(p=>{ const k=p.id+'|'+(o.split!=null?p.half:'F'); groups[k]=(groups[k]||0)+1; });
+  const needBy = {};
+  o.steps.forEach(s=>{ const k=s.id+'|'+(o.split!=null?s.half:'F'); needBy[k]=(needBy[k]||0)+s.need; });
+
+  Object.keys(needBy).forEach(k=>{
+    const [id,h] = k.split('|');
+    const got = groups[k]||0, need = needBy[k];
+    if(got===0) complaints.push('Faltó '+ING[id].name+sideTxt(h));
+    else if(got<need) complaints.push('Muy poco '+ING[id].name+sideTxt(h)+` (pusiste ${got} de ${need})`);
+    else if(got>need) complaints.push('Demasiado '+ING[id].name+sideTxt(h)+` (pusiste ${got}, pedí ${need})`);
+  });
+  Object.keys(groups).forEach(k=>{
+    if(!needBy[k]){
+      const [id,h] = k.split('|');
+      complaints.push(ING[id].name+' NO va en esta pizza'+sideTxt(h));
+    }
+  });
+
+  let orderOk = true;
+  ['F','L','R'].forEach(hk=>{
+    const rec = [];
+    o.steps.forEach(s=>{
+      const h = o.split!=null ? s.half : 'F';
+      if(h===hk && !rec.includes(s.id)) rec.push(s.id);
+    });
+    const seq = (o.seq && o.seq[hk] || []).filter(id=>rec.includes(id));
+    const expect = rec.filter(id=>seq.includes(id));
+    if(seq.join('|') !== expect.join('|')) orderOk = false;
+  });
+  if(!orderOk) complaints.push('No seguiste el orden del building chart (salsa → queso → toppings)');
+
+  return complaints;
+}
+
 function serveActive(){
   const o = currentOrder();
-  if(!o || !baked) return;
+  if(!o) return;
+  const complaints = evaluate(o);
+  const rejected = complaints.length >= 3;
+  let pts = 0;
   if(mode==='rush'){
-    const bonus = Math.round(o.timeLeft*2);
-    const extra = o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0);
-    rush.score += 100 + bonus + extra;
-    rush.served++;
-    rush.streak++;
-    rush.bestStreak = Math.max(rush.bestStreak, rush.streak);
+    if(rejected){
+      rush.lives--;
+      rush.streak = 0;
+      renderLives();
+    } else if(complaints.length===0){
+      pts = 120 + Math.round(o.timeLeft*2) + (o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0));
+      rush.streak++;
+      rush.bestStreak = Math.max(rush.bestStreak, rush.streak);
+      rush.served++;
+    } else {
+      pts = Math.max(15, 100 - 22*complaints.length);
+      rush.streak = 0;
+      rush.served++;
+    }
+    rush.score += pts;
     $('#scoreVal').textContent = rush.score;
-    toast('✓ '+o.name+' · +'+(100+bonus+extra)+' pts'+(rush.streak>1?' · racha ×'+rush.streak:''));
+    rush.paused = true;
+  }
+  showEval(o, complaints, pts, rejected);
+}
+
+function showEval(o, complaints, pts, rejected){
+  $('#evalTitle').textContent = rejected ? '😡 ¡Pizza rechazada!' :
+    (complaints.length ? '😕 Cliente con quejas' : '😋 ¡Cliente feliz!');
+  $('#evalName').textContent = o.name+' · '+o.size+'"';
+  $('#evalList').innerHTML = complaints.length
+    ? complaints.map(c=>'<li>“'+c+'”</li>').join('')
+    : '<li>“¡Perfecta! Justo como la pedí. 👌”</li>';
+  if(mode==='rush'){
+    $('#evalPts').innerHTML = rejected
+      ? 'El cliente se fue sin pagar · <b>+0</b> pts · −1 vida'
+      : '<b>+'+pts+'</b> pts'+(rush.streak>1 ? ' · racha ×'+rush.streak : '');
+  } else {
+    $('#evalPts').innerHTML = complaints.length
+      ? '<b>'+complaints.length+'</b> queja'+(complaints.length>1?'s':'')+' — sigue practicando'
+      : '<b>¡Sin quejas!</b> Así se arma según el chart';
+  }
+  $('#evalOverlay').classList.remove('hiddenX');
+}
+
+$('#btnNext').onclick = ()=>{
+  $('#evalOverlay').classList.add('hiddenX');
+  if(mode==='rush'){
     rush.queue.shift();
+    rush.paused = false;
+    if(rush.lives<=0){ endRush(); return; }
     activateOrder(rush.queue[0]||null);
     renderQueue();
   } else {
-    toast('✓ '+o.name+' '+o.size+'" entregada');
     trainOrder = makeOrder();
     activateOrder(trainOrder);
   }
-}
+};
 
 /* ---------- botones ---------- */
 $('#btnBake').onclick = ()=>{
-  const o = currentOrder();
-  if(!o || baked) return;
-  ensureIdx(o);
-  if(o.idx < o.steps.length) return;
-  baked = true;
+  if(baked || bakeAnim) return;
+  if(mode!=='free' && !currentOrder()) return;
   bakeAnim = {t:0};
   toast('🔥 Horneando…');
+  syncButtons();
 };
 $('#btnServe').onclick = serveActive;
 $('#btnSkip').onclick = ()=>{
@@ -889,14 +1048,13 @@ $('#btnSkip').onclick = ()=>{
 };
 $('#btnReset').onclick = ()=>{
   const o = currentOrder();
+  if(o){ o.placed = []; o.seq = {F:[],L:[],R:[]}; }
+  clearPizza();
   if(o){
-    o.idx = 0;
-    o.steps.forEach(s=>s.done=0);
-    clearPizza();
     divider.visible = o.split!=null;
-    renderTicket(); renderTray();
-    toast('Pizza reiniciada'+(mode==='rush'?' — ¡el reloj sigue!':''));
-  } else clearPizza();
+    renderTicket();
+  }
+  toast('Pizza reiniciada'+(mode==='rush'&&rush.running?' — ¡el reloj sigue!':''));
 };
 $('#btnStart').onclick = startRush;
 $('#btnAgain').onclick = startRush;
@@ -910,6 +1068,7 @@ function setMode(m){
     $('#btn'+n).classList.toggle('on', n.toLowerCase()===m);
   });
   rush.running = false;
+  rush.paused = false;
   $('#queue').innerHTML = '';
   $('#ticket').style.display = m==='free' ? 'none' : '';
   $('#tBarWrap').style.display = m==='rush' ? '' : 'none';
@@ -918,16 +1077,16 @@ function setMode(m){
   $('#livesRow').style.display = m==='rush' ? '' : 'none';
   $('#startOverlay').classList.toggle('hiddenX', m!=='rush');
   $('#overOverlay').classList.add('hiddenX');
+  $('#evalOverlay').classList.add('hiddenX');
   divider.visible = false;
+  renderTray();
   if(m==='train'){
     trainOrder = makeOrder();
     activateOrder(trainOrder);
-    toast('Modo entrenamiento — sin tiempo');
+    toast('Modo entrenamiento — armas tú, el cliente evalúa, sin tiempo');
   } else if(m==='free'){
     clearPizza();
     setPizzaSize(14);
-    $('#btnBake').disabled = false;
-    renderTray();
   } else {
     activateOrder(null);
   }
@@ -940,23 +1099,85 @@ const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 let dragging=false, moved=0, lastX=0, lastY=0, pinchDist=0;
 
+/* estado del corte con cuchillo */
+let cutDrag=false, cutStartLocal=null, previewCut=null;
+const cutPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+const planeHit = new THREE.Vector3();
+
+function setRay(cx,cy){
+  ndc.set((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
+  ray.setFromCamera(ndc, camera);
+}
+function pickPizzaPoint(cx,cy){
+  setRay(cx,cy);
+  const hits = ray.intersectObjects([crust, ...placedGroup.children], true);
+  return hits.length ? hits[0].point : null;
+}
+function planePoint(cx,cy){
+  setRay(cx,cy);
+  return ray.ray.intersectPlane(cutPlane, planeHit) ? planeHit : null;
+}
+function clampToPizza(v){
+  const r = Math.hypot(v.x, v.z);
+  const max = PIZZA_R*1.04;
+  if(r>max){ v.x *= max/r; v.z *= max/r; }
+  return v;
+}
+function removePreview(){
+  if(previewCut){ cutsGroup.remove(previewCut); previewCut=null; }
+}
+
 container.addEventListener('pointerdown', e=>{
   dragging=true; moved=0; lastX=e.clientX; lastY=e.clientY;
-  container.classList.add('grabbing');
+  cutDrag=false; cutStartLocal=null;
+  if(baked){
+    const p = pickPizzaPoint(e.clientX, e.clientY);
+    if(p){
+      cutDrag = true;
+      cutPlane.constant = -p.y;
+      cutStartLocal = clampToPizza(workspace.worldToLocal(p.clone()));
+      container.classList.add('cutting');
+    }
+  }
+  if(!cutDrag) container.classList.add('grabbing');
 });
 addEventListener('pointermove', e=>{
   if(!dragging) return;
   const dx=e.clientX-lastX, dy=e.clientY-lastY;
   moved += Math.abs(dx)+Math.abs(dy);
   lastX=e.clientX; lastY=e.clientY;
+  if(cutDrag){
+    if(moved<6) return;
+    const wp = planePoint(e.clientX, e.clientY);
+    if(!wp) return;
+    const b = clampToPizza(workspace.worldToLocal(wp.clone()));
+    removePreview();
+    const ddx=b.x-cutStartLocal.x, ddz=b.z-cutStartLocal.z;
+    if(Math.hypot(ddx,ddz) > .04){
+      previewCut = drawCut(cutStartLocal, b, 0xd9d2c4);
+    }
+    return;
+  }
   orbit.theta -= dx*.005;
   orbit.phi   -= dy*.004;
   updateCamera();
 });
 addEventListener('pointerup', e=>{
   container.classList.remove('grabbing');
-  if(dragging && moved<6) handleTap(e.clientX, e.clientY);
-  dragging=false;
+  container.classList.remove('cutting');
+  if(dragging){
+    if(cutDrag && moved>=6){
+      removePreview();
+      const wp = planePoint(e.clientX, e.clientY);
+      if(wp && cutStartLocal){
+        registerCut(cutStartLocal, clampToPizza(workspace.worldToLocal(wp.clone())));
+      }
+    } else if(moved<6){
+      handleTap(e.clientX, e.clientY);
+    }
+  }
+  dragging=false; cutDrag=false; cutStartLocal=null;
+  removePreview();
 });
 container.addEventListener('wheel', e=>{
   e.preventDefault();
@@ -982,17 +1203,13 @@ function findIng(obj){
 }
 
 function handleTap(cx,cy){
-  ndc.set((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
-  ray.setFromCamera(ndc, camera);
+  setRay(cx,cy);
   const panHit = ray.intersectObjects(clickPans, true);
   if(panHit.length){
     const id = findIng(panHit[0].object);
     if(id){
-      if(mode==='free'){ freeSelected=id; renderTray(); }
-      const act = activeIng();
-      const isActive = id===act ||
-        (id==='buffalo_ranch'&&act==='buffalo_driz') || (id==='bbq_sauce'&&act==='bbq_driz');
-      toast(ING[id].name + (mode!=='free' && isActive ? ' — ¡es el paso actual! Toca la pizza' : ''));
+      selectIng(id);
+      toast(ING[id].name+' seleccionado — toca la pizza para aplicarlo');
       return;
     }
   }
@@ -1013,10 +1230,9 @@ function animate(){
   const dt = Math.min(.1, clock.getDelta());
   pulse += dt*4;
 
-  const act = activeIng();
   const glow = (Math.sin(pulse)*.5+.5)*.8;
   for(const id in highlightByIng){
-    const on = id===act;
+    const on = id===selected;
     highlightByIng[id].forEach(m=>{ m.emissiveIntensity = on ? glow : 0; });
   }
 
@@ -1026,12 +1242,13 @@ function animate(){
     crust.material.color.lerpColors(rawCrust, bakedCrust, k);
     if(k>=1){
       bakeAnim = null;
-      $('#btnServe').disabled = false;
-      toast('🍕 ¡Lista! Entrégala');
+      baked = true;
+      syncButtons();
+      toast('🍕 Fuera del horno — 🔪 arrastra sobre la pizza para cortarla ('+reqCuts()+' cortes)');
     }
   }
 
-  if(mode==='rush' && rush.running){
+  if(mode==='rush' && rush.running && !rush.paused){
     rush.elapsed += dt;
     rush.spawnTimer += dt;
 
