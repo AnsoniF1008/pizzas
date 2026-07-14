@@ -162,8 +162,9 @@
     <p><b>Tú armas la pizza de verdad:</b> elige el ingrediente<br>
     en la bandeja (o tócalo en la línea) y luego toca la pizza.<br>
     El juego NO te corrige — puedes equivocarte.<br><br>
-    Después de hornear, <b>corta arrastrando el cuchillo</b><br>
-    (10" = 4 cortes · 14" = 6 cortes, rectos).<br><br>
+    Después de hornear, <b>corta arrastrando el cuchillo</b>.<br>
+    La comanda te dice el corte: <b>cuadrado</b> (10" = 4 · 14" = 6 rectos)<br>
+    o <b>triangle cut</b> (6 u 8 rebanadas, todos por el centro).<br><br>
     Al entregar, el cliente evalúa: toppings faltantes o de más,<br>
     orden del chart, cocción y cortes.<br>
     <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).</p>
@@ -623,6 +624,7 @@ function finishOrder(o){
   o.timeLimit = Math.min(110, Math.max(30, 14 + o.steps.length*4 + taps*0.9));
   o.timeLeft = o.timeLimit;
   o.num = orderNum++;
+  o.cut = Math.random() < .6 ? 'square' : 'triangle';
   return o;
 }
 
@@ -710,9 +712,19 @@ function currentOrder(){
 const cutsGroup = new THREE.Group();
 workspace.add(cutsGroup);
 let cuts = [];
-function reqCuts(){
-  const o = currentOrder();
-  return (o && o.size===10) ? 4 : (o ? 6 : (PIZZA_R < .5 ? 4 : 6));
+
+/* según el chart oficial:
+   cuadrado: 10" = 2+2 cortes · 14" = 3+3 cortes
+   triangle: personal = 6 rebanadas (3 cortes) · large = 8 rebanadas (4 cortes), todos por el centro */
+function cutInfo(o){
+  const size = o ? o.size : (PIZZA_R < .5 ? 10 : 14);
+  const style = (o && o.cut) ? o.cut : 'square';
+  if(style==='triangle'){
+    const n = size===10 ? 3 : 4;
+    return {style, n, label:`Triangle cut — ${n*2} rebanadas (${n} cortes por el centro)`};
+  }
+  const n = size===10 ? 4 : 6;
+  return {style, n, label:`Corte cuadrado — ${n} cortes rectos`};
 }
 
 function clearPizza(){
@@ -791,6 +803,7 @@ function renderTicket(){
     const cls = counts[i]>=s.need ? 'done' : '';
     html += `<li class="${cls}"><span>${ING[s.id].name}</span><span>${counts[i]}/${s.need}</span></li>`;
   });
+  html += `<li class="sec">🔪 ${cutInfo(o).label}</li>`;
   $('#tItems').innerHTML = html;
 }
 
@@ -872,10 +885,14 @@ function registerCut(a, b){
   let ang = Math.atan2(dz, dx)*180/Math.PI;
   ang = ((ang%180)+180)%180;
   const dev = Math.min(ang%90, 90-(ang%90));
-  cuts.push({dev});
+  const dCenter = Math.abs(a.x*b.z - b.x*a.z)/len;   /* distancia de la línea al centro */
+  cuts.push({ang, dev, dCenter});
   drawCut(a, b);
-  const need = reqCuts();
-  toast(`🔪 Corte ${Math.min(cuts.length,need)}/${need}` + (dev>14 ? ' — quedó chueco 😬' : ''));
+  const ci = cutInfo(currentOrder());
+  let warn = '';
+  if(ci.style==='square' && dev>14) warn = ' — quedó chueco 😬';
+  if(ci.style==='triangle' && dCenter > PIZZA_R*.18) warn = ' — no pasó por el centro 😬';
+  toast(`🔪 Corte ${Math.min(cuts.length,ci.n)}/${ci.n}` + warn);
 }
 
 /* ---------- servicio (rush) ---------- */
@@ -930,10 +947,30 @@ function evaluate(o){
       ? '¡La sacaste del horno a medias! Está a medio cocer'
       : '¡Está CRUDA! Ni siquiera pasó por el horno');
   } else {
-    const need = o.size===10 ? 4 : 6;
-    if(cuts.length===0) complaints.push('¡Me la entregaste SIN CORTAR!');
-    else if(cuts.length < need) complaints.push(`Faltaron cortes: hiciste ${cuts.length} de ${need}`);
-    else if(cuts.some(c=>c.dev>14)) complaints.push('Los cortes quedaron chuecos, las rebanadas son disparejas');
+    const ci = cutInfo(o);
+    const cutName = ci.style==='triangle' ? 'triangle cut' : 'corte cuadrado';
+    if(cuts.length===0) complaints.push('¡Me la entregaste SIN CORTAR! Pedí '+cutName);
+    else if(cuts.length < ci.n) complaints.push(`Faltaron cortes: hiciste ${cuts.length} de ${ci.n} (${cutName})`);
+    else {
+      if(cuts.length > ci.n) complaints.push(`Hiciste cortes de más: ${cuts.length} en vez de ${ci.n}`);
+      if(ci.style==='square'){
+        if(cuts.some(c=>c.dev>14)) complaints.push('Los cortes quedaron chuecos, las rebanadas son disparejas');
+        else if(cuts.every(c=>c.dCenter < PIZZA_R*.15)) complaints.push('Pedí corte CUADRADO y me la cortaste en triángulos');
+      } else {
+        if(cuts.some(c=>c.dCenter > PIZZA_R*.18)){
+          complaints.push('En el triangle cut TODOS los cortes pasan por el centro — quedó como sea');
+        } else {
+          const angs = cuts.map(c=>c.ang).sort((x,y)=>x-y);
+          const ideal = 180/ci.n;
+          let uneven = false;
+          for(let i=0;i<angs.length;i++){
+            const next = (i===angs.length-1) ? angs[0]+180 : angs[i+1];
+            if(Math.abs((next-angs[i])-ideal) > 17) uneven = true;
+          }
+          if(uneven) complaints.push('Las rebanadas triangulares quedaron disparejas');
+        }
+      }
+    }
   }
 
   const groups = {};
@@ -1244,7 +1281,7 @@ function animate(){
       bakeAnim = null;
       baked = true;
       syncButtons();
-      toast('🍕 Fuera del horno — 🔪 arrastra sobre la pizza para cortarla ('+reqCuts()+' cortes)');
+      toast('🍕 Fuera del horno — 🔪 '+cutInfo(currentOrder()).label);
     }
   }
 
