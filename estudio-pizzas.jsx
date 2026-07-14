@@ -1768,6 +1768,14 @@ export default function App() {
                   {label}
                 </button>
               ))}
+              <a href="/3d/"
+                className="flex-1 py-3 px-2 font-bold whitespace-nowrap text-center"
+                style={{
+                  fontFamily: DISPLAY, fontSize: 13, letterSpacing: 0.3, minWidth: 64,
+                  color: ACCENT, borderBottom: "3px solid transparent", textDecoration: "none",
+                }}>
+                Juego 3D
+              </a>
             </div>
 
             <main className="p-4 pb-10 md:p-6 md:pb-12">

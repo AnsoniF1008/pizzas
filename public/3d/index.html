@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pizza Trainer 3D — Servicio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#14181c; --paper:#f6f1e7; --tomato:#d7402b; --basil:#3f7d3a; --cheese:#f2b544; }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#171a1e;font-family:'Barlow Condensed',sans-serif;color:var(--paper)}
+  #scene{position:fixed;inset:0;cursor:grab}
+  #scene.grabbing{cursor:grabbing}
+
+  header{position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;
+    display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px}
+  .brand #backLink{pointer-events:auto;display:inline-block;margin-bottom:6px;color:var(--cheese);
+    font-family:'IBM Plex Mono',monospace;font-size:12px;text-decoration:none;font-weight:600}
+  .brand #backLink:active{opacity:.7}
+  .brand h1{font-weight:800;font-size:clamp(19px,3vw,28px);letter-spacing:.06em;text-transform:uppercase;line-height:1}
+  .brand p{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.55;margin-top:4px}
+  .score{font-family:'IBM Plex Mono',monospace;text-align:right;font-size:12px;line-height:1.5;
+    background:rgba(20,24,28,.72);border:1px solid rgba(246,241,231,.15);padding:8px 12px;border-radius:6px;backdrop-filter:blur(6px)}
+  .score b{color:var(--cheese);font-size:18px}
+  .score .lives{letter-spacing:2px}
+
+  #ticket{position:fixed;top:74px;left:16px;z-index:10;width:236px;max-height:calc(100vh - 250px);overflow-y:auto;
+    background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12px;
+    padding:12px 14px 20px;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),95% 100%,90% calc(100% - 6px),85% 100%,80% calc(100% - 6px),75% 100%,70% calc(100% - 6px),65% 100%,60% calc(100% - 6px),55% 100%,50% calc(100% - 6px),45% 100%,40% calc(100% - 6px),35% 100%,30% calc(100% - 6px),25% 100%,20% calc(100% - 6px),15% 100%,10% calc(100% - 6px),5% 100%,0 calc(100% - 6px));
+    transition:transform .25s ease;scrollbar-width:thin}
+  #ticket .th{display:flex;justify-content:space-between;border-bottom:1px dashed #999;padding-bottom:6px;margin-bottom:6px;font-weight:600}
+  #ticket .base{font-weight:600;margin-bottom:2px;text-transform:uppercase;font-size:13px;line-height:1.25}
+  #ticket .size{font-size:10px;opacity:.6;margin-bottom:6px}
+  #ticket .tbar{height:7px;background:#ddd4c2;border-radius:4px;overflow:hidden;margin-bottom:8px}
+  #ticket .tbar i{display:block;height:100%;background:var(--basil);border-radius:4px;transition:width .3s linear}
+  #ticket ul{list-style:none}
+  #ticket li{display:flex;justify-content:space-between;padding:2.5px 4px;border-radius:2px}
+  #ticket li.done{text-decoration:line-through;opacity:.4}
+  #ticket li.active{background:#ffe9b0;font-weight:600}
+  #ticket li.active::before{content:'▶ ';font-size:9px}
+  #ticket li.sec{background:var(--ink);color:var(--paper);font-weight:600;font-size:10px;
+    text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px;padding:3px 6px;justify-content:flex-start}
+  #ticket.pop{transform:rotate(-1.5deg) scale(1.03)}
+
+  #queue{position:fixed;top:74px;left:266px;z-index:9;display:flex;gap:8px;max-width:calc(100vw - 490px);overflow-x:auto;scrollbar-width:none}
+  #queue::-webkit-scrollbar{display:none}
+  .mini{flex:0 0 auto;width:116px;background:var(--paper);color:var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px 9px 10px;border-radius:2px;
+    box-shadow:0 5px 14px rgba(0,0,0,.4);opacity:.92}
+  .mini b{display:block;font-size:10.5px;line-height:1.2;margin-bottom:2px;text-transform:uppercase}
+  .mini .sz{opacity:.55;font-size:9px}
+  .mini .tbar{height:5px;background:#ddd4c2;border-radius:3px;overflow:hidden;margin-top:6px}
+  .mini .tbar i{display:block;height:100%;background:var(--basil)}
+  .mini .tbar i.warn{background:#d92e2e}
+
+  #tray{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;gap:7px;align-items:flex-end;
+    padding:10px 14px calc(12px + env(safe-area-inset-bottom));overflow-x:auto;scrollbar-width:none;
+    background:linear-gradient(to top,rgba(15,17,20,.92),rgba(15,17,20,0))}
+  #tray::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;border:1px solid rgba(246,241,231,.18);border-radius:8px;background:rgba(30,34,39,.85);color:var(--paper);
+    padding:7px 11px 6px;text-align:center;cursor:pointer;user-select:none;
+    font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    display:flex;flex-direction:column;align-items:center;gap:4px;min-width:70px;
+    transition:transform .12s ease,border-color .12s ease}
+  .chip .dot{width:20px;height:20px;border-radius:50%;border:2px solid rgba(0,0,0,.35)}
+  .chip.sel{border-color:var(--cheese);background:#2c3138;box-shadow:0 0 0 1px var(--cheese)}
+  .chip.done{opacity:.35}
+  .chip small{font-family:'IBM Plex Mono',monospace;font-size:9px;opacity:.6;font-weight:400}
+
+  #actions{position:fixed;right:14px;bottom:100px;z-index:11;display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+    font-size:15px;padding:11px 18px;border-radius:8px;border:none;cursor:pointer;color:var(--paper);
+    transition:transform .12s ease}
+  .btn:active{transform:scale(.96)}
+  .btn.bake{background:var(--tomato)}
+  .btn.serve{background:var(--basil)}
+  .btn.ghost{background:transparent;border:1px solid rgba(246,241,231,.25);font-weight:700}
+  .btn:disabled{opacity:.3;cursor:not-allowed}
+
+  #modeSwitch{position:fixed;top:74px;right:14px;z-index:10;display:flex;border:1px solid rgba(246,241,231,.2);border-radius:8px;overflow:hidden}
+  #modeSwitch button{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    background:rgba(30,34,39,.85);color:var(--paper);border:none;padding:8px 12px;font-size:13px;cursor:pointer}
+  #modeSwitch button.on{background:var(--cheese);color:var(--ink)}
+
+  #toast{position:fixed;left:50%;top:13%;transform:translateX(-50%) translateY(-8px);z-index:20;
+    background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;
+    padding:10px 18px;border-radius:4px;opacity:0;pointer-events:none;transition:all .3s ease;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:rgba(15,17,20,.86);backdrop-filter:blur(6px)}
+  .panel{background:var(--paper);color:var(--ink);width:min(430px,92vw);padding:28px 30px 26px;border-radius:6px;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:center}
+  .panel h2{font-weight:800;font-size:30px;letter-spacing:.05em;text-transform:uppercase;line-height:1.05}
+  .panel p{font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;margin:14px 0 20px;opacity:.8}
+  .panel .stats{font-family:'IBM Plex Mono',monospace;font-size:13px;margin:12px 0 20px;line-height:2}
+  .panel .stats b{font-size:22px;color:var(--tomato)}
+  .panel .btn{width:100%;font-size:18px;padding:14px}
+  .hiddenX{display:none!important}
+
+  @media (max-width:640px){
+    #ticket{width:194px;font-size:11px;top:66px;left:10px}
+    #queue{left:212px;max-width:calc(100vw - 224px);top:66px}
+    #actions{bottom:106px}
+  }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<header>
+  <div class="brand">
+    <a id="backLink" href="/">‹ Volver a la app</a>
+    <h1>Pizza Trainer 3D</h1>
+    <p>building chart · modo servicio</p>
+  </div>
+  <div class="score">
+    <div>PUNTOS <b id="scoreVal">0</b></div>
+    <div id="livesRow" class="lives">🍕🍕🍕</div>
+  </div>
+</header>
+
+<div id="ticket">
+  <div class="th"><span>COMANDA</span><span id="tNum">#001</span></div>
+  <div class="base" id="tBase">—</div>
+  <div class="size" id="tSize">—</div>
+  <div class="tbar" id="tBarWrap"><i id="tBar" style="width:100%"></i></div>
+  <ul id="tItems"></ul>
+</div>
+
+<div id="queue"></div>
+
+<div id="modeSwitch">
+  <button id="btnRush" class="on">Servicio</button>
+  <button id="btnTrain">Entrenar</button>
+  <button id="btnFree">Libre</button>
+</div>
+
+<div id="actions">
+  <button class="btn bake" id="btnBake" disabled>🔥 Hornear</button>
+  <button class="btn serve" id="btnServe" disabled>✓ Entregar</button>
+  <button class="btn ghost" id="btnSkip">Otra pizza</button>
+  <button class="btn ghost" id="btnReset">Limpiar</button>
+</div>
+
+<div id="tray"></div>
+<div id="toast"></div>
+
+<div class="overlay" id="startOverlay">
+  <div class="panel">
+    <h2>🍕 Turno de servicio</h2>
+    <p>Las comandas entran solas y cada una tiene su tiempo:<br>
+    pizzas del menú, <b>personalizadas</b> y <b>mitad y mitad</b>.<br>
+    En las mitad y mitad, cada topping va en SU lado —<br>
+    la línea del centro te guía.<br><br>
+    3 pizzas perdidas = fin del turno.<br>
+    Bonus por entregar rápido.</p>
+    <button class="btn bake" id="btnStart">Iniciar servicio</button>
+  </div>
+</div>
+
+<div class="overlay hiddenX" id="overOverlay">
+  <div class="panel">
+    <h2>Fin del turno</h2>
+    <div class="stats">
+      PUNTOS <b id="finalScore">0</b><br>
+      Pizzas entregadas: <span id="finalServed">0</span><br>
+      Mejor racha: <span id="finalStreak">0</span>
+    </div>
+    <button class="btn serve" id="btnAgain">Otro turno</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============================================================
+   PIZZA TRAINER 3D v5 — personalizadas y mitad & mitad
+   ============================================================ */
+
+/* ---------- INGREDIENTES ---------- */
+const ING = {
+  pizza_sauce:   {name:'Pizza Sauce',    css:'#c03a22', type:'layer',  color:0xc03a22},
+  bbq_sauce:     {name:'BBQ Sauce',      css:'#6e3f1d', type:'layer',  color:0x6e3f1d},
+  alfredo:       {name:'Alfredo Sauce',  css:'#efe6d0', type:'layer',  color:0xefe6d0},
+  olive_oil:     {name:'Olive Oil',      css:'#e9dc9e', type:'layer',  color:0xe9dc9e, opacity:.5},
+  buffalo_ranch: {name:'Buffalo Ranch',  css:'#f2c79b', type:'layer',  color:0xf2c79b},
+  buffalo_driz:  {name:'Buffalo Ranch (drizzle)', css:'#e8934a', type:'drizzle', color:0xe8934a},
+  bbq_driz:      {name:'BBQ Drizzle',    css:'#5e3413', type:'drizzle', color:0x5e3413},
+
+  mozzarella:    {name:'Mozzarella',     css:'#f5d98b', type:'layer',  color:0xf5d98b},
+  smoked_mozz:   {name:'Smoked Mozz.',   css:'#e2b96a', type:'layer',  color:0xe2b96a},
+  gouda:         {name:'Gouda',          css:'#f0c66a', type:'layer',  color:0xf0c66a},
+  cheddar:       {name:'Cheddar',        css:'#e8a33d', type:'scatter', color:0xe8a33d, piece:'crumb', n:12, s:.022},
+  romano:        {name:'Romano',         css:'#f3ead0', type:'scatter', color:0xf3ead0, piece:'crumb', n:14, s:.014},
+  feta:          {name:'Feta',           css:'#f7f3e8', type:'scatter', color:0xf7f3e8, piece:'cube',  n:9,  s:.03},
+  bigdons_mix:   {name:"Big Don's Mix",  css:'#d9cfae', type:'scatter', color:0xd9cfae, piece:'crumb', n:12, s:.02},
+
+  canad_bacon:   {name:'Canad. Bacon',   css:'#e89aa0', type:'count',  color:0xe89aa0, piece:'disc', s:.05},
+  pepperoni:     {name:'Pepperoni',      css:'#b3402e', type:'count',  color:0xb3402e, piece:'disc', s:.032},
+  sausage:       {name:'Ital. Sausage',  css:'#7d4b2c', type:'scatter', color:0x7d4b2c, piece:'crumb', n:9, s:.026},
+  chicken:       {name:'Chicken',        css:'#e6cfa3', type:'scatter', color:0xe6cfa3, piece:'cube',  n:8, s:.038},
+  bacon:         {name:'Bacon',          css:'#c96f3a', type:'scatter', color:0xc96f3a, piece:'crumb', n:10, s:.024},
+  potatoes:      {name:'Potatoes',       css:'#eede9d', type:'count',  color:0xeede9d, piece:'disc', s:.036},
+
+  pineapple:     {name:'Pineapple',      css:'#f0c93f', type:'scatter', color:0xf0c93f, piece:'wedge', n:7, s:.04},
+  cranberries:   {name:'Cranberries',    css:'#a3243a', type:'scatter', color:0xa3243a, piece:'sphere', n:11, s:.014},
+  cashews:       {name:'Cashews',        css:'#ead9b0', type:'scatter', color:0xead9b0, piece:'arc',  n:9, s:.02},
+  black_olives:  {name:'Black Olives',   css:'#2b2b2b', type:'scatter', color:0x2b2b2b, piece:'ring', n:9, s:.02},
+  green_olives:  {name:'Green Olives',   css:'#7a8f3c', type:'scatter', color:0x7a8f3c, piece:'ring', n:9, s:.02},
+  jalapenos:     {name:'Jalapeños',      css:'#4a7a2e', type:'scatter', color:0x4a7a2e, piece:'ring', n:8, s:.024},
+  red_onions:    {name:'Red Onions',     css:'#b06ac0', type:'scatter', color:0xb06ac0, piece:'arc',  n:7, s:.045},
+  bell_peppers:  {name:'Bell Peppers',   css:'#3f8f3a', type:'scatter', color:0x3f8f3a, piece:'arc',  n:7, s:.045},
+  mushrooms:     {name:'Mushrooms',      css:'#e4d7bd', type:'scatter', color:0xe4d7bd, piece:'mush', n:7, s:.038},
+  tomatoes:      {name:'Tomatoes',       css:'#d94f35', type:'scatter', color:0xd94f35, piece:'disc', n:6, s:.05},
+  spinach:       {name:'Spinach',        css:'#2f6b2f', type:'scatter', color:0x2f6b2f, piece:'leaf', n:9, s:.04},
+  basil:         {name:'Basil',          css:'#3f7d3a', type:'scatter', color:0x3f7d3a, piece:'leaf', n:6, s:.045},
+  cilantro:      {name:'Cilantro',       css:'#58a44b', type:'scatter', color:0x58a44b, piece:'leaf', n:12, s:.02},
+  caram_onions:  {name:'Caram. Onions',  css:'#9c6a33', type:'scatter', color:0x9c6a33, piece:'arc',  n:7, s:.04},
+  garlic:        {name:'Garlic',         css:'#f3ead9', type:'scatter', color:0xf3ead9, piece:'crumb', n:12, s:.012},
+  artichoke:     {name:'Artichoke',      css:'#8ba05a', type:'count',  color:0x8ba05a, piece:'wedge', s:.05},
+};
+
+/* ---------- DISTRIBUCIÓN DE LA LÍNEA ---------- */
+const LAYOUT_SMALL = [
+  ['romano',      'garlic'],
+  ['feta',        'bigdons_mix'],
+  ['cheddar',     'gouda'],
+  ['jalapenos',   'bacon'],
+  ['artichoke',   'pineapple'],
+  ['green_olives','black_olives'],
+  ['bell_peppers','mushrooms'],
+  ['red_onions',  'tomatoes'],
+  ['spinach',     'chicken'],
+  ['cilantro',    'basil'],
+  ['caram_onions','cranberries'],
+  ['sausage',     'cashews'],
+];
+const LAYOUT_LARGE = [
+  ['potatoes', .30],
+  ['canad_bacon', .30],
+  ['pepperoni', .34],
+  ['mozzarella', .44],
+  ['mozzarella', .44],
+  ['pizza_sauce', .46],
+];
+const BOTTLES = [
+  {ids:['alfredo'],                     color:0xefe6d0},
+  {ids:['olive_oil'],                   color:0xcdc06a},
+  {ids:['buffalo_ranch','buffalo_driz'],color:0xe8934a},
+  {ids:['bbq_sauce','bbq_driz'],        color:0x5e3413},
+];
+
+/* ---------- RECETAS DEL CHART ---------- */
+const S = (id,q10,q14)=>({id,q10,q14});
+const RECIPES = [
+  {name:"Carl's King", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('canad_bacon',3,5),S('pepperoni',9,18),S('sausage',1,2),S('black_olives',1,2),S('red_onions',1,2),S('bell_peppers',1,2),S('mushrooms',1,2),S('mozzarella',1,2)]},
+  {name:"Big Don's", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('canad_bacon',3,5),S('pepperoni',9,18),S('bigdons_mix',1,2),S('mozzarella',1,2),S('cheddar',1,2)]},
+  {name:"Buffalo Chicken", steps:[S('buffalo_ranch',1,1),S('smoked_mozz',1,2),S('chicken',1,2),S('cilantro',1,1),S('caram_onions',1,1),S('garlic',1,1),S('buffalo_driz',1,1)]},
+  {name:"Wyatt's BBQ", steps:[S('bbq_sauce',1,1),S('smoked_mozz',1,2),S('chicken',1,2),S('cilantro',1,1),S('red_onions',1,2),S('bacon',1,2),S('cheddar',1,2),S('bbq_driz',1,1)]},
+  {name:"Hawaiian", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('canad_bacon',8,16),S('pineapple',1,2),S('cranberries',1,2),S('cashews',1,2),S('mozzarella',1,2),S('cheddar',1,2)]},
+  {name:"Veggie", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('black_olives',1,2),S('red_onions',1,2),S('bell_peppers',1,2),S('mushrooms',1,2),S('mozzarella',1,2),S('romano',1,1)]},
+  {name:"Pepperoni Supreme", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('pepperoni',20,38),S('tomatoes',1,2),S('mushrooms',1,2),S('smoked_mozz',1,2)]},
+  {name:"Big Cheesy", steps:[S('pizza_sauce',1,2),S('gouda',1,2),S('smoked_mozz',1,1),S('mozzarella',1,1),S('romano',1,1),S('cheddar',1,2)]},
+  {name:"Margherita", steps:[S('pizza_sauce',1,2),S('mozzarella',1,2),S('basil',1,1),S('tomatoes',1,2),S('garlic',1,1),S('romano',1,1),S('olive_oil',1,1)]},
+  {name:"Blanco", steps:[S('olive_oil',1,1),S('garlic',1,1),S('romano',1,1),S('spinach',1,1),S('mozzarella',1,2),S('tomatoes',1,2),S('red_onions',1,2),S('mozzarella',1,2),S('bacon',1,1),S('romano',1,1),S('olive_oil',1,1)]},
+  {name:"Madelyn's Alfredo", steps:[S('alfredo',1,1),S('spinach',1,1),S('mozzarella',1,1),S('chicken',1,2),S('mushrooms',1,2),S('mozzarella',1,2),S('cheddar',1,2)]},
+  {name:"Tuscany", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('red_onions',1,2),S('black_olives',1,2),S('green_olives',1,2),S('artichoke',3,6),S('mozzarella',1,2),S('feta',1,2)]},
+  {name:"Pepperoni", steps:[S('pizza_sauce',1,2),S('mozzarella',1,2),S('pepperoni',12,24)]},
+  {name:"Potato Head", steps:[S('alfredo',1,1),S('mozzarella',1,2),S('potatoes',13,27),S('bacon',1,2),S('cheddar',1,2)]},
+];
+
+/* toppings disponibles para pizzas personalizadas (con su porción 10"/14") */
+const CUSTOM_POOL = [
+  {id:'pepperoni', q10:9, q14:18},
+  {id:'canad_bacon', q10:3, q14:5},
+  {id:'sausage', q10:1, q14:2},
+  {id:'chicken', q10:1, q14:2},
+  {id:'bacon', q10:1, q14:2},
+  {id:'pineapple', q10:1, q14:2},
+  {id:'black_olives', q10:1, q14:2},
+  {id:'green_olives', q10:1, q14:2},
+  {id:'jalapenos', q10:1, q14:2},
+  {id:'red_onions', q10:1, q14:2},
+  {id:'bell_peppers', q10:1, q14:2},
+  {id:'mushrooms', q10:1, q14:2},
+  {id:'tomatoes', q10:1, q14:2},
+  {id:'spinach', q10:1, q14:1},
+  {id:'artichoke', q10:3, q14:6},
+  {id:'cheddar', q10:1, q14:2},
+  {id:'feta', q10:1, q14:2},
+];
+
+/* ============================================================
+   ESCENA 3D
+   ============================================================ */
+const container = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x171a1e);
+scene.fog = new THREE.Fog(0x171a1e, 12, 26);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, .1, 100);
+
+const orbit = { theta: Math.PI*0.02, phi: 1.08, radius: 5.8, target: new THREE.Vector3(0,1.25,0) };
+function updateCamera(){
+  orbit.phi = Math.max(.45, Math.min(1.45, orbit.phi));
+  orbit.radius = Math.max(2.4, Math.min(12, orbit.radius));
+  camera.position.set(
+    orbit.target.x + orbit.radius*Math.sin(orbit.phi)*Math.sin(orbit.theta),
+    orbit.target.y + orbit.radius*Math.cos(orbit.phi),
+    orbit.target.z + orbit.radius*Math.sin(orbit.phi)*Math.cos(orbit.theta)
+  );
+  camera.lookAt(orbit.target);
+}
+updateCamera();
+
+scene.add(new THREE.HemisphereLight(0xbfd4e6, 0x2a2320, .8));
+const key = new THREE.DirectionalLight(0xfff2df, 1.15);
+key.position.set(4,7,5);
+key.castShadow = true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left=-6; key.shadow.camera.right=6;
+key.shadow.camera.top=6; key.shadow.camera.bottom=-4;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0x88aaff, .3);
+fill.position.set(-5,4,-3);
+scene.add(fill);
+
+const M = {
+  steel:     new THREE.MeshStandardMaterial({color:0xc9ced3, metalness:.85, roughness:.35}),
+  steelDark: new THREE.MeshStandardMaterial({color:0x9aa1a8, metalness:.85, roughness:.45}),
+  counter:   new THREE.MeshStandardMaterial({color:0xf2f3f4, metalness:.15, roughness:.5}),
+  panSteel:  new THREE.MeshStandardMaterial({color:0xd8dde2, metalness:.9, roughness:.25}),
+  panClear:  new THREE.MeshStandardMaterial({color:0xdfe6ea, metalness:.1, roughness:.15, transparent:true, opacity:.35}),
+  black:     new THREE.MeshStandardMaterial({color:0x1a1d20, roughness:.8}),
+  floor:     new THREE.MeshStandardMaterial({color:0x23272c, roughness:.9}),
+  crust:     new THREE.MeshStandardMaterial({color:0xe8c98a, roughness:.85}),
+};
+
+const floorM = new THREE.Mesh(new THREE.PlaneGeometry(40,40), M.floor);
+floorM.rotation.x = -Math.PI/2;
+floorM.receiveShadow = true;
+scene.add(floorM);
+const grid = new THREE.GridHelper(40, 40, 0x2e333a, 0x2e333a);
+grid.position.y = .001;
+scene.add(grid);
+
+const fridge = new THREE.Group();
+scene.add(fridge);
+const W = 4.65, D = 1.05, BODY_H = 1.02, LEG = 0.14;
+const COUNTER_Y = LEG + BODY_H;
+
+function box(w,h,d,matx,x,y,z,parent){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), matx);
+  m.position.set(x,y,z);
+  m.castShadow = true; m.receiveShadow = true;
+  (parent||fridge).add(m);
+  return m;
+}
+box(W, BODY_H, D, M.steel, 0, LEG+BODY_H/2, 0);
+[[-W/2+.18],[-W/6],[W/6],[W/2-.18]].forEach(([x])=>{
+  [-D/2+.12, D/2-.12].forEach(z=>{
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.05,16), M.black);
+    wheel.rotation.x = Math.PI/2;
+    wheel.position.set(x, .06, z);
+    wheel.castShadow = true;
+    fridge.add(wheel);
+  });
+});
+const doorW = (W - 0.75)/3;
+for(let i=0;i<3;i++){
+  const x = -W/2 + doorW/2 + i*doorW + .02;
+  box(doorW-.06, BODY_H-.12, .04, M.steel, x, LEG+BODY_H/2, D/2+.021);
+  box(doorW-.2, .045, .05, M.steelDark, x, LEG+BODY_H-.14, D/2+.06);
+}
+const compX = W/2 - .36;
+box(.66, BODY_H-.12, .04, M.steel, compX, LEG+BODY_H/2, D/2+.021);
+for(let i=0;i<9;i++) box(.5,.02,.01, M.black, compX, LEG+.16+i*.07, D/2+.045);
+box(.24,.1,.02, M.black, compX, LEG+BODY_H-.18, D/2+.05);
+const tempScreen = new THREE.Mesh(new THREE.PlaneGeometry(.14,.05),
+  new THREE.MeshStandardMaterial({color:0x33ff88, emissive:0x22cc66, emissiveIntensity:.9}));
+tempScreen.position.set(compX-.03, LEG+BODY_H-.18, D/2+.062);
+fridge.add(tempScreen);
+box(W+.3, .06, D+.45, M.counter, 0, COUNTER_Y+.03, .1);
+
+function rnd(a,b){ return a + Math.random()*(b-a); }
+function mat(c,extra){ return new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:.65}, extra||{})); }
+
+const PIECE = {
+  disc:  (c,s)=> new THREE.Mesh(new THREE.CylinderGeometry(s,s,.01,16), mat(c)),
+  ring:  (c,s)=> { const m=new THREE.Mesh(new THREE.TorusGeometry(s,.008,8,16), mat(c)); m.rotation.x=Math.PI/2; return m; },
+  arc:   (c,s)=> { const m=new THREE.Mesh(new THREE.TorusGeometry(s,.01,8,16,Math.PI*rnd(1.1,1.6)), mat(c)); m.rotation.x=Math.PI/2; m.rotation.z=rnd(0,Math.PI*2); return m; },
+  cube:  (c,s)=> { const m=new THREE.Mesh(new THREE.BoxGeometry(s,s*.5,s*.8), mat(c)); m.rotation.y=rnd(0,Math.PI); return m; },
+  crumb: (c,s)=> { const m=new THREE.Mesh(new THREE.BoxGeometry(s*rnd(.8,1.3),s*.6,s*rnd(.8,1.3)), mat(c)); m.rotation.y=rnd(0,Math.PI); return m; },
+  wedge: (c,s)=> { const m=new THREE.Mesh(new THREE.CylinderGeometry(s,s,.014,3), mat(c)); m.rotation.y=rnd(0,Math.PI*2); return m; },
+  sphere:(c,s)=> new THREE.Mesh(new THREE.SphereGeometry(s,10,8), mat(c)),
+  leaf:  (c,s)=> { const m=new THREE.Mesh(new THREE.CircleGeometry(s,8), mat(c,{side:THREE.DoubleSide})); m.rotation.x=-Math.PI/2; m.scale.x=.6; m.rotation.z=rnd(0,Math.PI*2); return m; },
+  mush:  (c,s)=> { const m=new THREE.Mesh(new THREE.SphereGeometry(s,12,8,0,Math.PI*2,0,Math.PI/2), mat(c,{roughness:.8})); m.scale.y=.55; return m; },
+};
+
+const railH = .16;
+const rail = new THREE.Group();
+rail.position.set(0, COUNTER_Y+.06, -D/2+.05);
+fridge.add(rail);
+box(W, railH, .82, M.steel, 0, railH/2, .05, rail);
+for(let s=0;s<3;s++){
+  const lid = box(W/3-.12, .02, .55, M.steelDark, -W/3 + s*(W/3), railH+.3, -.42, rail);
+  lid.rotation.x = -Math.PI/2.5;
+}
+
+const clickPans = [];
+const highlightByIng = {};
+function regHighlight(id, m){ (highlightByIng[id] = highlightByIng[id]||[]).push(m); }
+
+function makePan(id, x, z, w, d, flat){
+  const ing = ING[id];
+  const frame = box(w, .1, d, M.panSteel, x, railH+.02, z, rail);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w-.04, .03, d-.04),
+    new THREE.MeshStandardMaterial({color:ing.color, roughness:.65, emissive:ing.color, emissiveIntensity:0}));
+  base.position.set(x, railH+.08, z);
+  base.userData.ing = id;
+  rail.add(base);
+  clickPans.push(base, frame);
+  frame.userData.ing = id;
+  regHighlight(id, base.material);
+  if(!flat && ing.piece){
+    for(let i=0;i<7;i++){
+      const p = PIECE[ing.piece](ing.color, (ing.s||.03)*.9);
+      p.position.set(x+rnd(-w/2+.05,w/2-.05), railH+.1+rnd(0,.012), z+rnd(-d/2+.05,d/2-.05));
+      rail.add(p);
+      clickPans.push(p);
+      p.traverse(o=>o.userData.ing=id);
+    }
+  }
+}
+
+const SMALL_W = 2.55;
+const colW = SMALL_W / LAYOUT_SMALL.length;
+LAYOUT_SMALL.forEach((col,i)=>{
+  const x = -W/2 + .08 + colW/2 + i*colW;
+  makePan(col[0], x, -.14, colW-.03, .38);
+  makePan(col[1], x, .28,  colW-.03, .38);
+});
+let cursorX = -W/2 + .08 + SMALL_W + .04;
+LAYOUT_LARGE.forEach(([id,w])=>{
+  makePan(id, cursorX + w/2, .07, w-.03, .78, id==='pizza_sauce'||id==='mozzarella');
+  cursorX += w;
+});
+(function(){
+  const pepX = -W/2 + .08 + SMALL_W + .04 + .30 + .30 + .34/2;
+  const cont = box(.26, .16, .26, M.panClear, pepX, railH+.16, -.18, rail);
+  cont.userData.ing = 'smoked_mozz';
+  const inner = new THREE.Mesh(new THREE.BoxGeometry(.22,.1,.22),
+    new THREE.MeshStandardMaterial({color:ING.smoked_mozz.color, roughness:.7, emissive:ING.smoked_mozz.color, emissiveIntensity:0}));
+  inner.position.set(pepX, railH+.14, -.18);
+  inner.userData.ing = 'smoked_mozz';
+  rail.add(inner);
+  clickPans.push(cont, inner);
+  regHighlight('smoked_mozz', inner.material);
+})();
+BOTTLES.forEach((b,i)=>{
+  const bx = W/2 - .12, bz = .38 - i*.16;
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.05,.055,.22,14),
+    new THREE.MeshStandardMaterial({color:b.color, roughness:.5, emissive:b.color, emissiveIntensity:0}));
+  body.position.set(bx, COUNTER_Y+.06+.11, bz);
+  body.castShadow = true;
+  fridge.add(body);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(.014,.03,.07,10), M.black);
+  cap.position.set(bx, COUNTER_Y+.06+.25, bz);
+  fridge.add(cap);
+  body.userData.ing = b.ids[0];
+  b.ids.forEach(id=> regHighlight(id, body.material));
+  clickPans.push(body);
+});
+
+/* ---------- pizza ---------- */
+const workspace = new THREE.Group();
+workspace.position.set(-.5, COUNTER_Y+.065, .45);
+scene.add(workspace);
+
+let PIZZA_R = .54;
+const crust = new THREE.Mesh(new THREE.CylinderGeometry(1,1.03,.035,48), M.crust.clone());
+crust.castShadow = true; crust.receiveShadow = true;
+workspace.add(crust);
+
+/* divisor mitad y mitad */
+const divider = new THREE.Mesh(new THREE.BoxGeometry(.012,.004,1),
+  new THREE.MeshStandardMaterial({color:0x14181c, roughness:.6}));
+divider.visible = false;
+workspace.add(divider);
+
+function setPizzaSize(inch){
+  PIZZA_R = inch===10 ? .40 : .54;
+  crust.scale.set(PIZZA_R, 1, PIZZA_R);
+  divider.scale.z = PIZZA_R*2*.98;
+}
+setPizzaSize(14);
+
+const placedGroup = new THREE.Group();
+workspace.add(placedGroup);
+let layerY = .04;
+
+/* half: null = completa | 'L' = mitad izquierda (x<0) | 'R' = derecha (x>0)
+   devuelve: true | 'out' (fuera de la pizza) | 'side' (mitad equivocada) */
+function applyIngredient(id, point, half){
+  const ing = ING[id];
+  const innerR = PIZZA_R*.85;
+
+  if(ing.type==='layer'){
+    const theta0 = half==='L' ? Math.PI : 0;
+    const len = half ? Math.PI : Math.PI*2;
+    const layer = new THREE.Mesh(new THREE.CylinderGeometry(innerR, innerR, .008, 40, 1, false, theta0, len),
+      mat(ing.color, ing.opacity ? {transparent:true, opacity:ing.opacity} : {}));
+    layer.position.y = layerY;
+    layer.receiveShadow = true;
+    placedGroup.add(layer);
+    layerY += half ? .004 : .008;
+    return true;
+  }
+  if(ing.type==='drizzle'){
+    const x0 = half==='L' ? -innerR*.85 : (half==='R' ? .06 : -innerR*.85);
+    const x1 = half==='R' ?  innerR*.85 : (half==='L' ? -.06 : innerR*.85);
+    const nStripes = half ? 5 : 7;
+    for(let i=0;i<nStripes;i++){
+      const sx = x0 + (i+.5)*(x1-x0)/nStripes;
+      const chord = Math.sqrt(Math.max(.02, innerR*innerR - sx*sx));
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(.014,.005,chord*1.7), mat(ing.color));
+      stripe.position.set(sx, layerY+.004, 0);
+      stripe.rotation.y = rnd(-.12,.12);
+      placedGroup.add(stripe);
+    }
+    layerY += .005;
+    return true;
+  }
+  if(ing.type==='count'){
+    if(!point) return 'out';
+    const local = workspace.worldToLocal(point.clone());
+    if(Math.hypot(local.x, local.z) > innerR*.94) return 'out';
+    if(half==='L' && local.x > -.01) return 'side';
+    if(half==='R' && local.x <  .01) return 'side';
+    const p = PIECE[ing.piece](ing.color, ing.s);
+    p.castShadow = true;
+    p.position.set(local.x, layerY + .008, local.z);
+    placedGroup.add(p);
+    return true;
+  }
+  if(ing.type==='scatter'){
+    const n = half ? Math.max(4, Math.round(ing.n*.6)) : ing.n;
+    for(let i=0;i<n;i++){
+      let a;
+      if(half==='L') a = rnd(Math.PI/2+.12, Math.PI*1.5-.12);
+      else if(half==='R') a = rnd(-Math.PI/2+.12, Math.PI/2-.12);
+      else a = rnd(0, Math.PI*2);
+      const r = Math.sqrt(Math.random())*innerR*.9;
+      const p = PIECE[ing.piece](ing.color, ing.s||.03);
+      p.castShadow = true;
+      p.position.set(Math.cos(a)*r, layerY + .008 + rnd(0,.004), Math.sin(a)*r);
+      placedGroup.add(p);
+    }
+    layerY += .003;
+    return true;
+  }
+  return 'out';
+}
+
+/* ============================================================
+   GENERADORES DE COMANDAS
+   ============================================================ */
+let orderNum = 1;
+
+function stepsFromRecipe(recipe, size, half){
+  return recipe.steps.map(s=>{
+    const q = size===10 ? s.q10 : s.q14;
+    let need = q;
+    if(half){
+      const t = ING[s.id].type;
+      need = (t==='layer'||t==='drizzle') ? 1 : Math.max(1, Math.ceil(q/2));
+    }
+    return {id:s.id, need, done:0, half: half||null};
+  });
+}
+
+function finishOrder(o){
+  const taps = o.steps.reduce((a,s)=>a+s.need,0);
+  o.timeLimit = Math.min(110, Math.max(30, 14 + o.steps.length*4 + taps*0.9));
+  o.timeLeft = o.timeLimit;
+  o.num = orderNum++;
+  return o;
+}
+
+function makeStandard(){
+  const recipe = RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  const size = Math.random()<.5 ? 10 : 14;
+  return finishOrder({
+    kind:'std', name:recipe.name, size,
+    steps: stepsFromRecipe(recipe, size, null),
+    split:null
+  });
+}
+
+function makeCustom(){
+  const size = Math.random()<.5 ? 10 : 14;
+  const pool = [...CUSTOM_POOL].sort(()=>Math.random()-.5).slice(0, 2+Math.floor(Math.random()*3));
+  const steps = [
+    {id:'pizza_sauce', need: size===10?1:2, done:0, half:null},
+    {id:'mozzarella',  need: size===10?1:1, done:0, half:null},
+    ...pool.map(t=>({id:t.id, need: size===10?t.q10:t.q14, done:0, half:null}))
+  ];
+  return finishOrder({
+    kind:'custom',
+    name:'Personalizada ('+pool.map(t=>ING[t.id].name).join(', ')+')',
+    size, steps, split:null
+  });
+}
+
+function makeHalfHalf(){
+  const size = Math.random()<.5 ? 10 : 14;
+  let a = RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  let b = RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  while(b===a) b = RECIPES[Math.floor(Math.random()*RECIPES.length)];
+  const stepsA = stepsFromRecipe(a, size, 'L');
+  const stepsB = stepsFromRecipe(b, size, 'R');
+  return finishOrder({
+    kind:'half',
+    name:'½ '+a.name+' / ½ '+b.name,
+    nameA:a.name, nameB:b.name,
+    size,
+    steps:[...stepsA, ...stepsB],
+    split: stepsA.length
+  });
+}
+
+function makeOrder(){
+  const roll = Math.random();
+  if(roll < .55) return makeStandard();
+  if(roll < .78) return makeCustom();
+  return makeHalfHalf();
+}
+
+/* ============================================================
+   ESTADO DEL JUEGO
+   ============================================================ */
+let mode = 'rush';
+let baked = false, bakeAnim = null;
+let freeSelected = 'pizza_sauce';
+let trainOrder = null;
+
+const rush = {
+  running:false, queue:[], lives:3,
+  score:0, served:0, streak:0, bestStreak:0,
+  spawnTimer:0, spawnInterval:26, elapsed:0
+};
+const MAX_QUEUE = 5;
+
+const $ = s => document.querySelector(s);
+const toastEl = $('#toast');
+let toastTimer;
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2600);
+}
+
+function currentOrder(){
+  if(mode==='rush') return rush.queue[0] || null;
+  if(mode==='train') return trainOrder;
+  return null;
+}
+
+function clearPizza(){
+  while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
+  layerY = .04;
+  baked = false; bakeAnim = null;
+  crust.material.color.set(0xe8c98a);
+  $('#btnBake').disabled = true;
+  $('#btnServe').disabled = true;
+}
+
+function halfLabel(h){ return h==='L' ? '◐ ' : (h==='R' ? '◑ ' : ''); }
+
+function activateOrder(o){
+  clearPizza();
+  divider.visible = !!(o && o.split!=null);
+  if(!o){
+    $('#tBase').textContent = '—';
+    $('#tSize').textContent = 'esperando comandas…';
+    $('#tNum').textContent = '';
+    $('#tItems').innerHTML = '';
+    $('#tBar').style.width = '100%';
+    renderTray();
+    return;
+  }
+  setPizzaSize(o.size);
+  $('#tNum').textContent = '#'+String(o.num).padStart(3,'0');
+  $('#tBase').textContent = '🍕 '+o.name;
+  $('#tSize').textContent = o.size+'" — '+o.steps.length+' pasos en orden';
+  renderTicket();
+  renderTray();
+  const tk = $('#ticket');
+  tk.classList.add('pop');
+  setTimeout(()=>tk.classList.remove('pop'), 300);
+}
+
+function renderTicket(){
+  const o = currentOrder();
+  if(!o){ $('#tItems').innerHTML=''; return; }
+  let html = '';
+  o.steps.forEach((s,i)=>{
+    if(o.split!=null){
+      if(i===0) html += `<li class="sec">◐ Mitad izq — ${o.nameA}</li>`;
+      if(i===o.split) html += `<li class="sec">◑ Mitad der — ${o.nameB}</li>`;
+    }
+    const cls = i<o.idx ? 'done' : (i===o.idx ? 'active' : '');
+    html += `<li class="${cls}"><span>${ING[s.id].name}</span><span>${s.done}/${s.need}</span></li>`;
+  });
+  $('#tItems').innerHTML = html;
+}
+/* idx se guarda dentro del pedido */
+function ensureIdx(o){ if(o.idx==null) o.idx = 0; }
+
+function renderTray(){
+  const tray = $('#tray');
+  tray.innerHTML = '';
+  const o = currentOrder();
+  if(mode!=='free' && o){
+    ensureIdx(o);
+    o.steps.forEach((s,i)=>{
+      const c = document.createElement('div');
+      c.className = 'chip'+(i===o.idx?' sel':'')+(i<o.idx?' done':'');
+      c.innerHTML = `<span class="dot" style="background:${ING[s.id].css}"></span>${halfLabel(s.half)}${ING[s.id].name}<small>${s.done}/${s.need}</small>`;
+      tray.appendChild(c);
+    });
+    const sel = tray.querySelector('.chip.sel');
+    if(sel) sel.scrollIntoView({inline:'center', behavior:'smooth', block:'nearest'});
+  } else if(mode==='free'){
+    Object.keys(ING).forEach(id=>{
+      const c = document.createElement('div');
+      c.className = 'chip'+(id===freeSelected?' sel':'');
+      c.innerHTML = `<span class="dot" style="background:${ING[id].css}"></span>${ING[id].name}`;
+      c.onclick = ()=>{ freeSelected = id; renderTray(); };
+      tray.appendChild(c);
+    });
+  }
+}
+
+function renderQueue(){
+  const q = $('#queue');
+  if(mode!=='rush' || !rush.running){ q.innerHTML=''; return; }
+  q.innerHTML = rush.queue.slice(1).map(o=>{
+    const pct = Math.max(0, o.timeLeft/o.timeLimit*100);
+    return `<div class="mini"><b>${o.name}</b><span class="sz">${o.size}" · #${String(o.num).padStart(3,'0')}</span>
+      <div class="tbar"><i class="${pct<30?'warn':''}" style="width:${pct}%"></i></div></div>`;
+  }).join('');
+}
+
+function renderLives(){
+  $('#livesRow').textContent = '🍕'.repeat(rush.lives) + '✖'.repeat(3-rush.lives);
+}
+
+function activeIng(){
+  if(mode==='free') return freeSelected;
+  const o = currentOrder();
+  if(!o) return null;
+  ensureIdx(o);
+  return o.idx < o.steps.length ? o.steps[o.idx].id : null;
+}
+
+/* ---------- interacción con la pizza ---------- */
+function tapPizza(point){
+  if(mode==='free'){ applyIngredient(freeSelected, point, null); return; }
+  const o = currentOrder();
+  if(!o){ toast('No hay comandas activas'); return; }
+  ensureIdx(o);
+  if(o.idx >= o.steps.length){
+    toast(baked ? '¡Entrégala!' : 'Receta completa — 🔥 Hornear');
+    return;
+  }
+  if(baked){ toast('Ya está horneada'); return; }
+  const step = o.steps[o.idx];
+  const res = applyIngredient(step.id, point, step.half);
+  if(res==='out'){ toast('Coloca dentro de la pizza'); return; }
+  if(res==='side'){
+    toast('⚠ ¡Mitad equivocada! '+ING[step.id].name+' va en la '+(step.half==='L'?'IZQUIERDA ◐':'DERECHA ◑'));
+    return;
+  }
+  step.done++;
+  if(step.done >= step.need){
+    o.idx++;
+    if(o.idx < o.steps.length){
+      const nx = o.steps[o.idx];
+      toast('Siguiente: '+halfLabel(nx.half)+ING[nx.id].name);
+    } else {
+      toast('✔ Receta completa — 🔥 Hornear');
+      $('#btnBake').disabled = false;
+    }
+  }
+  renderTicket();
+  renderTray();
+}
+
+/* ---------- servicio (rush) ---------- */
+function startRush(){
+  rush.running = true;
+  rush.queue = [];
+  rush.lives = 3;
+  rush.score = 0; rush.served = 0; rush.streak = 0; rush.bestStreak = 0;
+  rush.spawnInterval = 26;
+  rush.spawnTimer = 0;
+  rush.elapsed = 0;
+  orderNum = 1;
+  $('#scoreVal').textContent = 0;
+  renderLives();
+  $('#startOverlay').classList.add('hiddenX');
+  $('#overOverlay').classList.add('hiddenX');
+  const first = makeStandard();   /* la primera siempre del menú, para calentar */
+  rush.queue.push(first);
+  activateOrder(first);
+  renderQueue();
+  toast('🔔 ¡Servicio abierto! '+first.name+' '+first.size+'"');
+}
+
+function loseOrder(o, reason){
+  rush.lives--;
+  rush.streak = 0;
+  renderLives();
+  toast('✖ '+o.name+' perdida — '+reason);
+  const wasActive = rush.queue[0]===o;
+  rush.queue = rush.queue.filter(x=>x!==o);
+  if(rush.lives<=0){ endRush(); return; }
+  if(wasActive) activateOrder(rush.queue[0]||null);
+  renderQueue();
+}
+
+function endRush(){
+  rush.running = false;
+  $('#finalScore').textContent = rush.score;
+  $('#finalServed').textContent = rush.served;
+  $('#finalStreak').textContent = rush.bestStreak;
+  $('#overOverlay').classList.remove('hiddenX');
+}
+
+function serveActive(){
+  const o = currentOrder();
+  if(!o || !baked) return;
+  if(mode==='rush'){
+    const bonus = Math.round(o.timeLeft*2);
+    const extra = o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0);
+    rush.score += 100 + bonus + extra;
+    rush.served++;
+    rush.streak++;
+    rush.bestStreak = Math.max(rush.bestStreak, rush.streak);
+    $('#scoreVal').textContent = rush.score;
+    toast('✓ '+o.name+' · +'+(100+bonus+extra)+' pts'+(rush.streak>1?' · racha ×'+rush.streak:''));
+    rush.queue.shift();
+    activateOrder(rush.queue[0]||null);
+    renderQueue();
+  } else {
+    toast('✓ '+o.name+' '+o.size+'" entregada');
+    trainOrder = makeOrder();
+    activateOrder(trainOrder);
+  }
+}
+
+/* ---------- botones ---------- */
+$('#btnBake').onclick = ()=>{
+  const o = currentOrder();
+  if(!o || baked) return;
+  ensureIdx(o);
+  if(o.idx < o.steps.length) return;
+  baked = true;
+  bakeAnim = {t:0};
+  toast('🔥 Horneando…');
+};
+$('#btnServe').onclick = serveActive;
+$('#btnSkip').onclick = ()=>{
+  if(mode!=='train') return;
+  trainOrder = makeOrder();
+  activateOrder(trainOrder);
+};
+$('#btnReset').onclick = ()=>{
+  const o = currentOrder();
+  if(o){
+    o.idx = 0;
+    o.steps.forEach(s=>s.done=0);
+    clearPizza();
+    divider.visible = o.split!=null;
+    renderTicket(); renderTray();
+    toast('Pizza reiniciada'+(mode==='rush'?' — ¡el reloj sigue!':''));
+  } else clearPizza();
+};
+$('#btnStart').onclick = startRush;
+$('#btnAgain').onclick = startRush;
+
+$('#btnRush').onclick  = ()=> setMode('rush');
+$('#btnTrain').onclick = ()=> setMode('train');
+$('#btnFree').onclick  = ()=> setMode('free');
+function setMode(m){
+  mode = m;
+  ['Rush','Train','Free'].forEach(n=>{
+    $('#btn'+n).classList.toggle('on', n.toLowerCase()===m);
+  });
+  rush.running = false;
+  $('#queue').innerHTML = '';
+  $('#ticket').style.display = m==='free' ? 'none' : '';
+  $('#tBarWrap').style.display = m==='rush' ? '' : 'none';
+  $('#btnSkip').style.display = m==='train' ? '' : 'none';
+  $('#btnServe').style.display = m==='free' ? 'none' : '';
+  $('#livesRow').style.display = m==='rush' ? '' : 'none';
+  $('#startOverlay').classList.toggle('hiddenX', m!=='rush');
+  $('#overOverlay').classList.add('hiddenX');
+  divider.visible = false;
+  if(m==='train'){
+    trainOrder = makeOrder();
+    activateOrder(trainOrder);
+    toast('Modo entrenamiento — sin tiempo');
+  } else if(m==='free'){
+    clearPizza();
+    setPizzaSize(14);
+    $('#btnBake').disabled = false;
+    renderTray();
+  } else {
+    activateOrder(null);
+  }
+}
+
+/* ============================================================
+   INTERACCIÓN 3D
+   ============================================================ */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let dragging=false, moved=0, lastX=0, lastY=0, pinchDist=0;
+
+container.addEventListener('pointerdown', e=>{
+  dragging=true; moved=0; lastX=e.clientX; lastY=e.clientY;
+  container.classList.add('grabbing');
+});
+addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  moved += Math.abs(dx)+Math.abs(dy);
+  lastX=e.clientX; lastY=e.clientY;
+  orbit.theta -= dx*.005;
+  orbit.phi   -= dy*.004;
+  updateCamera();
+});
+addEventListener('pointerup', e=>{
+  container.classList.remove('grabbing');
+  if(dragging && moved<6) handleTap(e.clientX, e.clientY);
+  dragging=false;
+});
+container.addEventListener('wheel', e=>{
+  e.preventDefault();
+  orbit.radius += e.deltaY*.004;
+  updateCamera();
+},{passive:false});
+container.addEventListener('touchmove', e=>{
+  if(e.touches.length===2){
+    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    if(pinchDist){ orbit.radius -= (d-pinchDist)*.01; updateCamera(); }
+    pinchDist = d; dragging=false;
+  }
+},{passive:true});
+container.addEventListener('touchend', ()=>{ pinchDist=0; });
+
+function findIng(obj){
+  let o = obj;
+  while(o){
+    if(o.userData && o.userData.ing) return o.userData.ing;
+    o = o.parent;
+  }
+  return null;
+}
+
+function handleTap(cx,cy){
+  ndc.set((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
+  ray.setFromCamera(ndc, camera);
+  const panHit = ray.intersectObjects(clickPans, true);
+  if(panHit.length){
+    const id = findIng(panHit[0].object);
+    if(id){
+      if(mode==='free'){ freeSelected=id; renderTray(); }
+      const act = activeIng();
+      const isActive = id===act ||
+        (id==='buffalo_ranch'&&act==='buffalo_driz') || (id==='bbq_sauce'&&act==='bbq_driz');
+      toast(ING[id].name + (mode!=='free' && isActive ? ' — ¡es el paso actual! Toca la pizza' : ''));
+      return;
+    }
+  }
+  const hits = ray.intersectObjects([crust, ...placedGroup.children], true);
+  if(hits.length) tapPizza(hits[0].point);
+}
+
+/* ============================================================
+   LOOP
+   ============================================================ */
+const bakedCrust = new THREE.Color(0xb8823f);
+const rawCrust = new THREE.Color(0xe8c98a);
+const clock = new THREE.Clock();
+let pulse = 0, queueRefresh = 0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(.1, clock.getDelta());
+  pulse += dt*4;
+
+  const act = activeIng();
+  const glow = (Math.sin(pulse)*.5+.5)*.8;
+  for(const id in highlightByIng){
+    const on = id===act;
+    highlightByIng[id].forEach(m=>{ m.emissiveIntensity = on ? glow : 0; });
+  }
+
+  if(bakeAnim){
+    bakeAnim.t += dt/(mode==='rush' ? 1.3 : 2.2);
+    const k = Math.min(1, bakeAnim.t);
+    crust.material.color.lerpColors(rawCrust, bakedCrust, k);
+    if(k>=1){
+      bakeAnim = null;
+      $('#btnServe').disabled = false;
+      toast('🍕 ¡Lista! Entrégala');
+    }
+  }
+
+  if(mode==='rush' && rush.running){
+    rush.elapsed += dt;
+    rush.spawnTimer += dt;
+
+    if(rush.spawnTimer >= rush.spawnInterval){
+      rush.spawnTimer = 0;
+      rush.spawnInterval = Math.max(13, rush.spawnInterval - .8);
+      if(rush.queue.length >= MAX_QUEUE){
+        rush.lives--;
+        rush.streak = 0;
+        renderLives();
+        toast('✖ ¡Cola llena! Se fue un cliente');
+        if(rush.lives<=0){ endRush(); }
+      } else {
+        const o = makeOrder();
+        rush.queue.push(o);
+        if(rush.queue.length===1) activateOrder(o);
+        toast('🔔 Nueva comanda: '+o.name+' '+o.size+'"');
+      }
+      renderQueue();
+    }
+
+    const expired = [];
+    rush.queue.forEach(o=>{
+      o.timeLeft -= dt;
+      if(o.timeLeft<=0) expired.push(o);
+    });
+    expired.forEach(o=> loseOrder(o, 'se acabó el tiempo'));
+
+    const o = rush.queue[0];
+    if(o){
+      const pct = Math.max(0, o.timeLeft/o.timeLimit*100);
+      const bar = $('#tBar');
+      bar.style.width = pct+'%';
+      bar.style.background = pct<30 ? '#d92e2e' : (pct<55 ? '#d9a92e' : 'var(--basil)');
+    }
+
+    queueRefresh += dt;
+    if(queueRefresh > .5){ queueRefresh = 0; renderQueue(); }
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+setMode('rush');
+</script>
+</body>
+</html>

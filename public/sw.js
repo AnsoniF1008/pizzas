@@ -1,5 +1,5 @@
-const CACHE = "pizza-trainer-v3";
-const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
+const CACHE = "pizza-trainer-v4";
+const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/3d/", "/3d/index.html"];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -28,7 +28,7 @@ self.addEventListener("fetch", (e) => {
           return res;
         })
         .catch(() => {
-          if (e.request.mode === "navigate") return caches.match("/index.html");
+          if (e.request.mode === "navigate") return hit || caches.match("/index.html");
           return hit;
         });
       return hit || net;
