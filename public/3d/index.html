@@ -206,53 +206,53 @@
    PIZZA TRAINER 3D v6 — armado libre, cortes y evaluación del cliente
    ============================================================ */
 
-/* ---------- INGREDIENTES ---------- */
+/* ---------- INGREDIENTES (colores saturados para distinguirlos) ---------- */
 const ING = {
-  pizza_sauce:   {name:'Pizza Sauce',    css:'#c03a22', type:'layer',  color:0xc03a22},
-  bbq_sauce:     {name:'BBQ Sauce',      css:'#6e3f1d', type:'layer',  color:0x6e3f1d},
-  alfredo:       {name:'Alfredo Sauce',  css:'#efe6d0', type:'layer',  color:0xefe6d0},
-  olive_oil:     {name:'Olive Oil',      css:'#e9dc9e', type:'layer',  color:0xe9dc9e, opacity:.5},
-  buffalo_ranch: {name:'Buffalo Ranch',  css:'#f2c79b', type:'layer',  color:0xf2c79b},
-  buffalo_driz:  {name:'Buffalo Ranch (drizzle)', css:'#e8934a', type:'drizzle', color:0xe8934a},
-  bbq_driz:      {name:'BBQ Drizzle',    css:'#5e3413', type:'drizzle', color:0x5e3413},
+  pizza_sauce:   {name:'Pizza Sauce',    css:'#c4281a', type:'layer',  color:0xc4281a},
+  bbq_sauce:     {name:'BBQ Sauce',      css:'#4a220c', type:'layer',  color:0x4a220c},
+  alfredo:       {name:'Alfredo Sauce',  css:'#e8d4a8', type:'layer',  color:0xe8d4a8},
+  olive_oil:     {name:'Olive Oil',      css:'#c4b03a', type:'layer',  color:0xc4b03a, opacity:.55},
+  buffalo_ranch: {name:'Buffalo Ranch',  css:'#e07a3a', type:'layer',  color:0xe07a3a},
+  buffalo_driz:  {name:'Buffalo Ranch (drizzle)', css:'#d45a1a', type:'drizzle', color:0xd45a1a},
+  bbq_driz:      {name:'BBQ Drizzle',    css:'#3a1808', type:'drizzle', color:0x3a1808},
 
-  mozzarella:    {name:'Mozzarella',     css:'#f5d98b', type:'layer',  color:0xf5d98b},
-  smoked_mozz:   {name:'Smoked Mozz.',   css:'#e2b96a', type:'layer',  color:0xe2b96a},
-  gouda:         {name:'Gouda',          css:'#f0c66a', type:'layer',  color:0xf0c66a},
-  cheddar:       {name:'Cheddar',        css:'#e8a33d', type:'scatter', color:0xe8a33d, piece:'crumb', n:12, s:.022},
-  romano:        {name:'Romano',         css:'#f3ead0', type:'scatter', color:0xf3ead0, piece:'crumb', n:14, s:.014},
-  feta:          {name:'Feta',           css:'#f7f3e8', type:'scatter', color:0xf7f3e8, piece:'cube',  n:9,  s:.03},
-  bigdons_mix:   {name:"Big Don's Mix",  css:'#d9cfae', type:'scatter', color:0xd9cfae, piece:'crumb', n:12, s:.02},
+  mozzarella:    {name:'Mozzarella',     css:'#f0c85a', type:'layer',  color:0xf0c85a},
+  smoked_mozz:   {name:'Smoked Mozz.',   css:'#c9893a', type:'layer',  color:0xc9893a},
+  gouda:         {name:'Gouda',          css:'#e8a820', type:'layer',  color:0xe8a820},
+  cheddar:       {name:'Cheddar',        css:'#e88810', type:'scatter', color:0xe88810, piece:'crumb', n:12, s:.022},
+  romano:        {name:'Romano',         css:'#d4c090', type:'scatter', color:0xd4c090, piece:'crumb', n:14, s:.014},
+  feta:          {name:'Feta',           css:'#e8e0c8', type:'scatter', color:0xe8e0c8, piece:'cube',  n:9,  s:.03},
+  bigdons_mix:   {name:"Big Don's Mix",  css:'#b8a070', type:'scatter', color:0xb8a070, piece:'crumb', n:12, s:.02},
 
-  canad_bacon:   {name:'Canad. Bacon',   css:'#e89aa0', type:'count',  color:0xe89aa0, piece:'disc', s:.05},
-  pepperoni:     {name:'Pepperoni',      css:'#b3402e', type:'count',  color:0xb3402e, piece:'disc', s:.032},
-  sausage:       {name:'Ital. Sausage',  css:'#7d4b2c', type:'scatter', color:0x7d4b2c, piece:'crumb', n:9, s:.026},
-  chicken:       {name:'Chicken',        css:'#e6cfa3', type:'scatter', color:0xe6cfa3, piece:'cube',  n:8, s:.038},
-  bacon:         {name:'Bacon',          css:'#c96f3a', type:'scatter', color:0xc96f3a, piece:'crumb', n:10, s:.024},
-  potatoes:      {name:'Potatoes',       css:'#eede9d', type:'count',  color:0xeede9d, piece:'disc', s:.036},
+  canad_bacon:   {name:'Canad. Bacon',   css:'#d4566a', type:'count',  color:0xd4566a, piece:'disc', s:.05},
+  pepperoni:     {name:'Pepperoni',      css:'#a02818', type:'count',  color:0xa02818, piece:'disc', s:.032},
+  sausage:       {name:'Ital. Sausage',  css:'#5c3018', type:'scatter', color:0x5c3018, piece:'crumb', n:9, s:.026},
+  chicken:       {name:'Chicken',        css:'#d4a868', type:'scatter', color:0xd4a868, piece:'cube',  n:8, s:.038},
+  bacon:         {name:'Bacon',          css:'#a84820', type:'scatter', color:0xa84820, piece:'crumb', n:10, s:.024},
+  potatoes:      {name:'Potatoes',       css:'#d4b848', type:'count',  color:0xd4b848, piece:'disc', s:.036},
 
-  pineapple:     {name:'Pineapple',      css:'#f0c93f', type:'scatter', color:0xf0c93f, piece:'wedge', n:7, s:.04},
-  cranberries:   {name:'Cranberries',    css:'#a3243a', type:'scatter', color:0xa3243a, piece:'sphere', n:11, s:.014},
-  cashews:       {name:'Cashews',        css:'#ead9b0', type:'scatter', color:0xead9b0, piece:'arc',  n:9, s:.02},
-  black_olives:  {name:'Black Olives',   css:'#2b2b2b', type:'scatter', color:0x2b2b2b, piece:'ring', n:9, s:.02},
-  green_olives:  {name:'Green Olives',   css:'#7a8f3c', type:'scatter', color:0x7a8f3c, piece:'ring', n:9, s:.02},
-  jalapenos:     {name:'Jalapeños',      css:'#4a7a2e', type:'scatter', color:0x4a7a2e, piece:'ring', n:8, s:.024},
-  red_onions:    {name:'Red Onions',     css:'#b06ac0', type:'scatter', color:0xb06ac0, piece:'arc',  n:7, s:.045},
-  bell_peppers:  {name:'Bell Peppers',   css:'#3f8f3a', type:'scatter', color:0x3f8f3a, piece:'arc',  n:7, s:.045},
-  mushrooms:     {name:'Mushrooms',      css:'#e4d7bd', type:'scatter', color:0xe4d7bd, piece:'mush', n:7, s:.038},
-  tomatoes:      {name:'Tomatoes',       css:'#d94f35', type:'scatter', color:0xd94f35, piece:'disc', n:6, s:.05},
-  spinach:       {name:'Spinach',        css:'#2f6b2f', type:'scatter', color:0x2f6b2f, piece:'leaf', n:9, s:.04},
-  basil:         {name:'Basil',          css:'#3f7d3a', type:'scatter', color:0x3f7d3a, piece:'leaf', n:6, s:.045},
-  cilantro:      {name:'Cilantro',       css:'#58a44b', type:'scatter', color:0x58a44b, piece:'leaf', n:12, s:.02},
-  caram_onions:  {name:'Caram. Onions',  css:'#9c6a33', type:'scatter', color:0x9c6a33, piece:'arc',  n:7, s:.04},
-  garlic:        {name:'Garlic',         css:'#f3ead9', type:'scatter', color:0xf3ead9, piece:'crumb', n:12, s:.012},
-  artichoke:     {name:'Artichoke',      css:'#8ba05a', type:'count',  color:0x8ba05a, piece:'wedge', s:.05},
+  pineapple:     {name:'Pineapple',      css:'#e8b020', type:'scatter', color:0xe8b020, piece:'wedge', n:7, s:.04},
+  cranberries:   {name:'Cranberries',    css:'#8a1028', type:'scatter', color:0x8a1028, piece:'sphere', n:11, s:.014},
+  cashews:       {name:'Cashews',        css:'#c8a060', type:'scatter', color:0xc8a060, piece:'arc',  n:9, s:.02},
+  black_olives:  {name:'Black Olives',   css:'#1a1a1a', type:'scatter', color:0x1a1a1a, piece:'ring', n:9, s:.02},
+  green_olives:  {name:'Green Olives',   css:'#6a8030', type:'scatter', color:0x6a8030, piece:'ring', n:9, s:.02},
+  jalapenos:     {name:'Jalapeños',      css:'#3a6820', type:'scatter', color:0x3a6820, piece:'ring', n:8, s:.024},
+  red_onions:    {name:'Red Onions',     css:'#9030a8', type:'scatter', color:0x9030a8, piece:'arc',  n:7, s:.045},
+  bell_peppers:  {name:'Bell Peppers',   css:'#2e8028', type:'scatter', color:0x2e8028, piece:'arc',  n:7, s:.045},
+  mushrooms:     {name:'Mushrooms',      css:'#c8b090', type:'scatter', color:0xc8b090, piece:'mush', n:7, s:.038},
+  tomatoes:      {name:'Tomatoes',       css:'#c83018', type:'scatter', color:0xc83018, piece:'disc', n:6, s:.05},
+  spinach:       {name:'Spinach',        css:'#1e5820', type:'scatter', color:0x1e5820, piece:'leaf', n:9, s:.04},
+  basil:         {name:'Basil',          css:'#2e6828', type:'scatter', color:0x2e6828, piece:'leaf', n:6, s:.045},
+  cilantro:      {name:'Cilantro',       css:'#3a9030', type:'scatter', color:0x3a9030, piece:'leaf', n:12, s:.02},
+  caram_onions:  {name:'Caram. Onions',  css:'#8a4818', type:'scatter', color:0x8a4818, piece:'arc',  n:7, s:.04},
+  garlic:        {name:'Garlic',         css:'#d8c8a0', type:'scatter', color:0xd8c8a0, piece:'crumb', n:12, s:.012},
+  artichoke:     {name:'Artichoke',      css:'#708840', type:'count',  color:0x708840, piece:'wedge', s:.05},
 
-  greengo:        {name:'Garlicky Greengo', css:'#8fae4a', type:'layer',   color:0x8fae4a},
-  taco_meat:      {name:'Taco Meat',        css:'#6e4526', type:'scatter', color:0x6e4526, piece:'crumb', n:12, s:.024},
-  lettuce:        {name:'Shredded Lettuce', css:'#7fbf4e', type:'scatter', color:0x7fbf4e, piece:'leaf', n:12, s:.03},
-  pineapple_salsa:{name:'Pineapple Salsa',  css:'#e8b93c', type:'scatter', color:0xe8b93c, piece:'crumb', n:10, s:.02},
-  ranch_driz:     {name:'Ranch (drizzle)',  css:'#efe2c8', type:'drizzle', color:0xefe2c8},
+  greengo:        {name:'Garlicky Greengo', css:'#6a9828', type:'layer',   color:0x6a9828},
+  taco_meat:      {name:'Taco Meat',        css:'#5a2810', type:'scatter', color:0x5a2810, piece:'crumb', n:12, s:.024},
+  lettuce:        {name:'Shredded Lettuce', css:'#58a028', type:'scatter', color:0x58a028, piece:'leaf', n:12, s:.03},
+  pineapple_salsa:{name:'Pineapple Salsa',  css:'#d49818', type:'scatter', color:0xd49818, piece:'crumb', n:10, s:.02},
+  ranch_driz:     {name:'Ranch (drizzle)',  css:'#e8d8b0', type:'drizzle', color:0xe8d8b0},
 };
 
 /* ---------- DISTRIBUCIÓN DE LA LÍNEA ---------- */
@@ -281,12 +281,12 @@ const LAYOUT_LARGE = [
   ['pizza_sauce', .46],
 ];
 const BOTTLES = [
-  {ids:['alfredo'],                     color:0xefe6d0},
-  {ids:['olive_oil'],                   color:0xcdc06a},
-  {ids:['buffalo_ranch','buffalo_driz'],color:0xe8934a},
-  {ids:['bbq_sauce','bbq_driz'],        color:0x5e3413},
-  {ids:['greengo'],                     color:0x8fae4a},
-  {ids:['ranch_driz'],                  color:0xefe2c8},
+  {ids:['alfredo'],                     color:0xe8d4a8, tag:'#c9a86a'},
+  {ids:['olive_oil'],                   color:0xb8a828, tag:'#8a8018'},
+  {ids:['buffalo_ranch','buffalo_driz'],color:0xe07a3a, tag:'#c05018'},
+  {ids:['bbq_sauce','bbq_driz'],        color:0x4a220c, tag:'#2a1008'},
+  {ids:['greengo'],                     color:0x6a9828, tag:'#3a6810'},
+  {ids:['ranch_driz'],                  color:0xe8d8b0, tag:'#4a7ab8'},
 ];
 
 /* ---------- RECETAS DEL CHART ---------- */
@@ -341,11 +341,13 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.82;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xc3c8ce);
-scene.fog = new THREE.Fog(0xc3c8ce, 14, 30);
+scene.background = new THREE.Color(0x3a4048);
+scene.fog = new THREE.Fog(0x3a4048, 12, 26);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, .1, 100);
 
 const orbit = { theta: Math.PI*0.02, phi: 1.08, radius: 5.8, target: new THREE.Vector3(0,1.25,0) };
@@ -361,28 +363,28 @@ function updateCamera(){
 }
 updateCamera();
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x8f949a, 1.0));
-const key = new THREE.DirectionalLight(0xfff6e8, 1.05);
+scene.add(new THREE.HemisphereLight(0xd8dde4, 0x4a4540, .55));
+const key = new THREE.DirectionalLight(0xfff0d8, .85);
 key.position.set(4,7,5);
 key.castShadow = true;
 key.shadow.mapSize.set(2048,2048);
 key.shadow.camera.left=-6; key.shadow.camera.right=6;
 key.shadow.camera.top=6; key.shadow.camera.bottom=-4;
 scene.add(key);
-const fill = new THREE.DirectionalLight(0xdfe9ff, .35);
+const fill = new THREE.DirectionalLight(0xa8b8d0, .28);
 fill.position.set(-5,4,-3);
 scene.add(fill);
 
 const M = {
-  steel:     new THREE.MeshStandardMaterial({color:0xd4d9de, metalness:.9, roughness:.28}),
-  steelDark: new THREE.MeshStandardMaterial({color:0x9aa1a8, metalness:.85, roughness:.45}),
-  cabinet:   new THREE.MeshStandardMaterial({color:0x33383e, metalness:.25, roughness:.55}),
-  counter:   new THREE.MeshStandardMaterial({color:0xf6f6f3, metalness:.05, roughness:.32}),
-  panSteel:  new THREE.MeshStandardMaterial({color:0xdde2e7, metalness:.92, roughness:.22}),
-  panClear:  new THREE.MeshStandardMaterial({color:0xdfe6ea, metalness:.1, roughness:.15, transparent:true, opacity:.35}),
-  glass:     new THREE.MeshStandardMaterial({color:0xe8f1f6, metalness:.15, roughness:.05, transparent:true, opacity:.22, side:THREE.DoubleSide}),
+  steel:     new THREE.MeshStandardMaterial({color:0xa8b0b8, metalness:.88, roughness:.32}),
+  steelDark: new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.85, roughness:.45}),
+  cabinet:   new THREE.MeshStandardMaterial({color:0x2a2e34, metalness:.25, roughness:.55}),
+  counter:   new THREE.MeshStandardMaterial({color:0xd8d4cc, metalness:.05, roughness:.45}),
+  panSteel:  new THREE.MeshStandardMaterial({color:0x8a929a, metalness:.9, roughness:.28}),
+  panClear:  new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.1, roughness:.15, transparent:true, opacity:.4}),
+  glass:     new THREE.MeshStandardMaterial({color:0xb8c4cc, metalness:.15, roughness:.08, transparent:true, opacity:.18, side:THREE.DoubleSide}),
   black:     new THREE.MeshStandardMaterial({color:0x1a1d20, roughness:.8}),
-  floor:     new THREE.MeshStandardMaterial({color:0xb4b8bd, roughness:.85}),
+  floor:     new THREE.MeshStandardMaterial({color:0x4a5058, roughness:.85}),
   crust:     new THREE.MeshStandardMaterial({color:0xe8c98a, roughness:.85}),
 };
 
@@ -391,13 +393,13 @@ floorM.rotation.x = -Math.PI/2;
 floorM.receiveShadow = true;
 scene.add(floorM);
 
-/* pared de azulejos blancos */
+/* pared de azulejos (gris cálido, no blanco puro) */
 (function(){
   const cv = document.createElement('canvas');
   cv.width = 256; cv.height = 256;
   const g = cv.getContext('2d');
-  g.fillStyle = '#e9e7e2'; g.fillRect(0,0,256,256);
-  g.strokeStyle = '#c8c5bf'; g.lineWidth = 5;
+  g.fillStyle = '#8a8680'; g.fillRect(0,0,256,256);
+  g.strokeStyle = '#6a6660'; g.lineWidth = 5;
   for(let i=0;i<=2;i++){
     g.beginPath(); g.moveTo(0,i*128); g.lineTo(256,i*128); g.stroke();
     g.beginPath(); g.moveTo(i*128,0); g.lineTo(i*128,256); g.stroke();
@@ -406,7 +408,7 @@ scene.add(floorM);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(14,7);
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(34,17),
-    new THREE.MeshStandardMaterial({map:tex, roughness:.55}));
+    new THREE.MeshStandardMaterial({map:tex, roughness:.6}));
   wall.position.set(0, 8.5, -3.4);
   wall.receiveShadow = true;
   scene.add(wall);
@@ -490,10 +492,10 @@ rail.add(lidGroup);
 
 /* barra LED sobre la línea */
 const led = new THREE.Mesh(new THREE.BoxGeometry(W-.24, .018, .035),
-  new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xf4f8ff, emissiveIntensity:1.6}));
+  new THREE.MeshStandardMaterial({color:0xe8e4d8, emissive:0xd8d0b8, emissiveIntensity:.9}));
 led.position.set(0, railH+.035, .455);
 rail.add(led);
-const ledLight = new THREE.PointLight(0xf4f8ff, .45, 2.6);
+const ledLight = new THREE.PointLight(0xfff0d0, .18, 2.0);
 ledLight.position.set(0, railH+.25, .3);
 rail.add(ledLight);
 
@@ -502,17 +504,17 @@ function makePoster(x){
   const cv = document.createElement('canvas');
   cv.width = 512; cv.height = 640;
   const g = cv.getContext('2d');
-  g.fillStyle = '#f7f5f0'; g.fillRect(0,0,512,640);
+  g.fillStyle = '#d8d0c0'; g.fillRect(0,0,512,640);
   g.fillStyle = '#17191c'; g.font = 'bold 40px Arial'; g.textAlign = 'center';
   g.fillText('PIZZA BUILDING CHART', 256, 56);
   g.fillRect(36, 80, 440, 32);
-  g.fillStyle = '#f7f5f0'; g.font = 'bold 20px Arial'; g.textAlign = 'left';
+  g.fillStyle = '#f0c85a'; g.font = 'bold 20px Arial'; g.textAlign = 'left';
   g.fillText('SECTION 1', 48, 103);
-  g.fillStyle = '#4a4e54';
+  g.fillStyle = '#3a3830';
   for(let c=0;c<3;c++) for(let r=0;r<13;r++){
     g.fillRect(48+c*150, 140+r*22, 55+((c*7+r*13)%62), 6);
   }
-  const cols = ['#e0a86e','#cfd66e','#7fbf4e','#d94f35','#e8b93c','#b3402e'];
+  const cols = ['#e08020','#c8a020','#3a8020','#c4281a','#e8a820','#a02818'];
   for(let i=0;i<6;i++){
     const px = 100+(i%3)*156, py = 468+Math.floor(i/3)*116;
     g.fillStyle = cols[i];
@@ -532,14 +534,65 @@ const clickPans = [];
 const highlightByIng = {};
 function regHighlight(id, m){ (highlightByIng[id] = highlightByIng[id]||[]).push(m); }
 
-function makePan(id, x, z, w, d, flat){
+const SAUCE_IDS = ['pizza_sauce','bbq_sauce','alfredo','buffalo_ranch','greengo','olive_oil'];
+const CHEESE_IDS = ['mozzarella','smoked_mozz','gouda'];
+
+/* color con variación natural para que los trozos no se vean planos */
+function jitterColor(hex){
+  const c = new THREE.Color(hex);
+  c.offsetHSL(rnd(-.02,.02), rnd(-.04,.08), rnd(-.08,.02));
+  return c;
+}
+
+function panLabel(name, accent){
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 56;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#1e2228'; g.fillRect(0,0,256,56);
+  g.fillStyle = accent || '#f0c85a'; g.fillRect(0,0,12,56);
+  g.fillStyle = '#f2efe6'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  let size = 26;
+  g.font = 'bold '+size+'px Arial';
+  const txt = name.toUpperCase();
+  while(g.measureText(txt).width > 220 && size > 11){ size -= 2; g.font = 'bold '+size+'px Arial'; }
+  g.fillText(txt, 134, 30);
+  return new THREE.CanvasTexture(cv);
+}
+
+function fillCheeseShreds(id, x, z, w, d){
   const ing = ING[id];
-  /* bandeja GN hundida en la mesa con borde de acero */
+  for(let i=0;i<36;i++){
+    const shred = new THREE.Mesh(
+      new THREE.BoxGeometry(rnd(.028,.055), .007, rnd(.007,.012)),
+      mat(jitterColor(ing.color), {roughness:.75}));
+    const rx = rnd(-w/2+.035, w/2-.035), rz = rnd(-d/2+.035, d/2-.035);
+    shred.rotation.y = rnd(0, Math.PI);
+    shred.rotation.z = rnd(-.3,.3);
+    shred.position.set(x+rx, railH+.055+rnd(0,.028), z+rz);
+    rail.add(shred);
+    shred.userData.ing = id;
+    clickPans.push(shred);
+  }
+}
+
+function makePan(id, x, z, w, d){
+  const ing = ING[id];
+  /* bandeja GN hundida — acero oscuro para contrastar con la comida */
   const frame = box(w, .085, d, M.panSteel, x, railH-.01, z, rail);
-  const rim = box(w+.018, .014, d+.018, M.panSteel, x, railH+.035, z, rail);
+  const rim = box(w+.018, .014, d+.018, M.steelDark, x, railH+.035, z, rail);
   rim.castShadow = false;
+  const isSauce = SAUCE_IDS.includes(id);
+  const isCheese = CHEESE_IDS.includes(id);
+  const baseColor = new THREE.Color(ing.color);
+  if(isSauce) baseColor.offsetHSL(0, .05, -.12);
+  else baseColor.offsetHSL(0, .02, -.18);
   const base = new THREE.Mesh(new THREE.BoxGeometry(w-.035, .05, d-.035),
-    new THREE.MeshStandardMaterial({color:ing.color, roughness:.75, emissive:ing.color, emissiveIntensity:0}));
+    new THREE.MeshStandardMaterial({
+      color:baseColor,
+      roughness: isSauce ? .18 : .9,
+      metalness: isSauce ? .12 : 0,
+      emissive:ing.color, emissiveIntensity:0
+    }));
   base.position.set(x, railH+.028, z);
   base.userData.ing = id;
   rail.add(base);
@@ -547,18 +600,52 @@ function makePan(id, x, z, w, d, flat){
   frame.userData.ing = id;
   rim.userData.ing = id;
   regHighlight(id, base.material);
-  if(!flat && ing.piece){
-    for(let i=0;i<10;i++){
-      const p = PIECE[ing.piece](ing.color, (ing.s||.03)*.9);
-      const rx = rnd(-w/2+.05, w/2-.05), rz = rnd(-d/2+.05, d/2-.05);
-      /* montoncito: más alto al centro */
-      const mound = .012*(1 - (Math.abs(rx)/(w/2) + Math.abs(rz)/(d/2))/2);
-      p.position.set(x+rx, railH+.055+mound+rnd(0,.01), z+rz);
+
+  if(isSauce){
+    /* superficie brillante de salsa + remolinos */
+    const gloss = new THREE.Mesh(new THREE.BoxGeometry(w-.05, .012, d-.05),
+      new THREE.MeshStandardMaterial({
+        color:ing.color, roughness:.12, metalness:.15,
+        emissive:ing.color, emissiveIntensity:.08
+      }));
+    gloss.position.set(x, railH+.055, z);
+    gloss.userData.ing = id;
+    rail.add(gloss);
+    clickPans.push(gloss);
+    for(let i=0;i<4;i++){
+      const swirl = new THREE.Mesh(
+        new THREE.TorusGeometry(Math.min(w,d)*rnd(.1,.28), .008, 6, 20),
+        mat(new THREE.Color(ing.color).offsetHSL(0,.05,-.15), {roughness:.2}));
+      swirl.rotation.x = Math.PI/2;
+      swirl.position.set(x+rnd(-w*.2,w*.2), railH+.062, z+rnd(-d*.2,d*.2));
+      rail.add(swirl);
+      swirl.userData.ing = id;
+      clickPans.push(swirl);
+    }
+  } else if(isCheese){
+    fillCheeseShreds(id, x, z, w, d);
+  } else if(ing.piece){
+    const n = ing.type==='count' ? 22 : 16;
+    for(let i=0;i<n;i++){
+      const p = PIECE[ing.piece](jitterColor(ing.color), (ing.s||.03)*rnd(.85,1.15));
+      const rx = rnd(-w/2+.04, w/2-.04), rz = rnd(-d/2+.04, d/2-.04);
+      const mound = .016*(1 - (Math.abs(rx)/(w/2) + Math.abs(rz)/(d/2))/2);
+      p.position.set(x+rx, railH+.056+mound+rnd(0,.014), z+rz);
       rail.add(p);
       clickPans.push(p);
       p.traverse(o=>o.userData.ing=id);
     }
   }
+
+  /* etiqueta oscura con barra de color del ingrediente */
+  const lw = Math.min(w-.01, .32);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(lw, lw*56/256),
+    new THREE.MeshStandardMaterial({map:panLabel(ing.name, ing.css), roughness:.55}));
+  label.position.set(x, railH+.05, z+d/2+.038);
+  label.rotation.x = -Math.PI/2 + .58;
+  label.userData.ing = id;
+  rail.add(label);
+  clickPans.push(label);
 }
 
 const SMALL_W = 2.55;
@@ -570,30 +657,51 @@ LAYOUT_SMALL.forEach((col,i)=>{
 });
 let cursorX = -W/2 + .08 + SMALL_W + .04;
 LAYOUT_LARGE.forEach(([id,w])=>{
-  makePan(id, cursorX + w/2, .07, w-.03, .78, id==='pizza_sauce'||id==='mozzarella');
+  makePan(id, cursorX + w/2, .07, w-.03, .78);
   cursorX += w;
 });
 (function(){
+  /* smoked mozz: contenedor pequeño elevado con hebras (no cubo blanco) */
   const pepX = -W/2 + .08 + SMALL_W + .04 + .30 + .30 + .34/2;
-  const cont = box(.26, .16, .26, M.panClear, pepX, railH+.16, -.18, rail);
-  cont.userData.ing = 'smoked_mozz';
-  const inner = new THREE.Mesh(new THREE.BoxGeometry(.22,.1,.22),
-    new THREE.MeshStandardMaterial({color:ING.smoked_mozz.color, roughness:.7, emissive:ING.smoked_mozz.color, emissiveIntensity:0}));
-  inner.position.set(pepX, railH+.14, -.18);
-  inner.userData.ing = 'smoked_mozz';
-  rail.add(inner);
-  clickPans.push(cont, inner);
-  regHighlight('smoked_mozz', inner.material);
+  const fw = .26, fd = .26;
+  const frame = box(fw, .08, fd, M.panSteel, pepX, railH+.12, -.18, rail);
+  const rim = box(fw+.012, .01, fd+.012, M.steelDark, pepX, railH+.165, -.18, rail);
+  rim.castShadow = false;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(fw-.03, .04, fd-.03),
+    new THREE.MeshStandardMaterial({color:0x8a6020, roughness:.9, emissive:ING.smoked_mozz.color, emissiveIntensity:0}));
+  base.position.set(pepX, railH+.15, -.18);
+  base.userData.ing = 'smoked_mozz';
+  rail.add(base);
+  clickPans.push(base, frame, rim);
+  frame.userData.ing = 'smoked_mozz';
+  regHighlight('smoked_mozz', base.material);
+  for(let i=0;i<28;i++){
+    const shred = new THREE.Mesh(
+      new THREE.BoxGeometry(rnd(.02,.04), .006, rnd(.006,.01)),
+      mat(jitterColor(ING.smoked_mozz.color), {roughness:.75}));
+    shred.rotation.y = rnd(0, Math.PI);
+    shred.position.set(pepX+rnd(-.09,.09), railH+.175+rnd(0,.02), -.18+rnd(-.09,.09));
+    shred.userData.ing = 'smoked_mozz';
+    rail.add(shred);
+    clickPans.push(shred);
+  }
+  const lbl = new THREE.Mesh(new THREE.PlaneGeometry(.24, .24*56/256),
+    new THREE.MeshStandardMaterial({map:panLabel('Smoked Mozz', ING.smoked_mozz.css), roughness:.55}));
+  lbl.position.set(pepX, railH+.18, -.02);
+  lbl.rotation.x = -Math.PI/2 + .58;
+  lbl.userData.ing = 'smoked_mozz';
+  rail.add(lbl);
+  clickPans.push(lbl);
 })();
-function bottleLabel(text, color){
+function bottleLabel(text, accent){
   const cv = document.createElement('canvas');
   cv.width = 128; cv.height = 64;
   const g = cv.getContext('2d');
-  g.fillStyle = '#f7f4ec'; g.fillRect(0,0,128,64);
-  g.fillStyle = color; g.fillRect(0,0,128,10); g.fillRect(0,54,128,10);
-  g.fillStyle = '#17191c'; g.font = 'bold 17px Arial'; g.textAlign = 'center';
+  g.fillStyle = '#1e2228'; g.fillRect(0,0,128,64);
+  g.fillStyle = accent || '#f0c85a'; g.fillRect(0,0,128,10); g.fillRect(0,54,128,10);
+  g.fillStyle = '#f2efe6'; g.font = 'bold 15px Arial'; g.textAlign = 'center';
   const words = text.toUpperCase().split(' ');
-  if(words.length>1){ g.fillText(words[0],64,30); g.fillText(words.slice(1).join(' '),64,49); }
+  if(words.length>1){ g.fillText(words[0],64,30); g.fillText(words.slice(1).join(' '),64,48); }
   else g.fillText(words[0],64,40);
   return new THREE.CanvasTexture(cv);
 }
@@ -601,26 +709,23 @@ function bottleLabel(text, color){
 BOTTLES.forEach((b,i)=>{
   const bx = W/2 - .12 - Math.floor(i/4)*.16, bz = .38 - (i%4)*.16;
   const y0 = COUNTER_Y+.06;
-  /* botella exprimible translúcida con el contenido de color */
   const body = new THREE.Mesh(new THREE.CylinderGeometry(.048,.054,.24,16),
-    new THREE.MeshStandardMaterial({color:b.color, roughness:.35, transparent:true, opacity:.92,
-      emissive:b.color, emissiveIntensity:0}));
+    new THREE.MeshStandardMaterial({color:b.color, roughness:.32, transparent:true, opacity:.95,
+      emissive:b.color, emissiveIntensity:.05}));
   body.position.set(bx, y0+.12, bz);
   body.castShadow = true;
   fridge.add(body);
-  /* etiqueta blanca con el nombre */
   const name = ING[b.ids[0]].name.replace(' (drizzle)','').replace(' Sauce','');
   const label = new THREE.Mesh(new THREE.CylinderGeometry(.0505,.0505,.1,16,1,true),
-    new THREE.MeshStandardMaterial({map:bottleLabel(name, ING[b.ids[0]].css), roughness:.6, side:THREE.DoubleSide}));
+    new THREE.MeshStandardMaterial({map:bottleLabel(name, b.tag||ING[b.ids[0]].css), roughness:.55, side:THREE.DoubleSide}));
   label.position.set(bx, y0+.12, bz);
   label.userData.ing = b.ids[0];
   fridge.add(label);
-  /* cuello y punta */
   const shoulder = new THREE.Mesh(new THREE.CylinderGeometry(.02,.048,.045,14), M.steelDark);
   shoulder.position.set(bx, y0+.262, bz);
   fridge.add(shoulder);
   const tip = new THREE.Mesh(new THREE.CylinderGeometry(.006,.018,.06,10),
-    new THREE.MeshStandardMaterial({color:0xe8e4da, roughness:.5}));
+    new THREE.MeshStandardMaterial({color:0xc8c0b0, roughness:.5}));
   tip.position.set(bx, y0+.315, bz);
   fridge.add(tip);
   body.userData.ing = b.ids[0];
