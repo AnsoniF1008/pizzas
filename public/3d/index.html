@@ -469,18 +469,247 @@ box(W+.3, .06, D+.45, M.counter, 0, COUNTER_Y+.03, .1);
 
 function rnd(a,b){ return a + Math.random()*(b-a); }
 function mat(c,extra){ return new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:.65}, extra||{})); }
+function hexToRgb(hex){
+  const n = typeof hex==='number' ? hex : parseInt(String(hex).replace('#',''),16);
+  return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+}
+function rgbStr(r,g,b){ return `rgb(${r|0},${g|0},${b|0})`; }
 
-const PIECE = {
-  disc:  (c,s)=> new THREE.Mesh(new THREE.CylinderGeometry(s,s,.01,16), mat(c)),
-  ring:  (c,s)=> { const m=new THREE.Mesh(new THREE.TorusGeometry(s,.008,8,16), mat(c)); m.rotation.x=Math.PI/2; return m; },
-  arc:   (c,s)=> { const m=new THREE.Mesh(new THREE.TorusGeometry(s,.01,8,16,Math.PI*rnd(1.1,1.6)), mat(c)); m.rotation.x=Math.PI/2; m.rotation.z=rnd(0,Math.PI*2); return m; },
-  cube:  (c,s)=> { const m=new THREE.Mesh(new THREE.BoxGeometry(s,s*.5,s*.8), mat(c)); m.rotation.y=rnd(0,Math.PI); return m; },
-  crumb: (c,s)=> { const m=new THREE.Mesh(new THREE.BoxGeometry(s*rnd(.8,1.3),s*.6,s*rnd(.8,1.3)), mat(c)); m.rotation.y=rnd(0,Math.PI); return m; },
-  wedge: (c,s)=> { const m=new THREE.Mesh(new THREE.CylinderGeometry(s,s,.014,3), mat(c)); m.rotation.y=rnd(0,Math.PI*2); return m; },
-  sphere:(c,s)=> new THREE.Mesh(new THREE.SphereGeometry(s,10,8), mat(c)),
-  leaf:  (c,s)=> { const m=new THREE.Mesh(new THREE.CircleGeometry(s,8), mat(c,{side:THREE.DoubleSide})); m.rotation.x=-Math.PI/2; m.scale.x=.6; m.rotation.z=rnd(0,Math.PI*2); return m; },
-  mush:  (c,s)=> { const m=new THREE.Mesh(new THREE.SphereGeometry(s,12,8,0,Math.PI*2,0,Math.PI/2), mat(c,{roughness:.8})); m.scale.y=.55; return m; },
-};
+/* ---------- texturas procedurales de comida (calidad visual) ---------- */
+const TEX = {};
+function makeTex(key, size, draw){
+  if(TEX[key]) return TEX[key];
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  draw(cv.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(cv);
+  t.encoding = THREE.sRGBEncoding;
+  t.anisotropy = 4;
+  TEX[key] = t;
+  return t;
+}
+function noiseDots(g,n,size,fn){
+  for(let i=0;i<n;i++) fn(Math.random()*size, Math.random()*size, Math.random());
+}
+
+function texPepperoni(){
+  return makeTex('pep', 128, (g,s)=>{
+    const grd = g.createRadialGradient(s*.5,s*.5,s*.15, s*.5,s*.5,s*.5);
+    grd.addColorStop(0,'#c43828'); grd.addColorStop(.55,'#a82818'); grd.addColorStop(.82,'#8a2010'); grd.addColorStop(1,'#6a180c');
+    g.fillStyle = grd; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
+    g.fillStyle = 'rgba(90,20,10,.55)'; g.beginPath(); g.arc(s/2,s/2,s*.48,0,7); g.strokeStyle='rgba(60,12,8,.7)'; g.lineWidth=s*.06; g.stroke();
+    noiseDots(g,28,s,(x,y,r)=>{
+      g.fillStyle = r>.5 ? 'rgba(240,180,100,.55)' : 'rgba(70,18,10,.45)';
+      g.beginPath(); g.arc(x,y,1.2+r*2.8,0,7); g.fill();
+    });
+  });
+}
+function texCanadian(){
+  return makeTex('can', 128, (g,s)=>{
+    const grd = g.createRadialGradient(s*.45,s*.4,s*.1, s*.5,s*.5,s*.5);
+    grd.addColorStop(0,'#e87888'); grd.addColorStop(.7,'#c84858'); grd.addColorStop(1,'#a83848');
+    g.fillStyle = grd; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
+    g.strokeStyle='rgba(160,60,70,.5)'; g.lineWidth=2;
+    for(let i=0;i<5;i++){ g.beginPath(); g.arc(s*.3+i*8,s*.35+i*6,s*.35, .2, 1.8); g.stroke(); }
+  });
+}
+function texTomato(){
+  return makeTex('tom', 128, (g,s)=>{
+    const grd = g.createRadialGradient(s*.5,s*.5,s*.08, s*.5,s*.5,s*.5);
+    grd.addColorStop(0,'#e85830'); grd.addColorStop(.45,'#d03818'); grd.addColorStop(1,'#a02810');
+    g.fillStyle = grd; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
+    g.fillStyle = '#f0c878';
+    for(let i=0;i<8;i++){
+      const a = i/8*Math.PI*2;
+      g.beginPath(); g.ellipse(s/2+Math.cos(a)*s*.18, s/2+Math.sin(a)*s*.18, s*.05, s*.09, a, 0, 7); g.fill();
+    }
+    g.fillStyle='#f8e8b0'; g.beginPath(); g.arc(s/2,s/2,s*.07,0,7); g.fill();
+  });
+}
+function texPotato(){
+  return makeTex('pot', 96, (g,s)=>{
+    g.fillStyle='#e0c860'; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
+    g.fillStyle='rgba(180,140,40,.35)';
+    noiseDots(g,40,s,(x,y,r)=>{ g.beginPath(); g.arc(x,y,r*2,0,7); g.fill(); });
+    g.strokeStyle='rgba(120,90,20,.4)'; g.lineWidth=3; g.beginPath(); g.arc(s/2,s/2,s*.42,0,7); g.stroke();
+  });
+}
+function texMushroom(){
+  return makeTex('mush', 96, (g,s)=>{
+    const grd = g.createRadialGradient(s*.4,s*.35,s*.05, s*.5,s*.5,s*.5);
+    grd.addColorStop(0,'#ebe0c8'); grd.addColorStop(.6,'#d0c0a0'); grd.addColorStop(1,'#b8a888');
+    g.fillStyle=grd; g.fillRect(0,0,s,s);
+    g.strokeStyle='rgba(140,120,90,.45)'; g.lineWidth=1.5;
+    for(let i=0;i<10;i++){ g.beginPath(); g.moveTo(s/2,s/2); g.lineTo(s/2+Math.cos(i*.63)*s*.45, s/2+Math.sin(i*.63)*s*.45); g.stroke(); }
+  });
+}
+function texCheese(hex){
+  const key = 'ch_'+hex.toString(16);
+  return makeTex(key, 64, (g,s)=>{
+    const {r,g:gg,b} = hexToRgb(hex);
+    g.fillStyle = rgbStr(r,gg,b); g.fillRect(0,0,s,s);
+    for(let i=0;i<80;i++){
+      g.fillStyle = rgbStr(r+rnd(-25,20), gg+rnd(-20,15), b+rnd(-15,10));
+      g.fillRect(Math.random()*s, Math.random()*s, 1+Math.random()*3, 1+Math.random()*2);
+    }
+  });
+}
+function texSauce(hex){
+  const key = 'sa_'+hex.toString(16);
+  return makeTex(key, 128, (g,s)=>{
+    const {r,g:gg,b} = hexToRgb(hex);
+    const grd = g.createRadialGradient(s*.4,s*.35,0, s*.5,s*.5,s*.7);
+    grd.addColorStop(0, rgbStr(Math.min(255,r+30), Math.min(255,gg+15), b));
+    grd.addColorStop(.5, rgbStr(r,gg,b));
+    grd.addColorStop(1, rgbStr(r*.55, gg*.55, b*.55));
+    g.fillStyle=grd; g.fillRect(0,0,s,s);
+    noiseDots(g,60,s,(x,y,k)=>{
+      g.fillStyle = `rgba(${r*.4|0},${gg*.3|0},${b*.2|0},${.15+k*.25})`;
+      g.beginPath(); g.ellipse(x,y,4+k*8,2+k*4,k*6,0,7); g.fill();
+    });
+  });
+}
+function texLeaf(hex){
+  const key = 'lf_'+hex.toString(16);
+  return makeTex(key, 64, (g,s)=>{
+    const {r,g:gg,b} = hexToRgb(hex);
+    g.clearRect(0,0,s,s);
+    g.fillStyle = rgbStr(r,gg,b);
+    g.beginPath(); g.ellipse(s/2,s/2,s*.28,s*.48,0,0,7); g.fill();
+    g.strokeStyle = rgbStr(r*.5,gg*.55,b*.5); g.lineWidth=2;
+    g.beginPath(); g.moveTo(s/2,s*.1); g.lineTo(s/2,s*.9); g.stroke();
+    for(let i=0;i<4;i++){
+      g.beginPath(); g.moveTo(s/2,s*.25+i*10); g.quadraticCurveTo(s*.25,s*.3+i*10,s*.2,s*.35+i*8); g.stroke();
+      g.beginPath(); g.moveTo(s/2,s*.25+i*10); g.quadraticCurveTo(s*.75,s*.3+i*10,s*.8,s*.35+i*8); g.stroke();
+    }
+  });
+}
+function texOnion(){
+  return makeTex('oni', 64, (g,s)=>{
+    g.clearRect(0,0,s,s);
+    g.strokeStyle='#a040b8'; g.lineWidth=5; g.lineCap='round';
+    g.beginPath(); g.arc(s/2,s/2,s*.32, .2, Math.PI*1.4); g.stroke();
+    g.strokeStyle='#c060d0'; g.lineWidth=3;
+    g.beginPath(); g.arc(s/2,s/2,s*.22, .4, Math.PI*1.3); g.stroke();
+  });
+}
+function texOlive(dark){
+  return makeTex(dark?'olvB':'olvG', 64, (g,s)=>{
+    g.clearRect(0,0,s,s);
+    g.fillStyle = dark ? '#1a1a1a' : '#6a8030';
+    g.beginPath(); g.arc(s/2,s/2,s*.4,0,7); g.fill();
+    g.fillStyle = dark ? '#0a0a0a' : '#4a6020';
+    g.beginPath(); g.arc(s/2,s/2,s*.18,0,7); g.fill();
+    g.fillStyle='rgba(255,255,255,.12)'; g.beginPath(); g.arc(s*.38,s*.35,s*.1,0,7); g.fill();
+  });
+}
+function texCrust(){
+  return makeTex('crust', 256, (g,s)=>{
+    g.fillStyle='#e8c98a'; g.fillRect(0,0,s,s);
+    for(let i=0;i<900;i++){
+      const k=Math.random();
+      g.fillStyle = k>.6 ? 'rgba(200,150,70,.25)' : 'rgba(240,210,150,.3)';
+      g.fillRect(Math.random()*s, Math.random()*s, 1+Math.random()*3, 1+Math.random()*3);
+    }
+    for(let i=0;i<40;i++){
+      g.fillStyle='rgba(180,120,50,.2)';
+      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,2+Math.random()*5,0,7); g.fill();
+    }
+  });
+}
+
+function foodMat(map, opts){
+  return new THREE.MeshStandardMaterial(Object.assign({
+    map, roughness:.7, metalness:0, flatShading:false
+  }, opts||{}));
+}
+
+/* piezas de topping con aspecto realista */
+function makeFoodPiece(id, scale){
+  const ing = ING[id];
+  const s = scale || ing.s || .03;
+  const c = jitterColor(ing.color);
+  let mesh;
+
+  if(id==='pepperoni'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.98,.008,24),
+      foodMat(texPepperoni(), {roughness:.45, metalness:.05}));
+    mesh.rotation.y = rnd(0,Math.PI*2);
+  } else if(id==='canad_bacon'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.96,.007,20),
+      foodMat(texCanadian(), {roughness:.55}));
+    mesh.rotation.y = rnd(0,Math.PI*2);
+  } else if(id==='tomatoes'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s,.006,20),
+      foodMat(texTomato(), {roughness:.4, metalness:.02}));
+    mesh.rotation.y = rnd(0,Math.PI*2);
+  } else if(id==='potatoes'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.95,.01,16),
+      foodMat(texPotato(), {roughness:.75}));
+  } else if(id==='mushrooms'){
+    const g = new THREE.Group();
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(s,16,10,0,Math.PI*2,0,Math.PI/2),
+      foodMat(texMushroom(), {roughness:.85}));
+    cap.scale.y = .55;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(s*.25,s*.3,s*.25,8),
+      mat(0xc8b898,{roughness:.9}));
+    stem.position.y = -s*.05;
+    g.add(cap, stem);
+    mesh = g;
+  } else if(id==='black_olives' || id==='green_olives' || id==='jalapenos'){
+    const dark = id==='black_olives';
+    const col = id==='jalapenos' ? 0x3a6820 : (dark?0x1a1a1a:0x6a8030);
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.011,10,22),
+      id==='jalapenos'
+        ? mat(col,{roughness:.5})
+        : foodMat(texOlive(dark), {roughness:.5}));
+    mesh.rotation.x = Math.PI/2;
+    mesh.rotation.z = rnd(0,Math.PI);
+  } else if(id==='red_onions' || id==='caram_onions' || id==='bell_peppers'){
+    const col = id==='bell_peppers' ? 0x2e8028 : (id==='caram_onions'?0x8a4818:0x9030a8);
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.011,8,18,Math.PI*rnd(1.0,1.5)),
+      id==='red_onions'
+        ? foodMat(texOnion(), {roughness:.55, transparent:true, opacity:.92, side:THREE.DoubleSide})
+        : mat(col,{roughness:.55, side:THREE.DoubleSide}));
+    mesh.rotation.x = Math.PI/2;
+    mesh.rotation.z = rnd(0,Math.PI*2);
+  } else if(id==='spinach' || id==='basil' || id==='cilantro' || id==='lettuce'){
+    mesh = new THREE.Mesh(new THREE.PlaneGeometry(s*1.4, s*2.1),
+      foodMat(texLeaf(ing.color), {roughness:.85, side:THREE.DoubleSide, transparent:true, alphaTest:.15}));
+    mesh.rotation.x = -Math.PI/2 + rnd(-.15,.25);
+    mesh.rotation.z = rnd(0,Math.PI*2);
+  } else if(id==='chicken' || id==='feta'){
+    mesh = new THREE.Mesh(new THREE.BoxGeometry(s*rnd(.9,1.2), s*.45, s*rnd(.7,1.1)),
+      foodMat(texCheese(ing.color), {roughness:.8, color:c}));
+    mesh.rotation.y = rnd(0,Math.PI);
+  } else if(id==='bacon'){
+    mesh = new THREE.Mesh(new THREE.BoxGeometry(s*1.8, s*.35, s*.7),
+      mat(c,{roughness:.65}));
+    /* franjas de grasa */
+    const fat = new THREE.Mesh(new THREE.BoxGeometry(s*1.8, s*.36, s*.18), mat(0xe8c8a0,{roughness:.7}));
+    fat.position.z = s*.15;
+    const g = new THREE.Group(); g.add(mesh, fat); mesh = g;
+    mesh.rotation.y = rnd(0,Math.PI);
+  } else if(id==='pineapple' || id==='artichoke'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s*.7,s,.012,3),
+      mat(c,{roughness:.7}));
+    mesh.rotation.y = rnd(0,Math.PI*2);
+  } else if(id==='cranberries'){
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(s,12,10),
+      mat(c,{roughness:.35, metalness:.05}));
+  } else if(ing.piece==='crumb' || ['sausage','cheddar','romano','bigdons_mix','taco_meat','garlic','cashews','pineapple_salsa','bacon'].includes(id)){
+    mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(s*rnd(.7,1.4), s*rnd(.4,.7), s*rnd(.7,1.3)),
+      foodMat(texCheese(ing.color), {roughness:.75, color:c}));
+    mesh.rotation.set(rnd(-.2,.2), rnd(0,Math.PI), rnd(-.2,.2));
+  } else {
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s,.01,16), mat(c,{roughness:.65}));
+  }
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 
 const railH = .16;
 const rail = new THREE.Group();
@@ -559,6 +788,35 @@ function jitterColor(hex){
   return c;
 }
 
+/* capa de salsa / queso con textura */
+function makeLayerMesh(id, innerR, half){
+  const ing = ING[id];
+  const theta0 = half==='L' ? Math.PI : 0;
+  const len = half ? Math.PI : Math.PI*2;
+  const isSauce = SAUCE_IDS.includes(id);
+  const isCheese = CHEESE_IDS.includes(id);
+  let material;
+  if(isSauce){
+    material = foodMat(texSauce(ing.color), {
+      roughness: id==='olive_oil' ? .15 : .25,
+      metalness: .08,
+      transparent: !!ing.opacity,
+      opacity: ing.opacity || 1,
+      emissive: new THREE.Color(ing.color),
+      emissiveIntensity: .04
+    });
+  } else if(isCheese){
+    material = foodMat(texCheese(ing.color), {roughness:.8, color:ing.color});
+  } else {
+    material = mat(ing.color, ing.opacity ? {transparent:true, opacity:ing.opacity} : {});
+  }
+  const layer = new THREE.Mesh(
+    new THREE.CylinderGeometry(innerR, innerR, isCheese ? .01 : .009, 48, 1, false, theta0, len),
+    material);
+  layer.receiveShadow = true;
+  return layer;
+}
+
 function panLabel(name, accent){
   const cv = document.createElement('canvas');
   cv.width = 256; cv.height = 56;
@@ -576,14 +834,16 @@ function panLabel(name, accent){
 
 function fillCheeseShreds(id, x, z, w, d){
   const ing = ING[id];
-  for(let i=0;i<36;i++){
+  const t = texCheese(ing.color);
+  for(let i=0;i<42;i++){
     const shred = new THREE.Mesh(
-      new THREE.BoxGeometry(rnd(.028,.055), .007, rnd(.007,.012)),
-      mat(jitterColor(ing.color), {roughness:.75}));
+      new THREE.BoxGeometry(rnd(.025,.052), .006, rnd(.006,.012)),
+      foodMat(t, {roughness:.72, color:jitterColor(ing.color)}));
     const rx = rnd(-w/2+.035, w/2-.035), rz = rnd(-d/2+.035, d/2-.035);
     shred.rotation.y = rnd(0, Math.PI);
-    shred.rotation.z = rnd(-.3,.3);
-    shred.position.set(x+rx, railH+.055+rnd(0,.028), z+rz);
+    shred.rotation.z = rnd(-.35,.35);
+    shred.position.set(x+rx, railH+.055+rnd(0,.03), z+rz);
+    shred.castShadow = true;
     rail.add(shred);
     shred.userData.ing = id;
     clickPans.push(shred);
@@ -617,22 +877,21 @@ function makePan(id, x, z, w, d){
   regHighlight(id, base.material);
 
   if(isSauce){
-    /* superficie brillante de salsa + remolinos */
-    const gloss = new THREE.Mesh(new THREE.BoxGeometry(w-.05, .012, d-.05),
-      new THREE.MeshStandardMaterial({
-        color:ing.color, roughness:.12, metalness:.15,
-        emissive:ing.color, emissiveIntensity:.08
+    const gloss = new THREE.Mesh(new THREE.BoxGeometry(w-.05, .014, d-.05),
+      foodMat(texSauce(ing.color), {
+        roughness: .14, metalness: .12,
+        emissive: new THREE.Color(ing.color), emissiveIntensity: .06
       }));
-    gloss.position.set(x, railH+.055, z);
+    gloss.position.set(x, railH+.056, z);
     gloss.userData.ing = id;
     rail.add(gloss);
     clickPans.push(gloss);
-    for(let i=0;i<4;i++){
+    for(let i=0;i<5;i++){
       const swirl = new THREE.Mesh(
-        new THREE.TorusGeometry(Math.min(w,d)*rnd(.1,.28), .008, 6, 20),
-        mat(new THREE.Color(ing.color).offsetHSL(0,.05,-.15), {roughness:.2}));
+        new THREE.TorusGeometry(Math.min(w,d)*rnd(.1,.28), .007, 8, 24),
+        mat(new THREE.Color(ing.color).offsetHSL(0,.08,-.18), {roughness:.18, metalness:.1}));
       swirl.rotation.x = Math.PI/2;
-      swirl.position.set(x+rnd(-w*.2,w*.2), railH+.062, z+rnd(-d*.2,d*.2));
+      swirl.position.set(x+rnd(-w*.2,w*.2), railH+.064, z+rnd(-d*.2,d*.2));
       rail.add(swirl);
       swirl.userData.ing = id;
       clickPans.push(swirl);
@@ -640,9 +899,9 @@ function makePan(id, x, z, w, d){
   } else if(isCheese){
     fillCheeseShreds(id, x, z, w, d);
   } else if(ing.piece){
-    const n = ing.type==='count' ? 22 : 16;
+    const n = ing.type==='count' ? 26 : 18;
     for(let i=0;i<n;i++){
-      const p = PIECE[ing.piece](jitterColor(ing.color), (ing.s||.03)*rnd(.85,1.15));
+      const p = makeFoodPiece(id, (ing.s||.03)*rnd(.9,1.2));
       const rx = rnd(-w/2+.04, w/2-.04), rz = rnd(-d/2+.04, d/2-.04);
       const mound = .016*(1 - (Math.abs(rx)/(w/2) + Math.abs(rz)/(d/2))/2);
       p.position.set(x+rx, railH+.056+mound+rnd(0,.014), z+rz);
@@ -690,13 +949,15 @@ LAYOUT_LARGE.forEach(([id,w])=>{
   clickPans.push(base, frame, rim);
   frame.userData.ing = 'smoked_mozz';
   regHighlight('smoked_mozz', base.material);
-  for(let i=0;i<28;i++){
+  const smT = texCheese(ING.smoked_mozz.color);
+  for(let i=0;i<32;i++){
     const shred = new THREE.Mesh(
       new THREE.BoxGeometry(rnd(.02,.04), .006, rnd(.006,.01)),
-      mat(jitterColor(ING.smoked_mozz.color), {roughness:.75}));
+      foodMat(smT, {roughness:.72, color:jitterColor(ING.smoked_mozz.color)}));
     shred.rotation.y = rnd(0, Math.PI);
     shred.position.set(pepX+rnd(-.09,.09), railH+.175+rnd(0,.02), -.18+rnd(-.09,.09));
     shred.userData.ing = 'smoked_mozz';
+    shred.castShadow = true;
     rail.add(shred);
     clickPans.push(shred);
   }
@@ -754,9 +1015,17 @@ workspace.position.set(-.5, COUNTER_Y+.065, .45);
 scene.add(workspace);
 
 let PIZZA_R = .54;
-const crust = new THREE.Mesh(new THREE.CylinderGeometry(1,1.03,.035,48), M.crust.clone());
+const crust = new THREE.Mesh(new THREE.CylinderGeometry(1,1.03,.038,64),
+  foodMat(texCrust(), {roughness:.88, color:0xe8c98a}));
 crust.castShadow = true; crust.receiveShadow = true;
 workspace.add(crust);
+/* borde de masa un poco más alto */
+const crustRim = new THREE.Mesh(new THREE.TorusGeometry(1.02, .035, 10, 48),
+  foodMat(texCrust(), {roughness:.9, color:0xd8b070}));
+crustRim.rotation.x = Math.PI/2;
+crustRim.position.y = .01;
+crustRim.castShadow = true;
+workspace.add(crustRim);
 
 /* divisor mitad y mitad */
 const divider = new THREE.Mesh(new THREE.BoxGeometry(.012,.004,1),
@@ -767,6 +1036,7 @@ workspace.add(divider);
 function setPizzaSize(inch){
   PIZZA_R = inch===10 ? .40 : .54;
   crust.scale.set(PIZZA_R, 1, PIZZA_R);
+  crustRim.scale.set(PIZZA_R, 1, PIZZA_R);
   divider.scale.z = PIZZA_R*2*.98;
 }
 setPizzaSize(14);
@@ -782,55 +1052,69 @@ function applyIngredient(id, point, half){
   const innerR = PIZZA_R*.85;
 
   if(ing.type==='layer'){
-    const theta0 = half==='L' ? Math.PI : 0;
-    const len = half ? Math.PI : Math.PI*2;
-    const layer = new THREE.Mesh(new THREE.CylinderGeometry(innerR, innerR, .008, 40, 1, false, theta0, len),
-      mat(ing.color, ing.opacity ? {transparent:true, opacity:ing.opacity} : {}));
+    const layer = makeLayerMesh(id, innerR, half);
     layer.position.y = layerY;
-    layer.receiveShadow = true;
     placedGroup.add(layer);
-    layerY += half ? .004 : .008;
+    /* mozzarella: hebras visibles encima de la capa */
+    if(CHEESE_IDS.includes(id)){
+      const n = half ? 18 : 32;
+      for(let i=0;i<n;i++){
+        let a;
+        if(half==='L') a = rnd(Math.PI/2+.1, Math.PI*1.5-.1);
+        else if(half==='R') a = rnd(-Math.PI/2+.1, Math.PI/2-.1);
+        else a = rnd(0, Math.PI*2);
+        const r = Math.sqrt(Math.random())*innerR*.88;
+        const shred = new THREE.Mesh(
+          new THREE.BoxGeometry(rnd(.03,.06), .005, rnd(.008,.014)),
+          foodMat(texCheese(ing.color), {roughness:.7, color:jitterColor(ing.color)}));
+        shred.position.set(Math.cos(a)*r, layerY+.01, Math.sin(a)*r);
+        shred.rotation.y = rnd(0,Math.PI);
+        shred.castShadow = true;
+        placedGroup.add(shred);
+      }
+    }
+    layerY += half ? .005 : .01;
     return true;
   }
   if(ing.type==='drizzle'){
     const x0 = half==='L' ? -innerR*.85 : (half==='R' ? .06 : -innerR*.85);
     const x1 = half==='R' ?  innerR*.85 : (half==='L' ? -.06 : innerR*.85);
-    const nStripes = half ? 5 : 7;
+    const nStripes = half ? 5 : 8;
     for(let i=0;i<nStripes;i++){
       const sx = x0 + (i+.5)*(x1-x0)/nStripes;
       const chord = Math.sqrt(Math.max(.02, innerR*innerR - sx*sx));
-      const stripe = new THREE.Mesh(new THREE.BoxGeometry(.014,.005,chord*1.7), mat(ing.color));
-      stripe.position.set(sx, layerY+.004, 0);
-      stripe.rotation.y = rnd(-.12,.12);
+      const stripe = new THREE.Mesh(new THREE.CylinderGeometry(.007,.009,chord*1.65,8),
+        foodMat(texSauce(ing.color), {roughness:.2, metalness:.08, color:ing.color}));
+      stripe.rotation.x = Math.PI/2;
+      stripe.position.set(sx, layerY+.006, 0);
+      stripe.rotation.z = rnd(-.1,.1);
       placedGroup.add(stripe);
     }
-    layerY += .005;
+    layerY += .006;
     return true;
   }
   if(ing.type==='count'){
     if(!point) return 'out';
     const local = workspace.worldToLocal(point.clone());
     if(Math.hypot(local.x, local.z) > innerR*.94) return 'out';
-    const p = PIECE[ing.piece](ing.color, ing.s);
-    p.castShadow = true;
-    p.position.set(local.x, layerY + .008, local.z);
+    const p = makeFoodPiece(id, ing.s);
+    p.position.set(local.x, layerY + .01, local.z);
     placedGroup.add(p);
     return true;
   }
   if(ing.type==='scatter'){
-    const n = half ? Math.max(4, Math.round(ing.n*.6)) : ing.n;
+    const n = half ? Math.max(5, Math.round(ing.n*.65)) : Math.round(ing.n*1.15);
     for(let i=0;i<n;i++){
       let a;
       if(half==='L') a = rnd(Math.PI/2+.12, Math.PI*1.5-.12);
       else if(half==='R') a = rnd(-Math.PI/2+.12, Math.PI/2-.12);
       else a = rnd(0, Math.PI*2);
       const r = Math.sqrt(Math.random())*innerR*.9;
-      const p = PIECE[ing.piece](ing.color, ing.s||.03);
-      p.castShadow = true;
-      p.position.set(Math.cos(a)*r, layerY + .008 + rnd(0,.004), Math.sin(a)*r);
+      const p = makeFoodPiece(id, (ing.s||.03)*rnd(.9,1.15));
+      p.position.set(Math.cos(a)*r, layerY + .01 + rnd(0,.005), Math.sin(a)*r);
       placedGroup.add(p);
     }
-    layerY += .003;
+    layerY += .004;
     return true;
   }
   return 'out';
