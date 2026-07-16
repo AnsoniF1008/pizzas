@@ -187,8 +187,8 @@
     Al entregar, el cliente evalúa: toppings faltantes o de más,<br>
     orden del chart, cocción y cortes.<br>
     <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).<br><br>
-    ⏱ Cada pizza tiene su tiempo real de preparación<br>
-    (hasta <b>4 minutos</b> según la complejidad).</p>
+    ⏱ Cada pizza tiene <b>4 minutos</b> para armarla,<br>
+    hornearla, cortarla y entregarla.</p>
     <button class="btn bake" id="btnStart">Iniciar servicio</button>
   </div>
 </div>
@@ -854,9 +854,8 @@ function stepsFromRecipe(recipe, size, half){
 }
 
 function finishOrder(o){
-  const taps = o.steps.reduce((a,s)=>a+s.need,0);
-  /* tiempo real de preparación: hasta 4 minutos según la complejidad */
-  o.timeLimit = Math.min(240, Math.max(75, 30 + o.steps.length*9 + taps*2));
+  /* 4 minutos fijos para armar cada pizza */
+  o.timeLimit = 240;
   o.timeLeft = o.timeLimit;
   o.num = orderNum++;
   o.cut = Math.random() < .6 ? 'square' : 'triangle';
@@ -923,7 +922,7 @@ let trainOrder = null;
 const rush = {
   running:false, paused:false, queue:[], lives:3,
   score:0, served:0, streak:0, bestStreak:0,
-  spawnTimer:0, spawnInterval:50, elapsed:0
+  spawnTimer:0, spawnInterval:90, elapsed:0
 };
 const MAX_QUEUE = 5;
 
@@ -1199,7 +1198,7 @@ function startRush(){
   rush.queue = [];
   rush.lives = 3;
   rush.score = 0; rush.served = 0; rush.streak = 0; rush.bestStreak = 0;
-  rush.spawnInterval = 50;
+  rush.spawnInterval = 90;
   rush.spawnTimer = 0;
   rush.elapsed = 0;
   orderNum = 1;
@@ -1589,7 +1588,7 @@ function animate(){
 
     if(rush.spawnTimer >= rush.spawnInterval){
       rush.spawnTimer = 0;
-      rush.spawnInterval = Math.max(24, rush.spawnInterval - 1.2);
+      rush.spawnInterval = Math.max(55, rush.spawnInterval - .8);
       if(rush.queue.length >= MAX_QUEUE){
         rush.lives--;
         rush.streak = 0;
