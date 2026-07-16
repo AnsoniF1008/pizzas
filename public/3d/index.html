@@ -18,6 +18,8 @@
   .brand #backLink{pointer-events:auto;display:inline-block;margin-bottom:6px;color:var(--cheese);
     font-family:'IBM Plex Mono',monospace;font-size:12px;text-decoration:none;font-weight:600}
   .brand #backLink:active{opacity:.7}
+  .brand{background:rgba(20,24,28,.72);border:1px solid rgba(246,241,231,.15);padding:8px 12px;
+    border-radius:6px;backdrop-filter:blur(6px)}
   .brand h1{font-weight:800;font-size:clamp(19px,3vw,28px);letter-spacing:.06em;text-transform:uppercase;line-height:1}
   .brand p{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.55;margin-top:4px}
   .score{font-family:'IBM Plex Mono',monospace;text-align:right;font-size:12px;line-height:1.5;
@@ -33,8 +35,9 @@
   #ticket .th{display:flex;justify-content:space-between;border-bottom:1px dashed #999;padding-bottom:6px;margin-bottom:6px;font-weight:600}
   #ticket .base{font-weight:600;margin-bottom:2px;text-transform:uppercase;font-size:13px;line-height:1.25}
   #ticket .size{font-size:10px;opacity:.6;margin-bottom:6px}
-  #ticket .tbar{height:7px;background:#ddd4c2;border-radius:4px;overflow:hidden;margin-bottom:8px}
+  #ticket .tbar{height:7px;background:#ddd4c2;border-radius:4px;overflow:hidden;margin-bottom:2px}
   #ticket .tbar i{display:block;height:100%;background:var(--basil);border-radius:4px;transition:width .3s linear}
+  #tTime{font-size:11px;font-weight:600;text-align:right;margin-bottom:6px;opacity:.75}
   #ticket ul{list-style:none}
   #ticket li{display:flex;justify-content:space-between;padding:2.5px 4px;border-radius:2px}
   #ticket li.done{text-decoration:line-through;opacity:.4}
@@ -76,7 +79,7 @@
   .btn:active{transform:scale(.96)}
   .btn.bake{background:var(--tomato)}
   .btn.serve{background:var(--basil)}
-  .btn.ghost{background:transparent;border:1px solid rgba(246,241,231,.25);font-weight:700}
+  .btn.ghost{background:rgba(20,24,28,.65);border:1px solid rgba(246,241,231,.3);font-weight:700;backdrop-filter:blur(4px)}
   .btn:disabled{opacity:.3;cursor:not-allowed}
 
   #modeSwitch{position:fixed;top:74px;right:14px;z-index:10;display:flex;border:1px solid rgba(246,241,231,.2);border-radius:8px;overflow:hidden}
@@ -135,6 +138,7 @@
   <div class="base" id="tBase">—</div>
   <div class="size" id="tSize">—</div>
   <div class="tbar" id="tBarWrap"><i id="tBar" style="width:100%"></i></div>
+  <div id="tTime"></div>
   <ul id="tItems"></ul>
 </div>
 
@@ -167,7 +171,9 @@
     o <b>triangle cut</b> (6 u 8 rebanadas, todos por el centro).<br><br>
     Al entregar, el cliente evalúa: toppings faltantes o de más,<br>
     orden del chart, cocción y cortes.<br>
-    <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).</p>
+    <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).<br><br>
+    ⏱ Cada pizza tiene su tiempo real de preparación<br>
+    (hasta <b>4 minutos</b> según la complejidad).</p>
     <button class="btn bake" id="btnStart">Iniciar servicio</button>
   </div>
 </div>
@@ -338,8 +344,8 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x171a1e);
-scene.fog = new THREE.Fog(0x171a1e, 12, 26);
+scene.background = new THREE.Color(0xc3c8ce);
+scene.fog = new THREE.Fog(0xc3c8ce, 14, 30);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, .1, 100);
 
 const orbit = { theta: Math.PI*0.02, phi: 1.08, radius: 5.8, target: new THREE.Vector3(0,1.25,0) };
@@ -355,26 +361,28 @@ function updateCamera(){
 }
 updateCamera();
 
-scene.add(new THREE.HemisphereLight(0xbfd4e6, 0x2a2320, .8));
-const key = new THREE.DirectionalLight(0xfff2df, 1.15);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8f949a, 1.0));
+const key = new THREE.DirectionalLight(0xfff6e8, 1.05);
 key.position.set(4,7,5);
 key.castShadow = true;
 key.shadow.mapSize.set(2048,2048);
 key.shadow.camera.left=-6; key.shadow.camera.right=6;
 key.shadow.camera.top=6; key.shadow.camera.bottom=-4;
 scene.add(key);
-const fill = new THREE.DirectionalLight(0x88aaff, .3);
+const fill = new THREE.DirectionalLight(0xdfe9ff, .35);
 fill.position.set(-5,4,-3);
 scene.add(fill);
 
 const M = {
-  steel:     new THREE.MeshStandardMaterial({color:0xc9ced3, metalness:.85, roughness:.35}),
+  steel:     new THREE.MeshStandardMaterial({color:0xd4d9de, metalness:.9, roughness:.28}),
   steelDark: new THREE.MeshStandardMaterial({color:0x9aa1a8, metalness:.85, roughness:.45}),
-  counter:   new THREE.MeshStandardMaterial({color:0xf2f3f4, metalness:.15, roughness:.5}),
-  panSteel:  new THREE.MeshStandardMaterial({color:0xd8dde2, metalness:.9, roughness:.25}),
+  cabinet:   new THREE.MeshStandardMaterial({color:0x33383e, metalness:.25, roughness:.55}),
+  counter:   new THREE.MeshStandardMaterial({color:0xf6f6f3, metalness:.05, roughness:.32}),
+  panSteel:  new THREE.MeshStandardMaterial({color:0xdde2e7, metalness:.92, roughness:.22}),
   panClear:  new THREE.MeshStandardMaterial({color:0xdfe6ea, metalness:.1, roughness:.15, transparent:true, opacity:.35}),
+  glass:     new THREE.MeshStandardMaterial({color:0xe8f1f6, metalness:.15, roughness:.05, transparent:true, opacity:.22, side:THREE.DoubleSide}),
   black:     new THREE.MeshStandardMaterial({color:0x1a1d20, roughness:.8}),
-  floor:     new THREE.MeshStandardMaterial({color:0x23272c, roughness:.9}),
+  floor:     new THREE.MeshStandardMaterial({color:0xb4b8bd, roughness:.85}),
   crust:     new THREE.MeshStandardMaterial({color:0xe8c98a, roughness:.85}),
 };
 
@@ -382,9 +390,27 @@ const floorM = new THREE.Mesh(new THREE.PlaneGeometry(40,40), M.floor);
 floorM.rotation.x = -Math.PI/2;
 floorM.receiveShadow = true;
 scene.add(floorM);
-const grid = new THREE.GridHelper(40, 40, 0x2e333a, 0x2e333a);
-grid.position.y = .001;
-scene.add(grid);
+
+/* pared de azulejos blancos */
+(function(){
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 256;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#e9e7e2'; g.fillRect(0,0,256,256);
+  g.strokeStyle = '#c8c5bf'; g.lineWidth = 5;
+  for(let i=0;i<=2;i++){
+    g.beginPath(); g.moveTo(0,i*128); g.lineTo(256,i*128); g.stroke();
+    g.beginPath(); g.moveTo(i*128,0); g.lineTo(i*128,256); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(14,7);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(34,17),
+    new THREE.MeshStandardMaterial({map:tex, roughness:.55}));
+  wall.position.set(0, 8.5, -3.4);
+  wall.receiveShadow = true;
+  scene.add(wall);
+})();
 
 const fridge = new THREE.Group();
 scene.add(fridge);
@@ -411,7 +437,7 @@ box(W, BODY_H, D, M.steel, 0, LEG+BODY_H/2, 0);
 const doorW = (W - 0.75)/3;
 for(let i=0;i<3;i++){
   const x = -W/2 + doorW/2 + i*doorW + .02;
-  box(doorW-.06, BODY_H-.12, .04, M.steel, x, LEG+BODY_H/2, D/2+.021);
+  box(doorW-.06, BODY_H-.12, .04, M.cabinet, x, LEG+BODY_H/2, D/2+.021);
   box(doorW-.2, .045, .05, M.steelDark, x, LEG+BODY_H-.14, D/2+.06);
 }
 const compX = W/2 - .36;
@@ -444,10 +470,63 @@ const rail = new THREE.Group();
 rail.position.set(0, COUNTER_Y+.06, -D/2+.05);
 fridge.add(rail);
 box(W, railH, .82, M.steel, 0, railH/2, .05, rail);
-for(let s=0;s<3;s++){
-  const lid = box(W/3-.12, .02, .55, M.steelDark, -W/3 + s*(W/3), railH+.3, -.42, rail);
-  lid.rotation.x = -Math.PI/2.5;
+
+/* tapa de vidrio abierta (como la mesa real) */
+const lidGroup = new THREE.Group();
+lidGroup.position.set(0, railH+.01, -.34);
+lidGroup.rotation.x = Math.PI/3.1;
+rail.add(lidGroup);
+(function(){
+  const pane = new THREE.Mesh(new THREE.BoxGeometry(W-.05, .018, .8), M.glass);
+  pane.position.set(0, 0, -.4);
+  lidGroup.add(pane);
+  const edge = box(W-.03, .03, .05, M.steel, 0, 0, -.79, lidGroup);
+  edge.castShadow = false;
+  [-W/2+.06, W/2-.06].forEach(x=>{
+    const side = box(.04, .026, .78, M.steel, x, 0, -.4, lidGroup);
+    side.castShadow = false;
+  });
+})();
+
+/* barra LED sobre la línea */
+const led = new THREE.Mesh(new THREE.BoxGeometry(W-.24, .018, .035),
+  new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xf4f8ff, emissiveIntensity:1.6}));
+led.position.set(0, railH+.035, .455);
+rail.add(led);
+const ledLight = new THREE.PointLight(0xf4f8ff, .45, 2.6);
+ledLight.position.set(0, railH+.25, .3);
+rail.add(ledLight);
+
+/* pizza building charts colgados detrás */
+function makePoster(x){
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 640;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#f7f5f0'; g.fillRect(0,0,512,640);
+  g.fillStyle = '#17191c'; g.font = 'bold 40px Arial'; g.textAlign = 'center';
+  g.fillText('PIZZA BUILDING CHART', 256, 56);
+  g.fillRect(36, 80, 440, 32);
+  g.fillStyle = '#f7f5f0'; g.font = 'bold 20px Arial'; g.textAlign = 'left';
+  g.fillText('SECTION 1', 48, 103);
+  g.fillStyle = '#4a4e54';
+  for(let c=0;c<3;c++) for(let r=0;r<13;r++){
+    g.fillRect(48+c*150, 140+r*22, 55+((c*7+r*13)%62), 6);
+  }
+  const cols = ['#e0a86e','#cfd66e','#7fbf4e','#d94f35','#e8b93c','#b3402e'];
+  for(let i=0;i<6;i++){
+    const px = 100+(i%3)*156, py = 468+Math.floor(i/3)*116;
+    g.fillStyle = cols[i];
+    g.beginPath(); g.arc(px, py, 42, 0, 7); g.fill();
+    g.lineWidth = 7; g.strokeStyle = '#c8a15c'; g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(.92, 1.15),
+    new THREE.MeshStandardMaterial({map:tex, roughness:.75, side:THREE.DoubleSide}));
+  m.position.set(x, COUNTER_Y + railH + 1.02, -D/2 - .28);
+  m.rotation.x = -.05;
+  fridge.add(m);
 }
+[-1.5, 0, 1.5].forEach(makePoster);
 
 const clickPans = [];
 const highlightByIng = {};
@@ -455,19 +534,26 @@ function regHighlight(id, m){ (highlightByIng[id] = highlightByIng[id]||[]).push
 
 function makePan(id, x, z, w, d, flat){
   const ing = ING[id];
-  const frame = box(w, .1, d, M.panSteel, x, railH+.02, z, rail);
-  const base = new THREE.Mesh(new THREE.BoxGeometry(w-.04, .03, d-.04),
-    new THREE.MeshStandardMaterial({color:ing.color, roughness:.65, emissive:ing.color, emissiveIntensity:0}));
-  base.position.set(x, railH+.08, z);
+  /* bandeja GN hundida en la mesa con borde de acero */
+  const frame = box(w, .085, d, M.panSteel, x, railH-.01, z, rail);
+  const rim = box(w+.018, .014, d+.018, M.panSteel, x, railH+.035, z, rail);
+  rim.castShadow = false;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w-.035, .05, d-.035),
+    new THREE.MeshStandardMaterial({color:ing.color, roughness:.75, emissive:ing.color, emissiveIntensity:0}));
+  base.position.set(x, railH+.028, z);
   base.userData.ing = id;
   rail.add(base);
-  clickPans.push(base, frame);
+  clickPans.push(base, frame, rim);
   frame.userData.ing = id;
+  rim.userData.ing = id;
   regHighlight(id, base.material);
   if(!flat && ing.piece){
-    for(let i=0;i<7;i++){
+    for(let i=0;i<10;i++){
       const p = PIECE[ing.piece](ing.color, (ing.s||.03)*.9);
-      p.position.set(x+rnd(-w/2+.05,w/2-.05), railH+.1+rnd(0,.012), z+rnd(-d/2+.05,d/2-.05));
+      const rx = rnd(-w/2+.05, w/2-.05), rz = rnd(-d/2+.05, d/2-.05);
+      /* montoncito: más alto al centro */
+      const mound = .012*(1 - (Math.abs(rx)/(w/2) + Math.abs(rz)/(d/2))/2);
+      p.position.set(x+rx, railH+.055+mound+rnd(0,.01), z+rz);
       rail.add(p);
       clickPans.push(p);
       p.traverse(o=>o.userData.ing=id);
@@ -499,19 +585,47 @@ LAYOUT_LARGE.forEach(([id,w])=>{
   clickPans.push(cont, inner);
   regHighlight('smoked_mozz', inner.material);
 })();
+function bottleLabel(text, color){
+  const cv = document.createElement('canvas');
+  cv.width = 128; cv.height = 64;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#f7f4ec'; g.fillRect(0,0,128,64);
+  g.fillStyle = color; g.fillRect(0,0,128,10); g.fillRect(0,54,128,10);
+  g.fillStyle = '#17191c'; g.font = 'bold 17px Arial'; g.textAlign = 'center';
+  const words = text.toUpperCase().split(' ');
+  if(words.length>1){ g.fillText(words[0],64,30); g.fillText(words.slice(1).join(' '),64,49); }
+  else g.fillText(words[0],64,40);
+  return new THREE.CanvasTexture(cv);
+}
+
 BOTTLES.forEach((b,i)=>{
-  const bx = W/2 - .12 - Math.floor(i/4)*.15, bz = .38 - (i%4)*.16;
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(.05,.055,.22,14),
-    new THREE.MeshStandardMaterial({color:b.color, roughness:.5, emissive:b.color, emissiveIntensity:0}));
-  body.position.set(bx, COUNTER_Y+.06+.11, bz);
+  const bx = W/2 - .12 - Math.floor(i/4)*.16, bz = .38 - (i%4)*.16;
+  const y0 = COUNTER_Y+.06;
+  /* botella exprimible translúcida con el contenido de color */
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.048,.054,.24,16),
+    new THREE.MeshStandardMaterial({color:b.color, roughness:.35, transparent:true, opacity:.92,
+      emissive:b.color, emissiveIntensity:0}));
+  body.position.set(bx, y0+.12, bz);
   body.castShadow = true;
   fridge.add(body);
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(.014,.03,.07,10), M.black);
-  cap.position.set(bx, COUNTER_Y+.06+.25, bz);
-  fridge.add(cap);
+  /* etiqueta blanca con el nombre */
+  const name = ING[b.ids[0]].name.replace(' (drizzle)','').replace(' Sauce','');
+  const label = new THREE.Mesh(new THREE.CylinderGeometry(.0505,.0505,.1,16,1,true),
+    new THREE.MeshStandardMaterial({map:bottleLabel(name, ING[b.ids[0]].css), roughness:.6, side:THREE.DoubleSide}));
+  label.position.set(bx, y0+.12, bz);
+  label.userData.ing = b.ids[0];
+  fridge.add(label);
+  /* cuello y punta */
+  const shoulder = new THREE.Mesh(new THREE.CylinderGeometry(.02,.048,.045,14), M.steelDark);
+  shoulder.position.set(bx, y0+.262, bz);
+  fridge.add(shoulder);
+  const tip = new THREE.Mesh(new THREE.CylinderGeometry(.006,.018,.06,10),
+    new THREE.MeshStandardMaterial({color:0xe8e4da, roughness:.5}));
+  tip.position.set(bx, y0+.315, bz);
+  fridge.add(tip);
   body.userData.ing = b.ids[0];
   b.ids.forEach(id=> regHighlight(id, body.material));
-  clickPans.push(body);
+  clickPans.push(body, label);
 });
 
 /* ---------- pizza ---------- */
@@ -621,7 +735,8 @@ function stepsFromRecipe(recipe, size, half){
 
 function finishOrder(o){
   const taps = o.steps.reduce((a,s)=>a+s.need,0);
-  o.timeLimit = Math.min(110, Math.max(30, 14 + o.steps.length*4 + taps*0.9));
+  /* tiempo real de preparación: hasta 4 minutos según la complejidad */
+  o.timeLimit = Math.min(240, Math.max(75, 30 + o.steps.length*9 + taps*2));
   o.timeLeft = o.timeLimit;
   o.num = orderNum++;
   o.cut = Math.random() < .6 ? 'square' : 'triangle';
@@ -688,7 +803,7 @@ let trainOrder = null;
 const rush = {
   running:false, paused:false, queue:[], lives:3,
   score:0, served:0, streak:0, bestStreak:0,
-  spawnTimer:0, spawnInterval:26, elapsed:0
+  spawnTimer:0, spawnInterval:50, elapsed:0
 };
 const MAX_QUEUE = 5;
 
@@ -758,6 +873,7 @@ function activateOrder(o){
     $('#tNum').textContent = '';
     $('#tItems').innerHTML = '';
     $('#tBar').style.width = '100%';
+    $('#tTime').textContent = '';
     syncButtons();
     return;
   }
@@ -837,7 +953,8 @@ function renderQueue(){
   if(mode!=='rush' || !rush.running){ q.innerHTML=''; return; }
   q.innerHTML = rush.queue.slice(1).map(o=>{
     const pct = Math.max(0, o.timeLeft/o.timeLimit*100);
-    return `<div class="mini"><b>${o.name}</b><span class="sz">${o.size}" · #${String(o.num).padStart(3,'0')}</span>
+    const t = Math.max(0, Math.ceil(o.timeLeft));
+    return `<div class="mini"><b>${o.name}</b><span class="sz">${o.size}" · ⏱ ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</span>
       <div class="tbar"><i class="${pct<30?'warn':''}" style="width:${pct}%"></i></div></div>`;
   }).join('');
 }
@@ -902,7 +1019,7 @@ function startRush(){
   rush.queue = [];
   rush.lives = 3;
   rush.score = 0; rush.served = 0; rush.streak = 0; rush.bestStreak = 0;
-  rush.spawnInterval = 26;
+  rush.spawnInterval = 50;
   rush.spawnTimer = 0;
   rush.elapsed = 0;
   orderNum = 1;
@@ -1020,7 +1137,7 @@ function serveActive(){
       rush.streak = 0;
       renderLives();
     } else if(complaints.length===0){
-      pts = 120 + Math.round(o.timeLeft*2) + (o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0));
+      pts = 120 + Math.round(o.timeLeft/o.timeLimit*100) + (o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0));
       rush.streak++;
       rush.bestStreak = Math.max(rush.bestStreak, rush.streak);
       rush.served++;
@@ -1109,6 +1226,7 @@ function setMode(m){
   $('#queue').innerHTML = '';
   $('#ticket').style.display = m==='free' ? 'none' : '';
   $('#tBarWrap').style.display = m==='rush' ? '' : 'none';
+  $('#tTime').style.display = m==='rush' ? '' : 'none';
   $('#btnSkip').style.display = m==='train' ? '' : 'none';
   $('#btnServe').style.display = m==='free' ? 'none' : '';
   $('#livesRow').style.display = m==='rush' ? '' : 'none';
@@ -1291,7 +1409,7 @@ function animate(){
 
     if(rush.spawnTimer >= rush.spawnInterval){
       rush.spawnTimer = 0;
-      rush.spawnInterval = Math.max(13, rush.spawnInterval - .8);
+      rush.spawnInterval = Math.max(24, rush.spawnInterval - 1.2);
       if(rush.queue.length >= MAX_QUEUE){
         rush.lives--;
         rush.streak = 0;
@@ -1320,6 +1438,8 @@ function animate(){
       const bar = $('#tBar');
       bar.style.width = pct+'%';
       bar.style.background = pct<30 ? '#d92e2e' : (pct<55 ? '#d9a92e' : 'var(--basil)');
+      const t = Math.max(0, Math.ceil(o.timeLeft));
+      $('#tTime').textContent = '⏱ '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
     }
 
     queueRefresh += dt;
