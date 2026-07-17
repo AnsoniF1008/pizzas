@@ -118,7 +118,23 @@
   .evalList li{border-bottom:1px dashed rgba(0,0,0,.18);padding:5px 2px}
   .evalList li:last-child{border-bottom:none}
   #evalPts{margin:10px 0 16px}
-  #scene.cutting{cursor:crosshair}
+  #scene.cutting{cursor:pointer}
+  #cutPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));
+    z-index:12;width:min(420px,94vw);display:none;flex-direction:column;gap:8px;
+    background:rgba(18,20,24,.94);border:1px solid rgba(246,241,231,.2);border-radius:14px;
+    padding:12px 14px;backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  #cutPanel.show{display:flex}
+  #cutPanel .cutTitle{font-weight:800;font-size:16px;letter-spacing:.06em;text-transform:uppercase;text-align:center}
+  #cutPanel .cutHint{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.7;text-align:center;line-height:1.4}
+  #cutDots{display:flex;justify-content:center;gap:7px;padding:2px 0 4px}
+  #cutDots i{width:12px;height:12px;border-radius:50%;background:rgba(246,241,231,.2);border:1px solid rgba(246,241,231,.3)}
+  #cutDots i.on{background:var(--cheese);border-color:var(--cheese);box-shadow:0 0 8px rgba(242,181,68,.5)}
+  #cutDots i.done{background:var(--basil);border-color:var(--basil)}
+  #cutBtns{display:flex;gap:8px}
+  #cutBtns .btn{flex:1;padding:12px 10px;font-size:15px}
+  #cutBtns .btn.cutMain{background:var(--tomato)}
+  #actions.cutting{display:none}
+  #tray.cutting{visibility:hidden;pointer-events:none}
 
   @media (max-width:640px){
     #ticket{width:194px;font-size:11px;top:66px;left:10px;max-height:calc(100vh - 280px)}
@@ -172,6 +188,17 @@
   <button class="btn ghost" id="btnReset">Limpiar</button>
 </div>
 
+<div id="cutPanel">
+  <div class="cutTitle" id="cutTitle">🔪 Modo corte</div>
+  <div class="cutHint" id="cutHint">Toca una línea guía o el botón para cortar</div>
+  <div id="cutDots"></div>
+  <div id="cutBtns">
+    <button class="btn ghost" id="btnUndoCut" type="button">↩ Deshacer</button>
+    <button class="btn cutMain" id="btnNextCut" type="button">🔪 Siguiente corte</button>
+  </div>
+  <button class="btn serve" id="btnServeCut" type="button" style="display:none;width:100%">✓ Entregar pizza</button>
+</div>
+
 <div id="tray"></div>
 <div id="toast"></div>
 
@@ -181,9 +208,9 @@
     <p><b>Tú armas la pizza de verdad:</b> elige el ingrediente<br>
     en la bandeja (o tócalo en la línea) y luego toca la pizza.<br>
     El juego NO te corrige — puedes equivocarte.<br><br>
-    Después de hornear, <b>corta arrastrando el cuchillo</b>.<br>
-    La comanda te dice el corte: <b>cuadrado</b> (10" = 4 · 14" = 6 rectos)<br>
-    o <b>triangle cut</b> (6 u 8 rebanadas, todos por el centro).<br><br>
+    Después de hornear, entra el <b>modo corte</b>:<br>
+    aparecen líneas guía y cortas con <b>un toque</b><br>
+    (o el botón grande) — pensado para teléfono.<br><br>
     Al entregar, el cliente evalúa: toppings faltantes o de más,<br>
     orden del chart, cocción y cortes.<br>
     <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).<br><br>
@@ -1212,28 +1239,215 @@ function currentOrder(){
   return null;
 }
 
-/* ---------- cortes ---------- */
+/* ---------- cortes (modo fácil: guías + un toque) ---------- */
 const cutsGroup = new THREE.Group();
 workspace.add(cutsGroup);
+const guidesGroup = new THREE.Group();
+workspace.add(guidesGroup);
 let cuts = [];
+let cutGuides = [];   /* {a,b,ang,dev,dCenter,mesh,done} */
+let cutMode = false;
+let savedOrbit = null;
 
-/* según el chart oficial:
-   cuadrado: 10" = 2+2 cortes · 14" = 3+3 cortes
-   triangle: personal = 6 rebanadas (3 cortes) · large = 8 rebanadas (4 cortes), todos por el centro */
 function cutInfo(o){
   const size = o ? o.size : (PIZZA_R < .5 ? 10 : 14);
   const style = (o && o.cut) ? o.cut : 'square';
   if(style==='triangle'){
     const n = size===10 ? 3 : 4;
-    return {style, n, label:`Triangle cut — ${n*2} rebanadas (${n} cortes por el centro)`};
+    return {style, n, label:`Triangle cut — ${n*2} rebanadas`};
   }
   const n = size===10 ? 4 : 6;
-  return {style, n, label:`Corte cuadrado — ${n} cortes rectos`};
+  return {style, n, label:`Corte cuadrado — ${n} cortes`};
+}
+
+/* genera los segmentos ideales según el chart */
+function idealCuts(style, n){
+  const R = PIZZA_R * 1.02;
+  const segs = [];
+  if(style==='triangle'){
+    for(let i=0;i<n;i++){
+      const ang = (i/n)*Math.PI; /* 0..PI — cada corte cruza el centro */
+      const c = Math.cos(ang), s = Math.sin(ang);
+      segs.push({
+        a:{x:-c*R, z:-s*R}, b:{x:c*R, z:s*R},
+        ang: ((ang*180/Math.PI)%180+180)%180,
+        dev: Math.min((ang*180/Math.PI)%90, 90-((ang*180/Math.PI)%90)),
+        dCenter: 0
+      });
+    }
+  } else {
+    /* cuadrado: mitad H + mitad V (10"=2+2, 14"=3+3) */
+    const half = n/2;
+    for(let i=0;i<half;i++){
+      const t = (i+1)/(half+1);
+      const x = -R + 2*R*t;
+      segs.push({a:{x, z:-R}, b:{x, z:R}, ang:90, dev:0, dCenter:Math.abs(x)});
+    }
+    for(let i=0;i<half;i++){
+      const t = (i+1)/(half+1);
+      const z = -R + 2*R*t;
+      segs.push({a:{x:-R, z}, b:{x:R, z}, ang:0, dev:0, dCenter:Math.abs(z)});
+    }
+  }
+  return segs;
+}
+
+function drawCutLine(a, b, color, thick){
+  const dx = b.x-a.x, dz = b.z-a.z;
+  const len = Math.hypot(dx, dz);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(thick||.018, .006, 1),
+    new THREE.MeshStandardMaterial({
+      color: color||0x2a1c10, roughness:.7,
+      emissive: color||0x2a1c10, emissiveIntensity: color===0xf2b544 ? .35 : 0
+    }));
+  m.scale.z = len;
+  m.position.set((a.x+b.x)/2, layerY+.02, (a.z+b.z)/2);
+  m.rotation.y = Math.atan2(dx, dz);
+  return m;
+}
+
+function clearGuides(){
+  while(guidesGroup.children.length) guidesGroup.remove(guidesGroup.children[0]);
+  cutGuides = [];
+}
+
+function showCutGuides(){
+  clearGuides();
+  const ci = cutInfo(currentOrder());
+  const segs = idealCuts(ci.style, ci.n);
+  segs.forEach((s,i)=>{
+    const mesh = drawCutLine(s.a, s.b, 0xf2b544, .022);
+    mesh.material.transparent = true;
+    mesh.material.opacity = .55;
+    mesh.userData.guideIdx = i;
+    guidesGroup.add(mesh);
+    /* puntos en los extremos para tocar más fácil */
+    [s.a, s.b].forEach(p=>{
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(.035, 10, 8),
+        new THREE.MeshStandardMaterial({color:0xf2b544, emissive:0xf2b544, emissiveIntensity:.4, transparent:true, opacity:.7}));
+      tip.position.set(p.x, layerY+.025, p.z);
+      tip.userData.guideIdx = i;
+      guidesGroup.add(tip);
+    });
+    cutGuides.push({...s, mesh, done:false, idx:i});
+  });
+}
+
+function renderCutUI(){
+  const ci = cutInfo(currentOrder());
+  const done = cutGuides.filter(g=>g.done).length;
+  const total = cutGuides.length || ci.n;
+  $('#cutTitle').textContent = '🔪 '+(ci.style==='triangle'?'Triangle cut':'Corte cuadrado');
+  $('#cutHint').textContent = done>=total
+    ? '✔ Cortes listos — ya puedes entregar'
+    : 'Toca una línea amarilla o el botón · '+(done+1)+'/'+total;
+  const dots = $('#cutDots');
+  dots.innerHTML = '';
+  for(let i=0;i<total;i++){
+    const d = document.createElement('i');
+    if(i<done) d.className = 'done';
+    else if(i===done) d.className = 'on';
+    dots.appendChild(d);
+  }
+  $('#btnNextCut').disabled = done>=total;
+  $('#btnNextCut').textContent = done>=total ? '✔ Listo' : '🔪 Corte '+(done+1)+'/'+total;
+  $('#btnUndoCut').disabled = done===0;
+  const serveCut = $('#btnServeCut');
+  if(mode==='free'){
+    serveCut.style.display = 'none';
+  } else {
+    serveCut.style.display = done>=total ? '' : 'none';
+  }
+}
+
+function enterCutMode(){
+  cutMode = true;
+  container.classList.add('cutting');
+  $('#cutPanel').classList.add('show');
+  $('#actions').classList.add('cutting');
+  $('#tray').classList.add('cutting');
+  /* cámara más desde arriba para ver las guías */
+  savedOrbit = {theta:orbit.theta, phi:orbit.phi, radius:orbit.radius};
+  orbit.phi = 0.55;
+  orbit.radius = Math.min(orbit.radius, 4.2);
+  updateCamera();
+  showCutGuides();
+  renderCutUI();
+  toast('🔪 Modo corte — toca las líneas amarillas');
+}
+
+function exitCutMode(){
+  const was = cutMode;
+  cutMode = false;
+  container.classList.remove('cutting');
+  $('#cutPanel').classList.remove('show');
+  $('#actions').classList.remove('cutting');
+  $('#tray').classList.remove('cutting');
+  clearGuides();
+  if(was && savedOrbit){
+    orbit.theta = savedOrbit.theta;
+    orbit.phi = savedOrbit.phi;
+    orbit.radius = savedOrbit.radius;
+    savedOrbit = null;
+    updateCamera();
+  } else {
+    savedOrbit = null;
+  }
+}
+
+function applyGuideCut(g){
+  if(!g || g.done) return;
+  g.done = true;
+  if(g.mesh){
+    g.mesh.material.color.set(0x2a1c10);
+    g.mesh.material.emissiveIntensity = 0;
+    g.mesh.material.opacity = 1;
+  }
+  /* ocultar tips de esta guía */
+  guidesGroup.children.forEach(ch=>{
+    if(ch.userData.guideIdx===g.idx && ch.geometry && ch.geometry.type==='SphereGeometry'){
+      ch.visible = false;
+    }
+  });
+  const line = drawCutLine(g.a, g.b, 0x1a1208, .02);
+  cutsGroup.add(line);
+  cuts.push({ang:g.ang, dev:g.dev, dCenter:g.dCenter, mesh:line, guideIdx:g.idx});
+  renderCutUI();
+  const left = cutGuides.filter(x=>!x.done).length;
+  toast(left ? '🔪 Corte hecho · quedan '+left : '✔ Pizza cortada — entrégala');
+}
+
+function cutNextGuide(){
+  const g = cutGuides.find(x=>!x.done);
+  if(g) applyGuideCut(g);
+}
+
+function undoLastCut(){
+  const last = cuts.pop();
+  if(!last) return;
+  if(last.mesh) cutsGroup.remove(last.mesh);
+  const g = cutGuides.find(x=>x.idx===last.guideIdx);
+  if(g){
+    g.done = false;
+    if(g.mesh){
+      g.mesh.material.color.set(0xf2b544);
+      g.mesh.material.emissiveIntensity = .35;
+      g.mesh.material.opacity = .55;
+    }
+    guidesGroup.children.forEach(ch=>{
+      if(ch.userData.guideIdx===g.idx && ch.geometry && ch.geometry.type==='SphereGeometry'){
+        ch.visible = true;
+      }
+    });
+  }
+  renderCutUI();
+  toast('↩ Corte deshecho');
 }
 
 function clearPizza(){
   while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
   while(cutsGroup.children.length) cutsGroup.remove(cutsGroup.children[0]);
+  exitCutMode();
   cuts = [];
   layerY = .018;
   baked = false; bakeAnim = null;
@@ -1431,35 +1645,7 @@ function tapPizza(point){
   renderTicket();
 }
 
-/* ---------- corte ---------- */
-function drawCut(a, b, color){
-  const dx = b.x-a.x, dz = b.z-a.z;
-  const len = Math.hypot(dx, dz);
-  const m = new THREE.Mesh(new THREE.BoxGeometry(.014,.004,1),
-    new THREE.MeshStandardMaterial({color: color||0x3a2b18, roughness:.8}));
-  m.scale.z = len;
-  m.position.set((a.x+b.x)/2, layerY+.014, (a.z+b.z)/2);
-  m.rotation.y = Math.atan2(dx, dz);
-  cutsGroup.add(m);
-  return m;
-}
-
-function registerCut(a, b){
-  const dx = b.x-a.x, dz = b.z-a.z;
-  const len = Math.hypot(dx, dz);
-  if(len < PIZZA_R*1.1){ toast('Corte muy corto — cruza toda la pizza'); return; }
-  let ang = Math.atan2(dz, dx)*180/Math.PI;
-  ang = ((ang%180)+180)%180;
-  const dev = Math.min(ang%90, 90-(ang%90));
-  const dCenter = Math.abs(a.x*b.z - b.x*a.z)/len;   /* distancia de la línea al centro */
-  cuts.push({ang, dev, dCenter});
-  drawCut(a, b);
-  const ci = cutInfo(currentOrder());
-  let warn = '';
-  if(ci.style==='square' && dev>14) warn = ' — quedó chueco 😬';
-  if(ci.style==='triangle' && dCenter > PIZZA_R*.18) warn = ' — no pasó por el centro 😬';
-  toast(`🔪 Corte ${Math.min(cuts.length,ci.n)}/${ci.n}` + warn);
-}
+/* ---------- corte: reemplazado por modo guía (enterCutMode) ---------- */
 
 /* ---------- servicio (rush) ---------- */
 function startRush(){
@@ -1577,6 +1763,7 @@ function evaluate(o){
 function serveActive(){
   const o = currentOrder();
   if(!o) return;
+  exitCutMode();
   const complaints = evaluate(o);
   const rejected = complaints.length >= 3;
   let pts = 0;
@@ -1644,6 +1831,9 @@ $('#btnBake').onclick = ()=>{
   syncButtons();
 };
 $('#btnServe').onclick = serveActive;
+$('#btnServeCut').onclick = serveActive;
+$('#btnNextCut').onclick = cutNextGuide;
+$('#btnUndoCut').onclick = undoLastCut;
 $('#btnSkip').onclick = ()=>{
   if(mode!=='train') return;
   trainOrder = makeOrder();
@@ -1703,11 +1893,6 @@ const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 let dragging=false, moved=0, lastX=0, lastY=0, pinchDist=0;
 
-/* estado del corte con cuchillo */
-let cutDrag=false, cutStartLocal=null, previewCut=null;
-const cutPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
-const planeHit = new THREE.Vector3();
-
 function setRay(cx,cy){
   ndc.set((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
   ray.setFromCamera(ndc, camera);
@@ -1717,71 +1902,41 @@ function pickPizzaPoint(cx,cy){
   const hits = ray.intersectObjects([crust, ...placedGroup.children], true);
   return hits.length ? hits[0].point : null;
 }
-function planePoint(cx,cy){
-  setRay(cx,cy);
-  return ray.ray.intersectPlane(cutPlane, planeHit) ? planeHit : null;
-}
-function clampToPizza(v){
-  const r = Math.hypot(v.x, v.z);
-  const max = PIZZA_R*1.04;
-  if(r>max){ v.x *= max/r; v.z *= max/r; }
-  return v;
-}
-function removePreview(){
-  if(previewCut){ cutsGroup.remove(previewCut); previewCut=null; }
+
+function nearestGuide(local){
+  let best=null, bestD=1e9;
+  cutGuides.forEach(g=>{
+    if(g.done) return;
+    /* distancia punto–segmento en XZ */
+    const ax=g.a.x, az=g.a.z, bx=g.b.x, bz=g.b.z;
+    const abx=bx-ax, abz=bz-az;
+    const apx=local.x-ax, apz=local.z-az;
+    const ab2=abx*abx+abz*abz || 1;
+    let t=(apx*abx+apz*abz)/ab2; t=Math.max(0,Math.min(1,t));
+    const d=Math.hypot(local.x-(ax+abx*t), local.z-(az+abz*t));
+    if(d<bestD){ bestD=d; best=g; }
+  });
+  return bestD < PIZZA_R*.28 ? best : null;
 }
 
 container.addEventListener('pointerdown', e=>{
   dragging=true; moved=0; lastX=e.clientX; lastY=e.clientY;
-  cutDrag=false; cutStartLocal=null;
-  if(baked){
-    const p = pickPizzaPoint(e.clientX, e.clientY);
-    if(p){
-      cutDrag = true;
-      cutPlane.constant = -p.y;
-      cutStartLocal = clampToPizza(workspace.worldToLocal(p.clone()));
-      container.classList.add('cutting');
-    }
-  }
-  if(!cutDrag) container.classList.add('grabbing');
+  container.classList.add('grabbing');
 });
 addEventListener('pointermove', e=>{
   if(!dragging) return;
   const dx=e.clientX-lastX, dy=e.clientY-lastY;
   moved += Math.abs(dx)+Math.abs(dy);
   lastX=e.clientX; lastY=e.clientY;
-  if(cutDrag){
-    if(moved<6) return;
-    const wp = planePoint(e.clientX, e.clientY);
-    if(!wp) return;
-    const b = clampToPizza(workspace.worldToLocal(wp.clone()));
-    removePreview();
-    const ddx=b.x-cutStartLocal.x, ddz=b.z-cutStartLocal.z;
-    if(Math.hypot(ddx,ddz) > .04){
-      previewCut = drawCut(cutStartLocal, b, 0xd9d2c4);
-    }
-    return;
-  }
+  if(cutMode && moved<10) return; /* en modo corte, no girar con toques cortos */
   orbit.theta -= dx*.005;
   orbit.phi   -= dy*.004;
   updateCamera();
 });
 addEventListener('pointerup', e=>{
   container.classList.remove('grabbing');
-  container.classList.remove('cutting');
-  if(dragging){
-    if(cutDrag && moved>=6){
-      removePreview();
-      const wp = planePoint(e.clientX, e.clientY);
-      if(wp && cutStartLocal){
-        registerCut(cutStartLocal, clampToPizza(workspace.worldToLocal(wp.clone())));
-      }
-    } else if(moved<6){
-      handleTap(e.clientX, e.clientY);
-    }
-  }
-  dragging=false; cutDrag=false; cutStartLocal=null;
-  removePreview();
+  if(dragging && moved<10) handleTap(e.clientX, e.clientY);
+  dragging=false;
 });
 container.addEventListener('wheel', e=>{
   e.preventDefault();
@@ -1807,6 +1962,23 @@ function findIng(obj){
 }
 
 function handleTap(cx,cy){
+  /* modo corte: un toque cerca de una guía = cortar */
+  if(cutMode && baked){
+    setRay(cx,cy);
+    const guideHit = ray.intersectObjects(guidesGroup.children, true);
+    if(guideHit.length){
+      const idx = guideHit[0].object.userData.guideIdx;
+      if(idx!=null){ applyGuideCut(cutGuides[idx]); return; }
+    }
+    const p = pickPizzaPoint(cx,cy);
+    if(p){
+      const local = workspace.worldToLocal(p.clone());
+      const g = nearestGuide(local);
+      if(g){ applyGuideCut(g); return; }
+      toast('Toca una línea amarilla o usa el botón');
+      return;
+    }
+  }
   setRay(cx,cy);
   const panHit = ray.intersectObjects(clickPans, true);
   if(panHit.length){
@@ -1817,6 +1989,7 @@ function handleTap(cx,cy){
       return;
     }
   }
+  if(baked){ toast(cutMode ? 'Toca una línea guía para cortar' : 'Ya está horneada'); return; }
   const hits = ray.intersectObjects([crust, ...placedGroup.children], true);
   if(hits.length) tapPizza(hits[0].point);
 }
@@ -1836,8 +2009,15 @@ function animate(){
 
   const glow = (Math.sin(pulse)*.5+.5)*.8;
   for(const id in highlightByIng){
-    const on = id===selected;
+    const on = id===selected && !cutMode;
     highlightByIng[id].forEach(m=>{ m.emissiveIntensity = on ? glow : 0; });
+  }
+  /* pulso de las guías de corte pendientes */
+  if(cutMode){
+    const gGlow = .25 + glow*.35;
+    cutGuides.forEach(g=>{
+      if(!g.done && g.mesh) g.mesh.material.emissiveIntensity = gGlow;
+    });
   }
 
   if(bakeAnim){
@@ -1848,7 +2028,7 @@ function animate(){
       bakeAnim = null;
       baked = true;
       syncButtons();
-      toast('🍕 Fuera del horno — 🔪 '+cutInfo(currentOrder()).label);
+      enterCutMode();
     }
   }
 

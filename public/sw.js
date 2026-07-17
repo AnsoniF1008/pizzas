@@ -1,4 +1,4 @@
-const CACHE = "pizza-trainer-v12";
+const CACHE = "pizza-trainer-v13";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/3d/", "/3d/index.html"];
 
 self.addEventListener("install", (e) => {
