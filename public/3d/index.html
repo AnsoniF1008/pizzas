@@ -133,6 +133,13 @@
   #cutBtns{display:flex;gap:8px}
   #cutBtns .btn{flex:1;padding:12px 10px;font-size:15px}
   #cutBtns .btn.cutMain{background:var(--tomato)}
+  #finishChips{display:none;flex-wrap:wrap;gap:6px;justify-content:center}
+  #finishChips.show{display:flex}
+  #finishChips .fchip{border:1px solid rgba(246,241,231,.25);border-radius:10px;background:rgba(40,44,50,.95);
+    color:var(--paper);padding:8px 12px;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    cursor:pointer;display:flex;align-items:center;gap:6px}
+  #finishChips .fchip .dot{width:14px;height:14px;border-radius:50%}
+  #finishChips .fchip.done{opacity:.4;text-decoration:line-through;pointer-events:none}
   #actions.cutting{display:none}
   #tray.cutting{visibility:hidden;pointer-events:none}
 
@@ -192,6 +199,7 @@
   <div class="cutTitle" id="cutTitle">🔪 Modo corte</div>
   <div class="cutHint" id="cutHint">Toca una línea guía o el botón para cortar</div>
   <div id="cutDots"></div>
+  <div id="finishChips"></div>
   <div id="cutBtns">
     <button class="btn ghost" id="btnUndoCut" type="button">↩ Deshacer</button>
     <button class="btn cutMain" id="btnNextCut" type="button">🔪 Siguiente corte</button>
@@ -295,6 +303,8 @@ const ING = {
   lettuce:        {name:'Shredded Lettuce', css:'#58a028', type:'scatter', color:0x58a028, piece:'leaf', n:12, s:.03},
   pineapple_salsa:{name:'Pineapple Salsa',  css:'#d49818', type:'scatter', color:0xd49818, piece:'crumb', n:10, s:.02},
   ranch_driz:     {name:'Ranch (drizzle)',  css:'#e8d8b0', type:'drizzle', color:0xe8d8b0},
+  parmesan:       {name:'Parmesan',         css:'#e8dcc0', type:'scatter', color:0xe8dcc0, piece:'crumb', n:16, s:.012},
+  chives:         {name:'Chives',           css:'#3a8028', type:'scatter', color:0x3a8028, piece:'leaf', n:14, s:.018},
 };
 
 /* ---------- DISTRIBUCIÓN DE LA LÍNEA ---------- */
@@ -339,18 +349,19 @@ const RECIPES = [
   {name:"Buffalo Chicken", steps:[S('buffalo_ranch',1,1),S('smoked_mozz',1,2),S('chicken',1,2),S('cilantro',1,1),S('caram_onions',1,1),S('garlic',1,1),S('buffalo_driz',1,1)]},
   {name:"Wyatt's BBQ", steps:[S('bbq_sauce',1,1),S('smoked_mozz',1,2),S('chicken',1,2),S('cilantro',1,1),S('red_onions',1,2),S('bacon',1,2),S('cheddar',1,2),S('bbq_driz',1,1)]},
   {name:"Hawaiian", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('canad_bacon',8,16),S('pineapple',1,2),S('cranberries',1,2),S('cashews',1,2),S('mozzarella',1,2),S('cheddar',1,2)]},
-  {name:"Veggie", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('black_olives',1,2),S('red_onions',1,2),S('bell_peppers',1,2),S('mushrooms',1,2),S('mozzarella',1,2),S('romano',1,1)]},
+  {name:"Veggie", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('black_olives',1,2),S('red_onions',1,2),S('bell_peppers',1,2),S('mushrooms',1,2),S('mozzarella',1,2),S('romano',1,1)], afterCut:['parmesan']},
   {name:"Pepperoni Supreme", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('pepperoni',20,38),S('tomatoes',1,2),S('mushrooms',1,2),S('smoked_mozz',1,2)]},
-  {name:"Big Cheesy", steps:[S('pizza_sauce',1,2),S('gouda',1,2),S('smoked_mozz',1,1),S('mozzarella',1,1),S('romano',1,1),S('cheddar',1,2)]},
-  {name:"Margherita", steps:[S('pizza_sauce',1,2),S('mozzarella',1,2),S('basil',1,1),S('tomatoes',1,2),S('garlic',1,1),S('romano',1,1),S('olive_oil',1,1)]},
-  {name:"Blanco", steps:[S('olive_oil',1,1),S('garlic',1,1),S('romano',1,1),S('spinach',1,1),S('mozzarella',1,2),S('tomatoes',1,2),S('red_onions',1,2),S('mozzarella',1,2),S('bacon',1,1),S('romano',1,1),S('olive_oil',1,1)]},
+  {name:"Big Cheesy", steps:[S('pizza_sauce',1,2),S('gouda',1,2),S('smoked_mozz',1,1),S('mozzarella',1,1),S('romano',1,1),S('cheddar',1,2)], afterCut:['parmesan']},
+  {name:"Margherita", steps:[S('pizza_sauce',1,2),S('mozzarella',1,2),S('basil',1,1),S('tomatoes',1,2),S('garlic',1,1),S('romano',1,1),S('olive_oil',1,1)], afterCut:['parmesan']},
+  {name:"Blanco", steps:[S('olive_oil',1,1),S('garlic',1,1),S('romano',1,1),S('spinach',1,1),S('mozzarella',1,2),S('tomatoes',1,2),S('red_onions',1,2),S('mozzarella',1,2),S('bacon',1,1),S('romano',1,1),S('olive_oil',1,1)], afterCut:['parmesan']},
   {name:"Madelyn's Alfredo", steps:[S('alfredo',1,1),S('spinach',1,1),S('mozzarella',1,1),S('chicken',1,2),S('mushrooms',1,2),S('mozzarella',1,2),S('cheddar',1,2)]},
-  {name:"Tuscany", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('red_onions',1,2),S('black_olives',1,2),S('green_olives',1,2),S('artichoke',3,6),S('mozzarella',1,2),S('feta',1,2)]},
+  {name:"Tuscany", steps:[S('pizza_sauce',1,2),S('spinach',1,1),S('mozzarella',1,1),S('tomatoes',1,2),S('red_onions',1,2),S('black_olives',1,2),S('green_olives',1,2),S('artichoke',3,6),S('mozzarella',1,2),S('feta',1,2)], afterCut:['parmesan']},
   {name:"Pepperoni", steps:[S('pizza_sauce',1,2),S('mozzarella',1,2),S('pepperoni',12,24)]},
-  {name:"Potato Head", steps:[S('alfredo',1,1),S('mozzarella',1,2),S('potatoes',13,27),S('bacon',1,2),S('cheddar',1,2)]},
+  {name:"Potato Head", steps:[S('alfredo',1,1),S('mozzarella',1,2),S('potatoes',13,27),S('bacon',1,2),S('cheddar',1,2)], afterCut:['chives']},
   {name:"Taco Pizza", steps:[S('greengo',1,2),S('mozzarella',1,1),S('taco_meat',1,2),S('lettuce',1,2),S('tomatoes',1,2),S('cheddar',1,2),S('ranch_driz',1,1)]},
   {name:"Smokin' Luau", steps:[S('pizza_sauce',1,2),S('mozzarella',1,1),S('pepperoni',12,24),S('bacon',1,2),S('pineapple_salsa',1,2),S('mozzarella',1,2),S('cilantro',1,1)]},
 ];
+function recipeAfterCut(recipe){ return recipe.afterCut ? [...recipe.afterCut] : []; }
 
 /* toppings disponibles para pizzas personalizadas (con su porción 10"/14") */
 const CUSTOM_POOL = [
@@ -695,7 +706,7 @@ function makeFoodPiece(id, scale){
         : mat(col,{roughness:.55, side:THREE.DoubleSide}));
     mesh.rotation.x = Math.PI/2;
     mesh.rotation.z = rnd(0,Math.PI*2);
-  } else if(id==='spinach' || id==='basil' || id==='cilantro' || id==='lettuce'){
+  } else if(id==='spinach' || id==='basil' || id==='cilantro' || id==='lettuce' || id==='chives'){
     mesh = new THREE.Mesh(new THREE.PlaneGeometry(s*1.4, s*2.1),
       foodMat(texLeaf(ing.color), {roughness:.85, side:THREE.DoubleSide, transparent:true, alphaTest:.15}));
     mesh.rotation.x = -Math.PI/2 + rnd(-.15,.25);
@@ -1156,6 +1167,9 @@ function finishOrder(o){
   o.timeLeft = o.timeLimit;
   o.num = orderNum++;
   o.cut = Math.random() < .6 ? 'square' : 'triangle';
+  o.afterCut = o.afterCut || [];
+  o.afterCutDone = {};
+  o.afterCut.forEach(id=>{ o.afterCutDone[id] = false; });
   return o;
 }
 
@@ -1165,7 +1179,8 @@ function makeStandard(){
   return finishOrder({
     kind:'std', name:recipe.name, size,
     steps: stepsFromRecipe(recipe, size, null),
-    split:null
+    split:null,
+    afterCut: recipeAfterCut(recipe)
   });
 }
 
@@ -1197,7 +1212,8 @@ function makeHalfHalf(){
     nameA:a.name, nameB:b.name,
     size,
     steps:[...stepsA, ...stepsB],
-    split: stepsA.length
+    split: stepsA.length,
+    afterCut: [...new Set([...recipeAfterCut(a), ...recipeAfterCut(b)])]
   });
 }
 
@@ -1219,7 +1235,7 @@ let trainOrder = null;
 const rush = {
   running:false, paused:false, queue:[], lives:3,
   score:0, served:0, streak:0, bestStreak:0,
-  spawnTimer:0, spawnInterval:90, elapsed:0
+  spawnTimer:0, spawnInterval:18, elapsed:0
 };
 const MAX_QUEUE = 5;
 
@@ -1333,30 +1349,88 @@ function showCutGuides(){
   });
 }
 
+function afterCutPending(o){
+  if(!o || !o.afterCut || !o.afterCut.length) return [];
+  return o.afterCut.filter(id=>!(o.afterCutDone && o.afterCutDone[id]));
+}
+function afterCutReady(o){
+  return afterCutPending(o).length===0;
+}
+
+function renderFinishChips(){
+  const box = $('#finishChips');
+  const o = currentOrder();
+  box.innerHTML = '';
+  if(!o || !o.afterCut || !o.afterCut.length){ box.classList.remove('show'); return; }
+  const cutsDone = cutGuides.length && cutGuides.every(g=>g.done);
+  if(!cutsDone){ box.classList.remove('show'); return; }
+  box.classList.add('show');
+  o.afterCut.forEach(id=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'fchip'+(o.afterCutDone[id]?' done':'');
+    b.innerHTML = `<span class="dot" style="background:${ING[id].css}"></span>Top ${ING[id].name}`;
+    b.onclick = ()=> applyAfterCut(id);
+    box.appendChild(b);
+  });
+}
+
+function applyAfterCut(id){
+  const o = currentOrder();
+  if(!o || !baked) return;
+  if(!cutGuides.length || !cutGuides.every(g=>g.done)){ toast('Primero termina de cortar'); return; }
+  if(!o.afterCut || !o.afterCut.includes(id)) return;
+  if(o.afterCutDone[id]) return;
+  applyIngredient(id, null, null);
+  /* scatter/layer don't need point — count would, but afterCut are scatter */
+  o.afterCutDone[id] = true;
+  renderFinishChips();
+  renderCutUI();
+  renderTicket();
+  toast('✔ '+ING[id].name+' encima (después del corte)');
+}
+
 function renderCutUI(){
-  const ci = cutInfo(currentOrder());
+  const o = currentOrder();
+  const ci = cutInfo(o);
   const done = cutGuides.filter(g=>g.done).length;
   const total = cutGuides.length || ci.n;
-  $('#cutTitle').textContent = '🔪 '+(ci.style==='triangle'?'Triangle cut':'Corte cuadrado');
-  $('#cutHint').textContent = done>=total
-    ? '✔ Cortes listos — ya puedes entregar'
-    : 'Toca una línea amarilla o el botón · '+(done+1)+'/'+total;
+  const pending = afterCutPending(o);
+  const cutsDone = done>=total && total>0;
+
+  if(cutsDone && pending.length){
+    $('#cutTitle').textContent = '🧀 Después del corte';
+    $('#cutHint').textContent = 'Toca el botón para poner: '+pending.map(id=>ING[id].name).join(', ');
+    $('#btnNextCut').style.display = 'none';
+    $('#btnUndoCut').style.display = '';
+    $('#btnUndoCut').disabled = true;
+  } else {
+    $('#cutTitle').textContent = '🔪 '+(ci.style==='triangle'?'Triangle cut':'Corte cuadrado');
+    $('#cutHint').textContent = cutsDone
+      ? '✔ Listo — ya puedes entregar'
+      : 'Toca una línea amarilla o el botón · '+(done+1)+'/'+total;
+    $('#btnNextCut').style.display = '';
+    $('#btnUndoCut').style.display = '';
+    $('#btnNextCut').disabled = cutsDone;
+    $('#btnNextCut').textContent = cutsDone ? '✔ Listo' : '🔪 Corte '+(done+1)+'/'+total;
+    $('#btnUndoCut').disabled = done===0;
+  }
+
   const dots = $('#cutDots');
   dots.innerHTML = '';
   for(let i=0;i<total;i++){
     const d = document.createElement('i');
     if(i<done) d.className = 'done';
-    else if(i===done) d.className = 'on';
+    else if(i===done && !cutsDone) d.className = 'on';
+    else if(cutsDone) d.className = 'done';
     dots.appendChild(d);
   }
-  $('#btnNextCut').disabled = done>=total;
-  $('#btnNextCut').textContent = done>=total ? '✔ Listo' : '🔪 Corte '+(done+1)+'/'+total;
-  $('#btnUndoCut').disabled = done===0;
+  renderFinishChips();
   const serveCut = $('#btnServeCut');
   if(mode==='free'){
     serveCut.style.display = 'none';
   } else {
-    serveCut.style.display = done>=total ? '' : 'none';
+    serveCut.style.display = (cutsDone && afterCutReady(o)) ? '' : 'none';
   }
 }
 
@@ -1414,7 +1488,14 @@ function applyGuideCut(g){
   cuts.push({ang:g.ang, dev:g.dev, dCenter:g.dCenter, mesh:line, guideIdx:g.idx});
   renderCutUI();
   const left = cutGuides.filter(x=>!x.done).length;
-  toast(left ? '🔪 Corte hecho · quedan '+left : '✔ Pizza cortada — entrégala');
+  if(left) toast('🔪 Corte hecho · quedan '+left);
+  else {
+    const o = currentOrder();
+    const pend = afterCutPending(o);
+    toast(pend.length
+      ? '✔ Cortada — ahora top '+pend.map(id=>ING[id].name).join(', ')
+      : '✔ Pizza cortada — entrégala');
+  }
 }
 
 function cutNextGuide(){
@@ -1523,6 +1604,15 @@ function renderTicket(){
     html += `<li class="${cls}"><span>${ING[s.id].name}</span><span>${counts[i]}/${s.need}</span></li>`;
   });
   html += `<li class="sec">🔪 ${cutInfo(o).label}</li>`;
+  if(o.afterCut && o.afterCut.length){
+    const doneAll = o.afterCut.every(id=>o.afterCutDone && o.afterCutDone[id]);
+    html += `<li class="sec">🧀 Después del corte</li>`;
+    o.afterCut.forEach(id=>{
+      const ok = o.afterCutDone && o.afterCutDone[id];
+      html += `<li class="${ok?'done':''}"><span>Top ${ING[id].name}</span><span>${ok?'✔':'0/1'}</span></li>`;
+    });
+    if(doneAll) {/* noop */}
+  }
   $('#tItems').innerHTML = html;
 }
 
@@ -1542,7 +1632,7 @@ const TRAY_CATS = [
     'spinach','basil','cilantro','lettuce','artichoke','garlic','caram_onions'
   ]},
   {id:'extra', label:'Extra', ids:[
-    'pineapple','pineapple_salsa','potatoes','cranberries','cashews'
+    'pineapple','pineapple_salsa','potatoes','cranberries','cashews','parmesan','chives'
   ]},
 ];
 let trayCat = 'salsas';
@@ -1654,7 +1744,7 @@ function startRush(){
   rush.queue = [];
   rush.lives = 3;
   rush.score = 0; rush.served = 0; rush.streak = 0; rush.bestStreak = 0;
-  rush.spawnInterval = 90;
+  rush.spawnInterval = 18;
   rush.spawnTimer = 0;
   rush.elapsed = 0;
   orderNum = 1;
@@ -1740,9 +1830,18 @@ function evaluate(o){
   Object.keys(groups).forEach(k=>{
     if(!needBy[k]){
       const [id,h] = k.split('|');
+      if(o.afterCut && o.afterCut.includes(id)) return; /* topping de terminado */
       complaints.push(ING[id].name+' NO va en esta pizza'+sideTxt(h));
     }
   });
+
+  if(baked && o.afterCut && o.afterCut.length){
+    o.afterCut.forEach(id=>{
+      if(!(o.afterCutDone && o.afterCutDone[id])){
+        complaints.push('Faltó el Top '+ING[id].name+' después de cortar');
+      }
+    });
+  }
 
   let orderOk = true;
   ['F','L','R'].forEach(hk=>{
@@ -1814,7 +1913,16 @@ $('#btnNext').onclick = ()=>{
     rush.queue.shift();
     rush.paused = false;
     if(rush.lives<=0){ endRush(); return; }
-    activateOrder(rush.queue[0]||null);
+    if(rush.queue[0]){
+      activateOrder(rush.queue[0]);
+    } else {
+      /* siguiente comanda al instante — no dejar esperando */
+      const next = makeOrder();
+      rush.queue.push(next);
+      rush.spawnTimer = 0;
+      activateOrder(next);
+      toast('🔔 Nueva comanda: '+next.name+' '+next.size+'"');
+    }
     renderQueue();
   } else {
     trainOrder = makeOrder();
@@ -2038,7 +2146,7 @@ function animate(){
 
     if(rush.spawnTimer >= rush.spawnInterval){
       rush.spawnTimer = 0;
-      rush.spawnInterval = Math.max(55, rush.spawnInterval - .8);
+      rush.spawnInterval = Math.max(10, rush.spawnInterval - .4);
       if(rush.queue.length >= MAX_QUEUE){
         rush.lives--;
         rush.streak = 0;
