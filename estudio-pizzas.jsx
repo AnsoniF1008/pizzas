@@ -24,7 +24,7 @@ const ICON = {
   "Romano": "🧀",
   "Cheddar": "🧀",
   "Feta": "🧀",
-  "Big Don's Mix": "🧀",
+  "Big Don's Mix": "🥓",
   "Canad. Bacon": "🥓",
   "Bacon": "🥓",
   "Pepperonis": "PEP",
@@ -88,7 +88,7 @@ const ICON = {
 const ES = {
   "Pizza Sauce": "Salsa de pizza", "Mozzarella": "Mozzarella",
   "Smoked Mozz.": "Mozzarella ahumada", "Gouda": "Gouda", "Romano": "Queso romano",
-  "Cheddar": "Cheddar", "Feta": "Queso feta", "Big Don's Mix": "Mezcla Big Don's",
+  "Cheddar": "Cheddar", "Feta": "Queso feta", "Big Don's Mix": "Mezcla Big Don's (salami, sausage, bacon)",
   "Canad. Bacon": "Tocino canadiense", "Bacon": "Tocineta", "Pepperonis": "Pepperoni",
   "Ital. Sausage": "Salchicha italiana", "Chicken": "Pollo", "Black Olives": "Aceitunas negras",
   "Green Olives": "Aceitunas verdes", "Red Onions": "Cebolla morada",
