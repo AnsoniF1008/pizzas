@@ -49,14 +49,27 @@
 
   #queue{position:fixed;top:74px;left:266px;z-index:9;display:flex;gap:8px;max-width:calc(100vw - 490px);overflow-x:auto;scrollbar-width:none}
   #queue::-webkit-scrollbar{display:none}
-  .mini{flex:0 0 auto;width:116px;background:var(--paper);color:var(--ink);
+  .mini{flex:0 0 auto;width:128px;background:var(--paper);color:var(--ink);cursor:pointer;
     font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px 9px 10px;border-radius:2px;
-    box-shadow:0 5px 14px rgba(0,0,0,.4);opacity:.92}
+    box-shadow:0 5px 14px rgba(0,0,0,.4);opacity:.92;border:2px solid transparent}
+  .mini.on{border-color:var(--tomato);opacity:1}
+  .mini.bake{background:#fff3e0}
+  .mini.ready{background:#e8f5e4}
   .mini b{display:block;font-size:10.5px;line-height:1.2;margin-bottom:2px;text-transform:uppercase}
-  .mini .sz{opacity:.55;font-size:9px}
+  .mini .sz{opacity:.7;font-size:9px}
   .mini .tbar{height:5px;background:#ddd4c2;border-radius:3px;overflow:hidden;margin-top:6px}
   .mini .tbar i{display:block;height:100%;background:var(--basil)}
   .mini .tbar i.warn{background:#d92e2e}
+  .mini .tbar i.oven{background:#e07020}
+
+  #ovenBar{position:fixed;top:118px;right:14px;z-index:10;display:none;flex-direction:column;gap:6px;
+    max-width:200px;max-height:40vh;overflow-y:auto}
+  #ovenBar.show{display:flex}
+  .ovenSlot{background:rgba(20,24,28,.88);border:1px solid rgba(224,112,32,.5);border-radius:8px;
+    padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;
+    color:var(--paper);backdrop-filter:blur(6px)}
+  .ovenSlot b{color:#f2b544;display:block;margin-bottom:2px}
+  .ovenSlot .ot{font-size:16px;font-weight:800;color:#ff8a3a}
 
   #tray{position:fixed;left:0;right:0;bottom:0;z-index:10;
     padding:8px 10px calc(10px + env(safe-area-inset-bottom));
@@ -181,6 +194,7 @@
 </div>
 
 <div id="queue"></div>
+<div id="ovenBar"></div>
 
 <div id="modeSwitch">
   <button id="btnRush" class="on">Servicio</button>
@@ -213,17 +227,13 @@
 <div class="overlay" id="startOverlay">
   <div class="panel">
     <h2>🍕 Turno de servicio</h2>
-    <p><b>Tú armas la pizza de verdad:</b> elige el ingrediente<br>
-    en la bandeja (o tócalo en la línea) y luego toca la pizza.<br>
-    El juego NO te corrige — puedes equivocarte.<br><br>
-    Después de hornear, entra el <b>modo corte</b>:<br>
-    aparecen líneas guía y cortas con <b>un toque</b><br>
-    (o el botón grande) — pensado para teléfono.<br><br>
-    Al entregar, el cliente evalúa: toppings faltantes o de más,<br>
-    orden del chart, cocción y cortes.<br>
-    <b>3 quejas o más = pizza rechazada</b> (pierdes una vida).<br><br>
-    ⏱ Cada pizza tiene <b>4 minutos</b> para armarla,<br>
-    hornearla, cortarla y entregarla.</p>
+    <p><b>Tú armas la pizza:</b> 4 min de preparación.<br>
+    Al hornear, la pizza tarda <b>8 minutos en el horno</b> —<br>
+    mientras tanto armas las otras comandas.<br>
+    Toca una comanda de la cola para cambiar.<br>
+    Tiempo total de entrega: <b>14 minutos</b> por pizza.<br><br>
+    Después de hornear: corta y (si aplica) Parmesan/Chives.<br>
+    <b>3 pizzas perdidas por tiempo = fin del turno</b>.</p>
     <button class="btn bake" id="btnStart">Iniciar servicio</button>
   </div>
 </div>
@@ -1162,14 +1172,18 @@ function stepsFromRecipe(recipe, size, half){
 }
 
 function finishOrder(o){
-  /* 4 minutos fijos para armar cada pizza */
-  o.timeLimit = 240;
+  /* 14 min de entrega: 4 armar + 8 horno + 2 cortar/terminar */
+  o.timeLimit = 14*60;
   o.timeLeft = o.timeLimit;
   o.num = orderNum++;
   o.cut = Math.random() < .6 ? 'square' : 'triangle';
   o.afterCut = o.afterCut || [];
   o.afterCutDone = {};
   o.afterCut.forEach(id=>{ o.afterCutDone[id] = false; });
+  o.stage = 'build';   /* build | baking | cut | ready */
+  o.bakeLeft = 0;
+  o.baked = false;
+  o.cutsDone = [];
   return o;
 }
 
@@ -1228,17 +1242,31 @@ function makeOrder(){
    ESTADO DEL JUEGO
    ============================================================ */
 let mode = 'rush';
-let baked = false, bakeAnim = null;
-let selected = null;          /* ingrediente elegido por el jugador */
+let baked = false;
+let selected = null;
 let trainOrder = null;
+const BAKE_RUSH = 8*60;
+const BAKE_TRAIN = 45;
+const MAX_QUEUE = 7;
+const bakedCrust = new THREE.Color(0xb8823f);
+const rawCrust = new THREE.Color(0xe8c98a);
 
 const rush = {
-  running:false, paused:false, queue:[], lives:3,
+  running:false, paused:false, queue:[], active:null, lives:3,
   score:0, served:0, streak:0, bestStreak:0,
-  spawnTimer:0, spawnInterval:18, elapsed:0
+  spawnTimer:0, spawnInterval:45, elapsed:0
 };
-const MAX_QUEUE = 5;
 
+function currentOrder(){
+  if(mode==='rush') return rush.active || null;
+  if(mode==='train') return trainOrder;
+  return null;
+}
+function bakeSeconds(){ return mode==='rush' ? BAKE_RUSH : BAKE_TRAIN; }
+function fmtTime(sec){
+  const t = Math.max(0, Math.ceil(sec));
+  return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
+}
 const $ = s => document.querySelector(s);
 const toastEl = $('#toast');
 let toastTimer;
@@ -1246,13 +1274,7 @@ function toast(msg){
   toastEl.textContent = msg;
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2600);
-}
-
-function currentOrder(){
-  if(mode==='rush') return rush.queue[0] || null;
-  if(mode==='train') return trainOrder;
-  return null;
+  toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2800);
 }
 
 /* ---------- cortes (modo fácil: guías + un toque) ---------- */
@@ -1469,7 +1491,7 @@ function exitCutMode(){
   }
 }
 
-function applyGuideCut(g){
+function applyGuideCut(g, silent){
   if(!g || g.done) return;
   g.done = true;
   if(g.mesh){
@@ -1477,7 +1499,6 @@ function applyGuideCut(g){
     g.mesh.material.emissiveIntensity = 0;
     g.mesh.material.opacity = 1;
   }
-  /* ocultar tips de esta guía */
   guidesGroup.children.forEach(ch=>{
     if(ch.userData.guideIdx===g.idx && ch.geometry && ch.geometry.type==='SphereGeometry'){
       ch.visible = false;
@@ -1486,12 +1507,15 @@ function applyGuideCut(g){
   const line = drawCutLine(g.a, g.b, 0x1a1208, .02);
   cutsGroup.add(line);
   cuts.push({ang:g.ang, dev:g.dev, dCenter:g.dCenter, mesh:line, guideIdx:g.idx});
+  const o = currentOrder();
+  if(o) o.cutsDone = cuts.map(c=>c.guideIdx).filter(i=>i!=null);
   renderCutUI();
+  if(silent) return;
   const left = cutGuides.filter(x=>!x.done).length;
   if(left) toast('🔪 Corte hecho · quedan '+left);
   else {
-    const o = currentOrder();
     const pend = afterCutPending(o);
+    if(o) o.stage = pend.length ? 'cut' : 'ready';
     toast(pend.length
       ? '✔ Cortada — ahora top '+pend.map(id=>ING[id].name).join(', ')
       : '✔ Pizza cortada — entrégala');
@@ -1525,33 +1549,92 @@ function undoLastCut(){
   toast('↩ Corte deshecho');
 }
 
-function clearPizza(){
+function clearPizzaVisual(){
   while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
   while(cutsGroup.children.length) cutsGroup.remove(cutsGroup.children[0]);
-  exitCutMode();
+  clearGuides();
   cuts = [];
   layerY = .018;
-  baked = false; bakeAnim = null;
-  crust.material.color.set(0xe8c98a);
+  baked = false;
+  crust.material.color.copy(rawCrust);
+}
+
+function clearPizza(){
+  exitCutMode();
+  clearPizzaVisual();
+  syncButtons();
+}
+
+function persistActive(){
+  const o = currentOrder();
+  if(!o) return;
+  o.baked = baked;
+  o.cutsDone = cuts.map(c=>c.guideIdx).filter(i=>i!=null);
+  if(o.stage==='build' && baked) o.stage = 'cut';
+  if(o.stage==='cut' && afterCutReady(o) && cutGuides.length && cutGuides.every(g=>g.done)) o.stage = 'ready';
+}
+
+function rebuildPizza(o){
+  clearPizzaVisual();
+  if(!o){ syncButtons(); return; }
+  setPizzaSize(o.size);
+  divider.visible = !!(o.split!=null);
+  baked = !!o.baked;
+  crust.material.color.copy(baked ? bakedCrust : rawCrust);
+  layerY = .018;
+  (o.placed||[]).forEach(p=>{
+    const half = p.half==='L'||p.half==='R' ? p.half : null;
+    let point = null;
+    if(p.x!=null && p.z!=null){
+      point = workspace.localToWorld(new THREE.Vector3(p.x, layerY, p.z));
+    }
+    applyIngredient(p.id, point, half);
+  });
+  if(baked){
+    const ci = cutInfo(o);
+    showCutGuides();
+    (o.cutsDone||[]).forEach(idx=>{
+      if(cutGuides[idx] && !cutGuides[idx].done) applyGuideCut(cutGuides[idx], true);
+    });
+    if(o.stage==='cut' || o.stage==='ready' || (o.cutsDone||[]).length < ci.n || afterCutPending(o).length){
+      /* re-enter cut UI without resetting guides */
+      cutMode = true;
+      container.classList.add('cutting');
+      $('#cutPanel').classList.add('show');
+      $('#actions').classList.add('cutting');
+      $('#tray').classList.add('cutting');
+      if(!savedOrbit) savedOrbit = {theta:orbit.theta, phi:orbit.phi, radius:orbit.radius};
+      orbit.phi = 0.55;
+      orbit.radius = Math.min(orbit.radius, 4.2);
+      updateCamera();
+      renderCutUI();
+    }
+  }
   syncButtons();
 }
 
 function syncButtons(){
   const o = currentOrder();
   if(mode==='free'){
-    $('#btnBake').disabled = false;
+    $('#btnBake').disabled = baked;
+    $('#btnBake').textContent = baked ? '🔥 Horneada' : '🔥 Hornear (8 min)';
     return;
   }
-  $('#btnBake').disabled = !o || baked || !!bakeAnim;
-  $('#btnServe').disabled = !o;
+  const baking = o && o.stage==='baking';
+  $('#btnBake').disabled = !o || baked || baking || (o && o.stage!=='build');
+  $('#btnBake').textContent = baking ? '🔥 En horno…' : '🔥 Hornear (8 min)';
+  $('#btnServe').disabled = !o || baking;
 }
 
-function halfLabel(h){ return h==='L' ? '◐ ' : (h==='R' ? '◑ ' : ''); }
-
 function activateOrder(o){
-  clearPizza();
-  divider.visible = !!(o && o.split!=null);
+  persistActive();
+  exitCutMode();
+  if(mode==='rush') rush.active = o || null;
+  else if(mode==='train') trainOrder = o || null;
+
   if(!o){
+    clearPizzaVisual();
+    divider.visible = false;
     $('#tBase').textContent = '—';
     $('#tSize').textContent = 'esperando comandas…';
     $('#tNum').textContent = '';
@@ -1559,18 +1642,101 @@ function activateOrder(o){
     $('#tBar').style.width = '100%';
     $('#tTime').textContent = '';
     syncButtons();
+    renderQueue();
+    renderOvenBar();
     return;
   }
   if(!o.placed){ o.placed = []; o.seq = {F:[],L:[],R:[]}; }
-  setPizzaSize(o.size);
+  if(!o.stage) o.stage = 'build';
+
   $('#tNum').textContent = '#'+String(o.num).padStart(3,'0');
   $('#tBase').textContent = '🍕 '+o.name;
-  $('#tSize').textContent = o.size+'" · '+o.steps.length+' pasos — tú decides cómo armarla';
-  renderTicket();
-  syncButtons();
+  if(o.stage==='baking'){
+    $('#tSize').textContent = o.size+'" · 🔥 EN HORNO · queda '+fmtTime(o.bakeLeft);
+    clearPizzaVisual();
+    setPizzaSize(o.size);
+    divider.visible = o.split!=null;
+    crust.material.color.lerpColors(rawCrust, bakedCrust, 1-Math.min(1,o.bakeLeft/bakeSeconds()));
+    baked = false;
+    syncButtons();
+    renderTicket();
+  } else {
+    $('#tSize').textContent = o.size+'" · entrega ⏱ '+fmtTime(o.timeLeft)+' · '+o.steps.length+' pasos';
+    rebuildPizza(o);
+    renderTicket();
+  }
   const tk = $('#ticket');
   tk.classList.add('pop');
   setTimeout(()=>tk.classList.remove('pop'), 300);
+  renderQueue();
+  renderOvenBar();
+}
+
+function switchToOrder(o){
+  if(!o || currentOrder()===o) return;
+  activateOrder(o);
+  toast(o.stage==='baking'
+    ? '🔥 '+o.name+' sigue en el horno ('+fmtTime(o.bakeLeft)+')'
+    : '📋 Comanda #'+String(o.num).padStart(3,'0')+' — '+o.name);
+}
+
+function startBake(){
+  if(mode==='free'){
+    if(baked) return;
+    baked = true;
+    crust.material.color.copy(bakedCrust);
+    syncButtons();
+    enterCutMode();
+    toast('🔥 Lista — córtala');
+    return;
+  }
+  const o = currentOrder();
+  if(!o || baked || o.stage==='baking') return;
+  if(o.stage!=='build') return;
+  persistActive();
+  o.stage = 'baking';
+  o.bakeLeft = bakeSeconds();
+  toast('🔥 Al horno '+fmtTime(o.bakeLeft)+' — mientras tanto arma otra pizza');
+  if(mode==='rush'){
+    const next = rush.queue.find(x=>x!==o && x.stage==='build');
+    if(next) activateOrder(next);
+    else activateOrder(o);
+  } else {
+    activateOrder(o);
+  }
+  renderOvenBar();
+}
+
+function onBakeDone(o){
+  o.stage = 'cut';
+  o.baked = true;
+  o.bakeLeft = 0;
+  toast('🍕 #'+String(o.num).padStart(3,'0')+' '+o.name+' lista del horno — ¡córtala!');
+  if(currentOrder()===o){
+    baked = true;
+    crust.material.color.copy(bakedCrust);
+    enterCutMode();
+    syncButtons();
+  }
+  renderQueue();
+  renderOvenBar();
+}
+
+function renderOvenBar(){
+  const bar = $('#ovenBar');
+  if(mode!=='rush' || !rush.running){ bar.classList.remove('show'); bar.innerHTML=''; return; }
+  const baking = rush.queue.filter(o=>o.stage==='baking');
+  if(!baking.length){ bar.classList.remove('show'); bar.innerHTML=''; return; }
+  bar.classList.add('show');
+  bar.innerHTML = baking.map(o=>
+    `<div class="ovenSlot" data-num="${o.num}"><b>🔥 HORNO</b>${o.name}<div class="ot">${fmtTime(o.bakeLeft)}</div></div>`
+  ).join('');
+  bar.querySelectorAll('.ovenSlot').forEach(el=>{
+    el.onclick = ()=>{
+      const o = rush.queue.find(x=>x.num===Number(el.dataset.num));
+      if(o) switchToOrder(o);
+    };
+  });
 }
 
 /* asigna lo colocado a cada paso del chart (en orden, para mozzarella repetida etc.) */
@@ -1701,50 +1867,71 @@ function selectIng(id){
   if(el) el.scrollIntoView({block:'nearest', behavior:'smooth'});
 }
 
+function tapPizza(point){
+  const o = currentOrder();
+  if(mode!=='free' && !o){ toast('No hay comandas activas'); return; }
+  if(o && o.stage==='baking'){ toast('🔥 Está en el horno — toca otra comanda para armar'); return; }
+  if(baked){ toast('Ya salió del horno — córtala'); return; }
+  if(!selected){ toast('Primero elige un ingrediente (bandeja o línea)'); return; }
+  let half = null;
+  let local = null;
+  if(point) local = workspace.worldToLocal(point.clone());
+  if(o && o.split!=null && local){
+    half = local.x < 0 ? 'L' : 'R';
+  }
+  const res = applyIngredient(selected, point, half);
+  if(res==='out'){ toast('Coloca dentro de la pizza'); return; }
+  if(mode==='free') return;
+  const entry = {id:selected, half: half||'F'};
+  if(local && ING[selected].type==='count'){ entry.x = local.x; entry.z = local.z; }
+  o.placed.push(entry);
+  const hk = half||'F';
+  if(!o.seq[hk].includes(selected)) o.seq[hk].push(selected);
+  renderTicket();
+}
+
 function renderQueue(){
   const q = $('#queue');
   if(mode!=='rush' || !rush.running){ q.innerHTML=''; return; }
-  q.innerHTML = rush.queue.slice(1).map(o=>{
-    const pct = Math.max(0, o.timeLeft/o.timeLimit*100);
-    const t = Math.max(0, Math.ceil(o.timeLeft));
-    return `<div class="mini"><b>${o.name}</b><span class="sz">${o.size}" · ⏱ ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</span>
-      <div class="tbar"><i class="${pct<30?'warn':''}" style="width:${pct}%"></i></div></div>`;
+  q.innerHTML = rush.queue.map(o=>{
+    const active = rush.active===o;
+    let st = '', cls = active?' on':'';
+    let pct = Math.max(0, o.timeLeft/o.timeLimit*100);
+    let barCls = pct<30?'warn':'';
+    if(o.stage==='baking'){
+      st = '🔥 '+fmtTime(o.bakeLeft);
+      cls += ' bake';
+      pct = Math.max(0, (1-o.bakeLeft/bakeSeconds())*100);
+      barCls = 'oven';
+    } else if(o.stage==='cut'){ st = '🔪 cortar'; cls += ' ready'; }
+    else if(o.stage==='ready'){ st = '✔ entregar'; cls += ' ready'; }
+    else st = '⏱ '+fmtTime(o.timeLeft);
+    return `<div class="mini${cls}" data-num="${o.num}"><b>${o.name}</b><span class="sz">${o.size}" · ${st}</span>
+      <div class="tbar"><i class="${barCls}" style="width:${pct}%"></i></div></div>`;
   }).join('');
+  q.querySelectorAll('.mini').forEach(el=>{
+    el.onclick = ()=>{
+      const o = rush.queue.find(x=>x.num===Number(el.dataset.num));
+      if(o) switchToOrder(o);
+    };
+  });
 }
 
 function renderLives(){
   $('#livesRow').textContent = '🍕'.repeat(rush.lives) + '✖'.repeat(3-rush.lives);
 }
 
-/* ---------- interacción con la pizza ---------- */
-function tapPizza(point){
-  const o = currentOrder();
-  if(mode!=='free' && !o){ toast('No hay comandas activas'); return; }
-  if(!selected){ toast('Primero elige un ingrediente (bandeja o línea)'); return; }
-  let half = null;
-  if(o && o.split!=null){
-    const local = workspace.worldToLocal(point.clone());
-    half = local.x < 0 ? 'L' : 'R';
-  }
-  const res = applyIngredient(selected, point, half);
-  if(res==='out'){ toast('Coloca dentro de la pizza'); return; }
-  if(mode==='free') return;
-  o.placed.push({id:selected, half: half||'F'});
-  const hk = half||'F';
-  if(!o.seq[hk].includes(selected)) o.seq[hk].push(selected);
-  renderTicket();
-}
-
-/* ---------- corte: reemplazado por modo guía (enterCutMode) ---------- */
+/* ---------- corte: modo guía ---------- */
 
 /* ---------- servicio (rush) ---------- */
 function startRush(){
   rush.running = true;
   rush.paused = false;
   rush.queue = [];
+  rush.active = null;
   rush.lives = 3;
   rush.score = 0; rush.served = 0; rush.streak = 0; rush.bestStreak = 0;
-  rush.spawnInterval = 18;
+  rush.spawnInterval = 45;
   rush.spawnTimer = 0;
   rush.elapsed = 0;
   orderNum = 1;
@@ -1752,11 +1939,12 @@ function startRush(){
   renderLives();
   $('#startOverlay').classList.add('hiddenX');
   $('#overOverlay').classList.add('hiddenX');
-  const first = makeStandard();   /* la primera siempre del menú, para calentar */
+  const first = makeStandard();
   rush.queue.push(first);
   activateOrder(first);
   renderQueue();
-  toast('🔔 ¡Servicio abierto! '+first.name+' '+first.size+'"');
+  renderOvenBar();
+  toast('🔔 ¡Servicio abierto! '+first.name+' '+first.size+'" · 14 min de entrega');
 }
 
 function loseOrder(o, reason){
@@ -1764,15 +1952,22 @@ function loseOrder(o, reason){
   rush.streak = 0;
   renderLives();
   toast('✖ '+o.name+' perdida — '+reason);
-  const wasActive = rush.queue[0]===o;
+  const wasActive = rush.active===o;
   rush.queue = rush.queue.filter(x=>x!==o);
   if(rush.lives<=0){ endRush(); return; }
-  if(wasActive) activateOrder(rush.queue[0]||null);
+  if(wasActive){
+    const next = rush.queue.find(x=>x.stage==='build') || rush.queue[0] || null;
+    activateOrder(next);
+  }
   renderQueue();
+  renderOvenBar();
 }
 
 function endRush(){
   rush.running = false;
+  rush.active = null;
+  exitCutMode();
+  $('#ovenBar').classList.remove('show');
   $('#finalScore').textContent = rush.score;
   $('#finalServed').textContent = rush.served;
   $('#finalStreak').textContent = rush.bestStreak;
@@ -1784,8 +1979,8 @@ function evaluate(o){
   const complaints = [];
   const sideTxt = h => o.split==null ? '' : (h==='L' ? ' en la mitad izquierda' : (h==='R' ? ' en la mitad derecha' : ''));
 
-  if(!baked){
-    complaints.push(bakeAnim
+  if(!o.baked && !baked){
+    complaints.push(o.stage==='baking'
       ? '¡La sacaste del horno a medias! Está a medio cocer'
       : '¡Está CRUDA! Ni siquiera pasó por el horno');
   } else {
@@ -1835,7 +2030,7 @@ function evaluate(o){
     }
   });
 
-  if(baked && o.afterCut && o.afterCut.length){
+  if((o.baked || baked) && o.afterCut && o.afterCut.length){
     o.afterCut.forEach(id=>{
       if(!(o.afterCutDone && o.afterCutDone[id])){
         complaints.push('Faltó el Top '+ING[id].name+' después de cortar');
@@ -1862,6 +2057,8 @@ function evaluate(o){
 function serveActive(){
   const o = currentOrder();
   if(!o) return;
+  if(o.stage==='baking'){ toast('Todavía está en el horno'); return; }
+  persistActive();
   exitCutMode();
   const complaints = evaluate(o);
   const rejected = complaints.length >= 3;
@@ -1910,20 +2107,24 @@ function showEval(o, complaints, pts, rejected){
 $('#btnNext').onclick = ()=>{
   $('#evalOverlay').classList.add('hiddenX');
   if(mode==='rush'){
-    rush.queue.shift();
+    const done = rush.active;
+    rush.queue = rush.queue.filter(x=>x!==done);
     rush.paused = false;
     if(rush.lives<=0){ endRush(); return; }
-    if(rush.queue[0]){
-      activateOrder(rush.queue[0]);
-    } else {
-      /* siguiente comanda al instante — no dejar esperando */
-      const next = makeOrder();
-      rush.queue.push(next);
-      rush.spawnTimer = 0;
+    const next = rush.queue.find(x=>x.stage==='cut'||x.stage==='ready')
+      || rush.queue.find(x=>x.stage==='build')
+      || rush.queue[0];
+    if(next){
       activateOrder(next);
-      toast('🔔 Nueva comanda: '+next.name+' '+next.size+'"');
+    } else {
+      const neu = makeOrder();
+      rush.queue.push(neu);
+      rush.spawnTimer = 0;
+      activateOrder(neu);
+      toast('🔔 Nueva comanda: '+neu.name+' '+neu.size+'"');
     }
     renderQueue();
+    renderOvenBar();
   } else {
     trainOrder = makeOrder();
     activateOrder(trainOrder);
@@ -1931,13 +2132,7 @@ $('#btnNext').onclick = ()=>{
 };
 
 /* ---------- botones ---------- */
-$('#btnBake').onclick = ()=>{
-  if(baked || bakeAnim) return;
-  if(mode!=='free' && !currentOrder()) return;
-  bakeAnim = {t:0};
-  toast('🔥 Horneando…');
-  syncButtons();
-};
+$('#btnBake').onclick = startBake;
 $('#btnServe').onclick = serveActive;
 $('#btnServeCut').onclick = serveActive;
 $('#btnNextCut').onclick = cutNextGuide;
@@ -1949,11 +2144,21 @@ $('#btnSkip').onclick = ()=>{
 };
 $('#btnReset').onclick = ()=>{
   const o = currentOrder();
-  if(o){ o.placed = []; o.seq = {F:[],L:[],R:[]}; }
-  clearPizza();
+  if(o && o.stage==='baking'){ toast('No puedes limpiar mientras está en el horno'); return; }
+  if(o){
+    o.placed = []; o.seq = {F:[],L:[],R:[]}; o.cutsDone = [];
+    o.baked = false; o.stage = 'build';
+    o.afterCutDone = {};
+    (o.afterCut||[]).forEach(id=>{ o.afterCutDone[id]=false; });
+  }
+  exitCutMode();
+  clearPizzaVisual();
   if(o){
     divider.visible = o.split!=null;
+    setPizzaSize(o.size);
+    baked = false;
     renderTicket();
+    syncButtons();
   }
   toast('Pizza reiniciada'+(mode==='rush'&&rush.running?' — ¡el reloj sigue!':''));
 };
@@ -1970,7 +2175,11 @@ function setMode(m){
   });
   rush.running = false;
   rush.paused = false;
+  rush.queue = [];
+  rush.active = null;
   $('#queue').innerHTML = '';
+  $('#ovenBar').classList.remove('show');
+  $('#ovenBar').innerHTML = '';
   $('#ticket').style.display = m==='free' ? 'none' : '';
   $('#tBarWrap').style.display = m==='rush' ? '' : 'none';
   $('#tTime').style.display = m==='rush' ? '' : 'none';
@@ -1980,15 +2189,17 @@ function setMode(m){
   $('#startOverlay').classList.toggle('hiddenX', m!=='rush');
   $('#overOverlay').classList.add('hiddenX');
   $('#evalOverlay').classList.add('hiddenX');
+  exitCutMode();
   divider.visible = false;
   renderTray();
   if(m==='train'){
     trainOrder = makeOrder();
     activateOrder(trainOrder);
-    toast('Modo entrenamiento — armas tú, el cliente evalúa, sin tiempo');
+    toast('Entrenamiento — horno 45s · sin reloj de entrega');
   } else if(m==='free'){
     clearPizza();
     setPizzaSize(14);
+    syncButtons();
   } else {
     activateOrder(null);
   }
@@ -2105,8 +2316,6 @@ function handleTap(cx,cy){
 /* ============================================================
    LOOP
    ============================================================ */
-const bakedCrust = new THREE.Color(0xb8823f);
-const rawCrust = new THREE.Color(0xe8c98a);
 const clock = new THREE.Clock();
 let pulse = 0, queueRefresh = 0;
 
@@ -2120,7 +2329,6 @@ function animate(){
     const on = id===selected && !cutMode;
     highlightByIng[id].forEach(m=>{ m.emissiveIntensity = on ? glow : 0; });
   }
-  /* pulso de las guías de corte pendientes */
   if(cutMode){
     const gGlow = .25 + glow*.35;
     cutGuides.forEach(g=>{
@@ -2128,15 +2336,24 @@ function animate(){
     });
   }
 
-  if(bakeAnim){
-    bakeAnim.t += dt/(mode==='rush' ? 1.3 : 2.2);
-    const k = Math.min(1, bakeAnim.t);
-    crust.material.color.lerpColors(rawCrust, bakedCrust, k);
-    if(k>=1){
-      bakeAnim = null;
-      baked = true;
-      syncButtons();
-      enterCutMode();
+  /* hornos en segundo plano (8 min) */
+  if(mode==='rush' && rush.running){
+    rush.queue.forEach(o=>{
+      if(o.stage==='baking'){
+        o.bakeLeft -= dt;
+        if(currentOrder()===o){
+          crust.material.color.lerpColors(rawCrust, bakedCrust, 1-Math.min(1, Math.max(0,o.bakeLeft)/bakeSeconds()));
+          $('#tSize').textContent = o.size+'" · 🔥 EN HORNO · queda '+fmtTime(o.bakeLeft);
+        }
+        if(o.bakeLeft<=0){ o.bakeLeft = 0; if(o.stage==='baking') onBakeDone(o); }
+      }
+    });
+  } else {
+    const o = currentOrder();
+    if(o && o.stage==='baking'){
+      o.bakeLeft -= dt;
+      crust.material.color.lerpColors(rawCrust, bakedCrust, 1-Math.min(1, Math.max(0,o.bakeLeft)/bakeSeconds()));
+      if(o.bakeLeft<=0){ o.bakeLeft = 0; if(o.stage==='baking') onBakeDone(o); }
     }
   }
 
@@ -2146,17 +2363,13 @@ function animate(){
 
     if(rush.spawnTimer >= rush.spawnInterval){
       rush.spawnTimer = 0;
-      rush.spawnInterval = Math.max(10, rush.spawnInterval - .4);
+      rush.spawnInterval = Math.max(25, rush.spawnInterval - .5);
       if(rush.queue.length >= MAX_QUEUE){
-        rush.lives--;
-        rush.streak = 0;
-        renderLives();
-        toast('✖ ¡Cola llena! Se fue un cliente');
-        if(rush.lives<=0){ endRush(); }
+        toast('Cola llena — entrega alguna antes de que entren más');
       } else {
         const o = makeOrder();
         rush.queue.push(o);
-        if(rush.queue.length===1) activateOrder(o);
+        if(!rush.active) activateOrder(o);
         toast('🔔 Nueva comanda: '+o.name+' '+o.size+'"');
       }
       renderQueue();
@@ -2167,20 +2380,19 @@ function animate(){
       o.timeLeft -= dt;
       if(o.timeLeft<=0) expired.push(o);
     });
-    expired.forEach(o=> loseOrder(o, 'se acabó el tiempo'));
+    expired.forEach(o=> loseOrder(o, 'se acabó el tiempo de entrega'));
 
-    const o = rush.queue[0];
-    if(o){
+    const o = rush.active;
+    if(o && o.stage!=='baking'){
       const pct = Math.max(0, o.timeLeft/o.timeLimit*100);
       const bar = $('#tBar');
       bar.style.width = pct+'%';
       bar.style.background = pct<30 ? '#d92e2e' : (pct<55 ? '#d9a92e' : 'var(--basil)');
-      const t = Math.max(0, Math.ceil(o.timeLeft));
-      $('#tTime').textContent = '⏱ '+Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
+      $('#tTime').textContent = '⏱ entrega '+fmtTime(o.timeLeft);
     }
 
     queueRefresh += dt;
-    if(queueRefresh > .5){ queueRefresh = 0; renderQueue(); }
+    if(queueRefresh > .4){ queueRefresh = 0; renderQueue(); renderOvenBar(); }
   }
 
   renderer.render(scene, camera);
