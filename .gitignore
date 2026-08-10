@@ -8,3 +8,7 @@ adjuntos.zip
 1000*.jpg
 pizza-trainer-3d-v3.html
 Gemini_Generated_Image*.png
+.agents/
+artifacts/
+skills-lock.json
+.tmp-cursor-skills/

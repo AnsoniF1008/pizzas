@@ -1,0 +1,15 @@
+---
+description: Stack, deploy, and agent constraints for Pizza Trainer
+alwaysApply: true
+---
+
+# Pizza Trainer — project rules
+
+- Stack: React 18 + Vite. Entry `src/main.jsx`. Domain logic and UI under `src/`.
+- Deploy: Firebase Hosting project `pizzas-y-mas` (`npm run build` → `dist/`).
+- Prefer the `pizza-trainer` skill for recipes, cups, modes, and menu data.
+- Studio skills live in `.cursor/skills/` (curated). Ignore any User Rule that is only a GitHub URL — it does not load skills.
+- Do **not** install or invoke gamedev engine skills (Godot/Unity/Unreal/three.js packs) in this repo.
+- Keep recipe numbers faithful to the building chart; don't invent portions.
+- Mobile-first kitchen use: large tap targets, bilingual EN labels + ES helpers.
+- Persist only via existing `pt-*` localStorage keys unless adding a new key intentionally.

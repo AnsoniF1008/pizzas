@@ -7,62 +7,78 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root{ --ink:#14181c; --paper:#f6f1e7; --tomato:#d7402b; --basil:#3f7d3a; --cheese:#f2b544; }
+  :root{
+    --ink:#14181c; --paper:#f3ebe0; --tomato:#d7402b; --basil:#3f7d3a; --cheese:#f2b544;
+    --hud:#12161ad9; --hud-line:rgba(242,181,68,.35); --danger:#d92e2e; --safe-top:env(safe-area-inset-top);
+  }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden;background:#171a1e;font-family:'Barlow Condensed',sans-serif;color:var(--paper)}
-  #scene{position:fixed;inset:0;cursor:grab}
+  html,body{height:100%;overflow:hidden;background:#1a1612;font-family:'Barlow Condensed',sans-serif;color:var(--paper)}
+  #scene{position:fixed;inset:0;cursor:grab;touch-action:none}
   #scene.grabbing{cursor:grabbing}
+  /* viñeta leve (Fase 6) — overlay CSS, sin costo de GPU en el canvas */
+  #vignette{position:fixed;inset:0;z-index:5;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 42%, transparent 56%, rgba(10,8,6,.34) 100%)}
 
   header{position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;
-    display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px}
-  .brand #backLink{pointer-events:auto;display:inline-block;margin-bottom:6px;color:var(--cheese);
-    font-family:'IBM Plex Mono',monospace;font-size:12px;text-decoration:none;font-weight:600}
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:calc(10px + var(--safe-top)) 14px 10px}
+  .brand #backLink{pointer-events:auto;display:inline-block;margin-bottom:4px;color:var(--cheese);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;text-decoration:none;font-weight:600}
   .brand #backLink:active{opacity:.7}
-  .brand{background:rgba(20,24,28,.72);border:1px solid rgba(246,241,231,.15);padding:8px 12px;
-    border-radius:6px;backdrop-filter:blur(6px)}
-  .brand h1{font-weight:800;font-size:clamp(19px,3vw,28px);letter-spacing:.06em;text-transform:uppercase;line-height:1}
-  .brand p{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.55;margin-top:4px}
-  .score{font-family:'IBM Plex Mono',monospace;text-align:right;font-size:12px;line-height:1.5;
-    background:rgba(20,24,28,.72);border:1px solid rgba(246,241,231,.15);padding:8px 12px;border-radius:6px;backdrop-filter:blur(6px)}
-  .score b{color:var(--cheese);font-size:18px}
-  .score .lives{letter-spacing:2px}
+  .brand{background:var(--hud);border:1px solid var(--hud-line);padding:8px 12px;
+    border-radius:10px;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .brand h1{font-weight:800;font-size:clamp(18px,2.8vw,26px);letter-spacing:.06em;text-transform:uppercase;line-height:1}
+  .brand p{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.55;margin-top:3px}
+  .score{font-family:'IBM Plex Mono',monospace;text-align:right;font-size:11px;line-height:1.45;
+    background:var(--hud);border:1px solid var(--hud-line);padding:8px 12px;border-radius:10px;
+    backdrop-filter:blur(10px);min-width:118px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .score button{pointer-events:auto;margin-top:6px;display:block;width:100%;
+    background:rgba(255,255,255,.06);border:1px solid var(--hud-line);color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 8px;border-radius:6px;cursor:pointer}
+  .score button:active{opacity:.75}
+  #gfxBtn{letter-spacing:.04em;text-transform:uppercase;font-weight:700;color:var(--cheese)!important}
 
-  #ticket{position:fixed;top:74px;left:16px;z-index:10;width:236px;max-height:calc(100vh - 290px);overflow-y:auto;
-    background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12px;
-    padding:12px 14px 20px;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.45);
-    clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),95% 100%,90% calc(100% - 6px),85% 100%,80% calc(100% - 6px),75% 100%,70% calc(100% - 6px),65% 100%,60% calc(100% - 6px),55% 100%,50% calc(100% - 6px),45% 100%,40% calc(100% - 6px),35% 100%,30% calc(100% - 6px),25% 100%,20% calc(100% - 6px),15% 100%,10% calc(100% - 6px),5% 100%,0 calc(100% - 6px));
-    transition:transform .25s ease;scrollbar-width:thin}
-  #ticket .th{display:flex;justify-content:space-between;border-bottom:1px dashed #999;padding-bottom:6px;margin-bottom:6px;font-weight:600}
-  #ticket .base{font-weight:600;margin-bottom:2px;text-transform:uppercase;font-size:13px;line-height:1.25}
-  #ticket .size{font-size:10px;opacity:.6;margin-bottom:6px}
-  #ticket .tbar{height:7px;background:#ddd4c2;border-radius:4px;overflow:hidden;margin-bottom:2px}
-  #ticket .tbar i{display:block;height:100%;background:var(--basil);border-radius:4px;transition:width .3s linear}
-  #tTime{font-size:11px;font-weight:600;text-align:right;margin-bottom:6px;opacity:.75}
+  #ticket{position:fixed;top:var(--hud-top,112px);left:12px;z-index:10;width:168px;max-height:calc(100vh - 300px);overflow-y:auto;
+    background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:10px;
+    padding:8px 9px 14px;border-radius:2px;box-shadow:0 6px 18px rgba(0,0,0,.4);
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),95% 100%,90% calc(100% - 5px),85% 100%,80% calc(100% - 5px),75% 100%,70% calc(100% - 5px),65% 100%,60% calc(100% - 5px),55% 100%,50% calc(100% - 5px),45% 100%,40% calc(100% - 5px),35% 100%,30% calc(100% - 5px),25% 100%,20% calc(100% - 5px),15% 100%,10% calc(100% - 5px),5% 100%,0 calc(100% - 5px));
+    transition:transform .25s ease,background .25s ease,box-shadow .25s ease;scrollbar-width:thin}
+  #ticket.late{background:#ffe8e4;box-shadow:0 0 0 2px #d92e2e,0 6px 18px rgba(0,0,0,.4)}
+  #ticket .th{display:flex;justify-content:space-between;border-bottom:1px dashed #999;padding-bottom:4px;margin-bottom:4px;font-weight:600;font-size:9px}
+  #ticket .base{font-weight:700;margin-bottom:1px;text-transform:uppercase;font-size:11px;line-height:1.2}
+  #ticket .size{font-size:9px;opacity:.65;margin-bottom:4px}
+  #ticket .tbar{height:5px;background:#ddd4c2;border-radius:3px;overflow:hidden;margin-bottom:2px}
+  #ticket .tbar i{display:block;height:100%;background:var(--basil);border-radius:3px;transition:width .3s linear,background .25s}
+  #tTime{font-size:10px;font-weight:700;text-align:right;margin-bottom:4px;opacity:.8}
+  #ticket.late #tTime{color:#c01818;opacity:1}
   #ticket ul{list-style:none}
-  #ticket li{display:flex;justify-content:space-between;padding:2.5px 4px;border-radius:2px}
+  #ticket li{display:flex;justify-content:space-between;padding:1.5px 3px;border-radius:2px;gap:4px}
+  #ticket li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #ticket li.done{text-decoration:line-through;opacity:.4}
   #ticket li.active{background:#ffe9b0;font-weight:600}
-  #ticket li.active::before{content:'▶ ';font-size:9px}
-  #ticket li.sec{background:var(--ink);color:var(--paper);font-weight:600;font-size:10px;
-    text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px;padding:3px 6px;justify-content:flex-start}
-  #ticket.pop{transform:rotate(-1.5deg) scale(1.03)}
+  #ticket li.active::before{content:'▶ ';font-size:8px}
+  #ticket li.sec{background:var(--ink);color:var(--paper);font-weight:600;font-size:8px;
+    text-transform:uppercase;letter-spacing:.05em;margin:4px 0 2px;padding:2px 5px;justify-content:flex-start}
+  #ticket.pop{transform:rotate(-1.5deg) scale(1.02)}
 
-  #queue{position:fixed;top:74px;left:266px;z-index:9;display:flex;gap:8px;max-width:calc(100vw - 490px);overflow-x:auto;scrollbar-width:none}
+  #queue{position:fixed;top:var(--hud-top,112px);left:190px;z-index:9;display:flex;gap:6px;max-width:calc(100vw - 400px);overflow-x:auto;scrollbar-width:none}
   #queue::-webkit-scrollbar{display:none}
-  .mini{flex:0 0 auto;width:128px;background:var(--paper);color:var(--ink);cursor:pointer;
-    font-family:'IBM Plex Mono',monospace;font-size:10px;padding:8px 9px 10px;border-radius:2px;
-    box-shadow:0 5px 14px rgba(0,0,0,.4);opacity:.92;border:2px solid transparent}
+  .mini{flex:0 0 auto;width:110px;background:var(--paper);color:var(--ink);cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;font-size:9px;padding:6px 7px 8px;border-radius:2px;
+    box-shadow:0 4px 12px rgba(0,0,0,.35);opacity:.92;border:2px solid transparent}
   .mini.on{border-color:var(--tomato);opacity:1}
   .mini.bake{background:#fff3e0}
   .mini.ready{background:#e8f5e4}
-  .mini b{display:block;font-size:10.5px;line-height:1.2;margin-bottom:2px;text-transform:uppercase}
-  .mini .sz{opacity:.7;font-size:9px}
-  .mini .tbar{height:5px;background:#ddd4c2;border-radius:3px;overflow:hidden;margin-top:6px}
+  .mini.late{background:#ffe8e4;border-color:#d92e2e}
+  .mini b{display:block;font-size:9.5px;line-height:1.15;margin-bottom:2px;text-transform:uppercase}
+  .mini .sz{opacity:.7;font-size:8px}
+  .mini.late .sz{color:#c01818;opacity:1;font-weight:700}
+  .mini .tbar{height:4px;background:#ddd4c2;border-radius:3px;overflow:hidden;margin-top:5px}
   .mini .tbar i{display:block;height:100%;background:var(--basil)}
   .mini .tbar i.warn{background:#d92e2e}
   .mini .tbar i.oven{background:#e07020}
 
-  #ovenBar{position:fixed;top:118px;right:14px;z-index:10;display:none;flex-direction:column;gap:6px;
+  #ovenBar{position:fixed;top:calc(var(--hud-top-r,112px) + 50px);right:14px;z-index:10;display:none;flex-direction:column;gap:6px;
     max-width:200px;max-height:40vh;overflow-y:auto}
   #ovenBar.show{display:flex}
   .ovenSlot{background:rgba(20,24,28,.88);border:1px solid rgba(224,112,32,.5);border-radius:8px;
@@ -92,9 +108,17 @@
     transition:transform .12s ease,border-color .12s ease,background .12s ease}
   .chip .dot{width:22px;height:22px;border-radius:50%;border:2px solid rgba(0,0,0,.4);box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
   .chip.sel{border-color:var(--cheese);background:#2c3138;box-shadow:0 0 0 1px var(--cheese)}
+  .chip.hint{border-color:#3f9e4a;background:#1e3a24;box-shadow:0 0 0 2px #3f9e4a;animation:hintPulse 1.1s ease-in-out infinite}
   .chip:active{transform:scale(.96)}
+  @keyframes hintPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  #ticket li.hint{background:#d4f5d4;font-weight:700}
 
   #actions{position:fixed;right:14px;bottom:210px;z-index:11;display:flex;flex-direction:column;gap:8px}
+  #btnHint{display:none;background:#2f6b38}
+  #recordsLine{font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.7;margin-top:4px;line-height:1.4}
+  #muteBtn{pointer-events:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    background:transparent;border:1px solid rgba(246,241,231,.25);color:var(--paper);border-radius:4px;
+    padding:3px 8px;cursor:pointer;opacity:.75}
   .btn{font-family:'Barlow Condensed',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
     font-size:15px;padding:11px 18px;border-radius:8px;border:none;cursor:pointer;color:var(--paper);
     transition:transform .12s ease}
@@ -104,21 +128,24 @@
   .btn.ghost{background:rgba(20,24,28,.65);border:1px solid rgba(246,241,231,.3);font-weight:700;backdrop-filter:blur(4px)}
   .btn:disabled{opacity:.3;cursor:not-allowed}
 
-  #modeSwitch{position:fixed;top:74px;right:14px;z-index:10;display:flex;border:1px solid rgba(246,241,231,.2);border-radius:8px;overflow:hidden}
+  #modeSwitch{position:fixed;top:var(--hud-top-r,112px);right:14px;z-index:10;display:flex;border:1px solid var(--hud-line);
+    border-radius:999px;overflow:hidden;background:var(--hud);backdrop-filter:blur(10px);
+    box-shadow:0 6px 18px rgba(0,0,0,.35)}
   #modeSwitch button{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-    background:rgba(30,34,39,.85);color:var(--paper);border:none;padding:8px 12px;font-size:13px;cursor:pointer}
+    background:transparent;color:var(--paper);border:none;padding:8px 14px;font-size:12px;cursor:pointer;min-height:40px}
   #modeSwitch button.on{background:var(--cheese);color:var(--ink)}
 
   #toast{position:fixed;left:50%;top:13%;transform:translateX(-50%) translateY(-8px);z-index:20;
-    background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;
-    padding:10px 18px;border-radius:4px;opacity:0;pointer-events:none;transition:all .3s ease;
-    box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+    background:linear-gradient(180deg,#fff8ee,#f0e4d4);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;
+    padding:10px 18px;border-radius:8px;opacity:0;pointer-events:none;transition:all .3s ease;
+    border:1px solid rgba(0,0,0,.12);box-shadow:0 10px 28px rgba(0,0,0,.45);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-    background:rgba(15,17,20,.86);backdrop-filter:blur(6px)}
-  .panel{background:var(--paper);color:var(--ink);width:min(430px,92vw);padding:28px 30px 26px;border-radius:6px;
-    box-shadow:0 20px 60px rgba(0,0,0,.6);text-align:center}
+    background:rgba(12,10,8,.88);backdrop-filter:blur(8px)}
+  .panel{background:linear-gradient(165deg,#fff8ee 0%,#efe4d4 100%);color:var(--ink);width:min(430px,92vw);
+    padding:28px 30px 26px;border-radius:14px;border:1px solid rgba(0,0,0,.1);
+    box-shadow:0 24px 70px rgba(0,0,0,.55);text-align:center}
   .panel h2{font-weight:800;font-size:30px;letter-spacing:.05em;text-transform:uppercase;line-height:1.05}
   .panel p{font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;margin:14px 0 20px;opacity:.8}
   .panel .stats{font-family:'IBM Plex Mono',monospace;font-size:13px;margin:12px 0 20px;line-height:2}
@@ -157,8 +184,10 @@
   #tray.cutting{visibility:hidden;pointer-events:none}
 
   @media (max-width:640px){
-    #ticket{width:194px;font-size:11px;top:66px;left:10px;max-height:calc(100vh - 280px)}
-    #queue{left:212px;max-width:calc(100vw - 224px);top:66px}
+    #ticket{width:142px;font-size:9px;left:8px;max-height:calc(100vh - 290px);padding:6px 7px 12px}
+    #ticket .base{font-size:10px}
+    #queue{left:158px;max-width:calc(100vw - 170px)}
+    .mini{width:96px;padding:5px 6px 7px}
     #actions{bottom:200px;right:10px}
     .catTab{font-size:12px;padding:7px 10px}
     #ingGrid{grid-template-columns:repeat(3,minmax(0,1fr));max-height:132px;gap:6px}
@@ -171,6 +200,7 @@
 </head>
 <body>
 <div id="scene"></div>
+<div id="vignette"></div>
 
 <header>
   <div class="brand">
@@ -181,6 +211,9 @@
   <div class="score">
     <div>PUNTOS <b id="scoreVal">0</b></div>
     <div id="livesRow" class="lives">🍕🍕🍕</div>
+    <div id="recordsLine"></div>
+    <button type="button" id="muteBtn" title="Sonido">🔊 Sonido</button>
+    <button type="button" id="gfxBtn" title="Calidad gráfica">GFX ULTRA</button>
   </div>
 </header>
 
@@ -205,6 +238,7 @@
 <div id="actions">
   <button class="btn bake" id="btnBake" disabled>🔥 Hornear</button>
   <button class="btn serve" id="btnServe" disabled>✓ Entregar</button>
+  <button class="btn" id="btnHint" type="button">💡 Pista</button>
   <button class="btn ghost" id="btnSkip">Otra pizza</button>
   <button class="btn ghost" id="btnReset">Limpiar</button>
 </div>
@@ -227,13 +261,12 @@
 <div class="overlay" id="startOverlay">
   <div class="panel">
     <h2>🍕 Turno de servicio</h2>
-    <p><b>Tú armas la pizza:</b> 4 min de preparación.<br>
-    Al hornear, la pizza tarda <b>8 minutos en el horno</b> —<br>
-    mientras tanto armas las otras comandas.<br>
-    Toca una comanda de la cola para cambiar.<br>
-    Tiempo total de entrega: <b>14 minutos</b> por pizza.<br><br>
-    Después de hornear: corta y (si aplica) Parmesan/Chives.<br>
-    <b>3 pizzas perdidas por tiempo = fin del turno</b>.</p>
+    <p>Arma la pizza de la comanda (tiempo <b>ilimitado</b>).<br>
+    El horneado es <b>instantáneo</b> — luego corta y termina.<br>
+    Si una comanda lleva <b>más de 8 minutos</b>, se pone en <b style="color:#c01818">rojo</b> (va tardando).<br>
+    Toca la cola para cambiar de pizza.<br><br>
+    <b>3 pizzas rechazadas = fin del turno</b>.</p>
+    <div class="stats" id="startRecords" style="margin-top:0"></div>
     <button class="btn bake" id="btnStart">Iniciar servicio</button>
   </div>
 </div>
@@ -245,6 +278,7 @@
       PUNTOS <b id="finalScore">0</b><br>
       Pizzas entregadas: <span id="finalServed">0</span><br>
       Mejor racha: <span id="finalStreak">0</span>
+      <div id="finalRecords" style="margin-top:8px;opacity:.75;font-size:12px"></div>
     </div>
     <button class="btn serve" id="btnAgain">Otro turno</button>
   </div>
@@ -261,10 +295,81 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
 <script>
 /* ============================================================
-   PIZZA TRAINER 3D v6 — armado libre, cortes y evaluación del cliente
+   PIZZA TRAINER 3D v12 — HUD dinámico, bandejas InstancedMesh, masa irregular, PBR tabla, viñeta
    ============================================================ */
+
+/* ---------- AUDIO (Web Audio, sin archivos) ---------- */
+let audioCtx = null, soundOn = true;
+function unlockAudio(){
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+}
+function tone(freq, dur, type, vol, when){
+  if(!soundOn) return;
+  try{
+    unlockAudio();
+    const t0 = audioCtx.currentTime + (when||0);
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type||'square';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol||0.08, t0+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t0); o.stop(t0+dur+0.02);
+  }catch(e){}
+}
+function sfx(kind){
+  if(kind==='top'){ tone(520,.06,'triangle',.06); tone(780,.05,'triangle',.04,.04); }
+  else if(kind==='bake'){ tone(440,.12,'sine',.1); tone(660,.18,'sine',.08,.1); tone(880,.25,'sine',.07,.22); }
+  else if(kind==='cut'){ tone(180,.05,'sawtooth',.04); }
+  else if(kind==='ok'){ tone(523,.1,'sine',.08); tone(659,.12,'sine',.07,.1); tone(784,.18,'sine',.07,.2); }
+  else if(kind==='bad'){ tone(180,.2,'sawtooth',.07); tone(140,.28,'sawtooth',.06,.12); }
+  else if(kind==='late'){ tone(300,.1,'square',.05); tone(300,.1,'square',.05,.16); }
+  else if(kind==='hint'){ tone(700,.08,'sine',.05); tone(900,.1,'sine',.04,.07); }
+  else if(kind==='new'){ tone(600,.07,'triangle',.05); }
+}
+
+/* ---------- RÉCORDS ---------- */
+const REC_KEY = 'pizza3d_records_v1';
+function loadRecords(){
+  try{ return JSON.parse(localStorage.getItem(REC_KEY)||'{}'); }catch(e){ return {}; }
+}
+function saveRecords( partial ){
+  const r = Object.assign({bestScore:0,bestStreak:0,mostServed:0,games:0}, loadRecords(), partial);
+  try{ localStorage.setItem(REC_KEY, JSON.stringify(r)); }catch(e){}
+  return r;
+}
+function renderRecordsUI(){
+  const r = loadRecords();
+  const line = $('#recordsLine');
+  if(line){
+    line.textContent = (r.bestScore||r.bestStreak)
+      ? 'Récord '+ (r.bestScore||0) +' · racha '+(r.bestStreak||0)
+      : 'Sin récord aún';
+  }
+  const start = $('#startRecords');
+  if(start){
+    start.innerHTML = (r.bestScore||r.mostServed)
+      ? 'Tu récord: <b>'+(r.bestScore||0)+'</b> pts · '+(r.mostServed||0)+' pizzas · racha '+(r.bestStreak||0)
+      : 'Aún no hay récord guardado en este teléfono';
+  }
+  const mute = $('#muteBtn');
+  if(mute) mute.textContent = soundOn ? '🔊 Sonido' : '🔇 Silencio';
+}
 
 /* ---------- INGREDIENTES (colores saturados para distinguirlos) ---------- */
 const ING = {
@@ -398,20 +503,134 @@ const CUSTOM_POOL = [
    ESCENA 3D
    ============================================================ */
 const container = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || Math.min(innerWidth, innerHeight) < 700;
+const MAX_PR = IS_MOBILE ? 1.5 : 2;
+const renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance', alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio, MAX_PR));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.physicallyCorrectLights = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.82;
+const EXPOSURE = 1.12;
+renderer.toneMappingExposure = EXPOSURE;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x3a4048);
-scene.fog = new THREE.Fog(0x3a4048, 12, 26);
-const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, .1, 100);
+scene.background = new THREE.Color(0x1e1a16);
+scene.fog = new THREE.FogExp2(0x1e1a16, 0.022);
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, .08, 80);
+
+/* Post-FX pack moderno: SSAO + bloom + color grade + FXAA */
+const GFX_LEVELS = ['MED', 'HIGH', 'ULTRA'];
+let gfxLevel = (()=>{ try{ return localStorage.getItem('pizza3d_gfx') || (IS_MOBILE ? 'MED' : 'ULTRA'); }catch(e){ return IS_MOBILE ? 'MED' : 'ULTRA'; }})();
+
+const CinematicShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    time: { value: 0 },
+    vignette: { value: 0.42 },
+    grain: { value: 0.045 },
+    contrast: { value: 1.08 },
+    saturation: { value: 1.12 },
+    warmth: { value: 0.06 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float time, vignette, grain, contrast, saturation, warmth;
+    varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+    void main(){
+      vec4 c = texture2D(tDiffuse, vUv);
+      vec3 col = c.rgb;
+      /* contrast */
+      col = (col - 0.5) * contrast + 0.5;
+      /* saturation */
+      float luma = dot(col, vec3(0.2126,0.7152,0.0722));
+      col = mix(vec3(luma), col, saturation);
+      /* warm kitchen grade */
+      col.r += warmth; col.b -= warmth * 0.55;
+      /* vignette */
+      float d = distance(vUv, vec2(0.5));
+      col *= smoothstep(0.95, 0.28, d * (0.55 + vignette));
+      /* film grain */
+      float g = (hash(vUv * vec2(1920.0,1080.0) + time) - 0.5) * grain;
+      col += g;
+      gl_FragColor = vec4(col, c.a);
+    }
+  `
+};
+
+const composer = new THREE.EffectComposer(renderer);
+const renderPass = new THREE.RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+let ssaoPass = null;
+try{
+  ssaoPass = new THREE.SSAOPass(scene, camera, innerWidth, innerHeight);
+  ssaoPass.kernelRadius = IS_MOBILE ? 8 : 14;
+  ssaoPass.minDistance = 0.0015;
+  ssaoPass.maxDistance = 0.12;
+  ssaoPass.output = THREE.SSAOPass.OUTPUT.Default;
+  composer.addPass(ssaoPass);
+}catch(e){ console.warn('SSAO unavailable', e); ssaoPass = null; }
+
+const bloomPass = new THREE.UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  IS_MOBILE ? 0.28 : 0.48,
+  0.6,
+  0.78
+);
+composer.addPass(bloomPass);
+
+const gradePass = new THREE.ShaderPass(CinematicShader);
+composer.addPass(gradePass);
+
+const fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+fxaaPass.material.uniforms['resolution'].value.set(1/(innerWidth*renderer.getPixelRatio()), 1/(innerHeight*renderer.getPixelRatio()));
+composer.addPass(fxaaPass);
+let bloomBoost = 0;
+let meltT = 0; /* 0 raw → 1 fully melted look */
+
+function applyGfxLevel(level){
+  gfxLevel = level;
+  try{ localStorage.setItem('pizza3d_gfx', level); }catch(e){}
+  const ultra = level === 'ULTRA';
+  const high = level === 'HIGH' || ultra;
+  if(ssaoPass){
+    ssaoPass.enabled = high;
+    ssaoPass.kernelRadius = ultra ? 16 : 10;
+    /* SSAOPass re-renders beauty — skip RenderPass when SSAO is on */
+    renderPass.enabled = !high;
+  } else {
+    renderPass.enabled = true;
+  }
+  bloomPass.strength = (level === 'MED' ? 0.22 : (high && !IS_MOBILE ? 0.48 : 0.32)) + bloomBoost;
+  gradePass.uniforms.grain.value = ultra ? 0.05 : (high ? 0.035 : 0.02);
+  gradePass.uniforms.vignette.value = ultra ? 0.48 : 0.36;
+  gradePass.uniforms.contrast.value = ultra ? 1.1 : 1.05;
+  gradePass.uniforms.saturation.value = ultra ? 1.14 : 1.06;
+  const pr = Math.min(devicePixelRatio, level === 'MED' ? 1.25 : (IS_MOBILE ? 1.5 : 2));
+  renderer.setPixelRatio(pr);
+  renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
+  if(ssaoPass) ssaoPass.setSize(innerWidth, innerHeight);
+  fxaaPass.material.uniforms['resolution'].value.set(1/(innerWidth*pr), 1/(innerHeight*pr));
+  if(typeof key !== 'undefined' && key.shadow){
+    const map = level === 'MED' ? 1024 : (ultra ? 3072 : 2048);
+    key.shadow.mapSize.set(map, map);
+    if(key.shadow.map){ key.shadow.map.dispose(); key.shadow.map = null; }
+  }
+  const btn = document.getElementById('gfxBtn');
+  if(btn) btn.textContent = 'GFX ' + level;
+}
+/* apply after lights exist */
+setTimeout(()=>applyGfxLevel(gfxLevel), 0);
 
 const orbit = { theta: Math.PI*0.02, phi: 1.08, radius: 5.8, target: new THREE.Vector3(0,1.25,0) };
 function updateCamera(){
@@ -426,55 +645,194 @@ function updateCamera(){
 }
 updateCamera();
 
-scene.add(new THREE.HemisphereLight(0xd8dde4, 0x4a4540, .55));
-const key = new THREE.DirectionalLight(0xfff0d8, .85);
-key.position.set(4,7,5);
+/* Rig PBR (threejs-materials-lighting): hemisphere + key + fill + rim + IBL */
+scene.add(new THREE.HemisphereLight(0xfff2e4, 0x2a241c, 0.7));
+const key = new THREE.DirectionalLight(0xfff4e4, 2.55);
+key.position.set(4,7.2,5);
 key.castShadow = true;
-key.shadow.mapSize.set(2048,2048);
-key.shadow.camera.left=-6; key.shadow.camera.right=6;
-key.shadow.camera.top=6; key.shadow.camera.bottom=-4;
+key.shadow.mapSize.set(IS_MOBILE ? 1536 : 3072, IS_MOBILE ? 1536 : 3072);
+/* frustum ceñido al bbox de la estación (fridge + horno) → sombras nítidas, sin pixelado */
+key.shadow.camera.left=-4.2; key.shadow.camera.right=5.2;
+key.shadow.camera.top=4.5; key.shadow.camera.bottom=-2.6;
+key.shadow.camera.near = 2;
+key.shadow.camera.far = 22;
+key.shadow.bias = -0.0002;
+key.shadow.normalBias = 0.018;
+key.shadow.radius = 2.2;
 scene.add(key);
-const fill = new THREE.DirectionalLight(0xa8b8d0, .28);
+const fill = new THREE.DirectionalLight(0xa8bdd8, 0.62);
 fill.position.set(-5,4,-3);
 scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffd8a0, 0.55);
+rim.position.set(0, 3.5, 6);
+scene.add(rim);
+const spotPizza = new THREE.SpotLight(0xfff0d8, 0.85, 8, Math.PI/7, 0.45, 1.4);
+spotPizza.position.set(0.2, 4.2, 1.4);
+spotPizza.target.position.set(1.55, 1.15, 0.15);
+scene.add(spotPizza); scene.add(spotPizza.target);
 
+/* Environment map procedural (IBL) — reflejos realistas en acero/vidrio */
+(function setupIBL(){
+  try{
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    const cv = document.createElement('canvas');
+    cv.width = 1024; cv.height = 512;
+    const g = cv.getContext('2d');
+    const grd = g.createLinearGradient(0,0,0,512);
+    grd.addColorStop(0,'#7a8aa0');
+    grd.addColorStop(.28,'#d4b898');
+    grd.addColorStop(.48,'#fff0c8');
+    grd.addColorStop(.62,'#c09060');
+    grd.addColorStop(1,'#1a1410');
+    g.fillStyle = grd; g.fillRect(0,0,1024,512);
+    /* luces de cocina / ventanas calientes */
+    for(let i=0;i<14;i++){
+      const x = 30+i*70 + Math.random()*20;
+      const y = 55+Math.random()*50;
+      const glow = g.createRadialGradient(x+20, y+12, 2, x+20, y+12, 40);
+      glow.addColorStop(0, `rgba(255,245,210,${.55+Math.random()*.35})`);
+      glow.addColorStop(1, 'rgba(255,200,120,0)');
+      g.fillStyle = glow; g.fillRect(x-20, y-20, 80, 60);
+      g.fillStyle = `rgba(255,236,190,${.2+Math.random()*.25})`;
+      g.fillRect(x, y, 42, 20);
+    }
+    /* piso oscuro abajo */
+    g.fillStyle = 'rgba(20,16,12,.45)';
+    g.fillRect(0, 360, 1024, 152);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.encoding = THREE.sRGBEncoding;
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    const envRT = pmrem.fromEquirectangular(tex);
+    scene.environment = envRT.texture;
+    tex.dispose();
+    pmrem.dispose();
+  }catch(e){ /* IBL opcional si falla */ }
+})();
+
+/* Tabla PBR del brief: riel metalness .9/roughness .35, mostrador .4,
+   baldosas esmaltadas .25, piso .6, horno metal alto/.5. Sin negros ni blancos puros. */
 const M = {
-  steel:     new THREE.MeshStandardMaterial({color:0xa8b0b8, metalness:.88, roughness:.32}),
+  steel:     new THREE.MeshStandardMaterial({color:0xa8b0b8, metalness:.9, roughness:.35, envMapIntensity:1.4}),
   steelDark: new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.85, roughness:.45}),
   cabinet:   new THREE.MeshStandardMaterial({color:0x2a2e34, metalness:.25, roughness:.55}),
-  counter:   new THREE.MeshStandardMaterial({color:0xd8d4cc, metalness:.05, roughness:.45}),
-  panSteel:  new THREE.MeshStandardMaterial({color:0x8a929a, metalness:.9, roughness:.28}),
+  counter:   new THREE.MeshStandardMaterial({color:0xd8d4cc, metalness:.05, roughness:.4, envMapIntensity:1.1}),
+  panSteel:  new THREE.MeshStandardMaterial({color:0x8a929a, metalness:.9, roughness:.28, envMapIntensity:1.3}),
   panClear:  new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.1, roughness:.15, transparent:true, opacity:.4}),
-  glass:     new THREE.MeshStandardMaterial({color:0xb8c4cc, metalness:.15, roughness:.08, transparent:true, opacity:.18, side:THREE.DoubleSide}),
+  glass:     new THREE.MeshPhysicalMaterial({color:0xd0d8e0, metalness:0, roughness:.2, transparent:true, opacity:.32,
+    transmission:.55, envMapIntensity:1.4, side:THREE.DoubleSide}),
   black:     new THREE.MeshStandardMaterial({color:0x1a1d20, roughness:.8}),
-  floor:     new THREE.MeshStandardMaterial({color:0x4a5058, roughness:.85}),
+  floor:     new THREE.MeshStandardMaterial({color:0x4a5058, roughness:.6}),
   crust:     new THREE.MeshStandardMaterial({color:0xe8c98a, roughness:.85}),
+  wood:      new THREE.MeshStandardMaterial({color:0x6a4a28, roughness:.78, metalness:.02}),
 };
 
-const floorM = new THREE.Mesh(new THREE.PlaneGeometry(40,40), M.floor);
-floorM.rotation.x = -Math.PI/2;
-floorM.receiveShadow = true;
-scene.add(floorM);
+/* piso de cocina — loseta antideslizante con variación por baldosa */
+(function(){
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 512;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#3a3834'; g.fillRect(0,0,512,512);
+  for(let y=0;y<4;y++) for(let x=0;x<4;x++){
+    const shade = 46 + ((x+y)%2)*16 + Math.random()*16;
+    const warm = Math.random()*8;
+    g.fillStyle = `rgb(${shade+warm},${shade-2},${shade-10})`;
+    g.fillRect(x*128+4, y*128+4, 120, 120);
+    /* desgaste desigual por baldosa */
+    for(let k=0;k<26;k++){
+      g.fillStyle = `rgba(${Math.random()>.5?255:10},${Math.random()>.5?250:10},${230},${.02+Math.random()*.05})`;
+      g.beginPath(); g.arc(x*128+8+Math.random()*112, y*128+8+Math.random()*112, 1+Math.random()*6, 0, 7); g.fill();
+    }
+    g.strokeStyle = 'rgba(18,16,14,.6)'; g.lineWidth = 6;
+    g.strokeRect(x*128+4, y*128+4, 120, 120);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(18,18);
+  tex.anisotropy = 8;
+  const floorM = new THREE.Mesh(new THREE.PlaneGeometry(40,40),
+    new THREE.MeshStandardMaterial({map:tex, roughness:.6, metalness:.04}));
+  floorM.rotation.x = -Math.PI/2;
+  floorM.receiveShadow = true;
+  scene.add(floorM);
+})();
 
-/* pared de azulejos (gris cálido, no blanco puro) */
+/* pared de azulejos de cocina + zócalo */
 (function(){
   const cv = document.createElement('canvas');
   cv.width = 256; cv.height = 256;
   const g = cv.getContext('2d');
-  g.fillStyle = '#8a8680'; g.fillRect(0,0,256,256);
-  g.strokeStyle = '#6a6660'; g.lineWidth = 5;
-  for(let i=0;i<=2;i++){
-    g.beginPath(); g.moveTo(0,i*128); g.lineTo(256,i*128); g.stroke();
-    g.beginPath(); g.moveTo(i*128,0); g.lineTo(i*128,256); g.stroke();
+  g.fillStyle = '#c8c0b4'; g.fillRect(0,0,256,256);
+  g.strokeStyle = '#9a9488'; g.lineWidth = 4;
+  for(let i=0;i<=4;i++){
+    g.beginPath(); g.moveTo(0,i*64); g.lineTo(256,i*64); g.stroke();
+    g.beginPath(); g.moveTo(i*64,0); g.lineTo(i*64,256); g.stroke();
+  }
+  for(let i=0;i<80;i++){
+    g.fillStyle = `rgba(255,255,255,${.03+Math.random()*.06})`;
+    g.fillRect(Math.random()*256, Math.random()*256, 2, 2);
   }
   const tex = new THREE.CanvasTexture(cv);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(14,7);
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(34,17),
-    new THREE.MeshStandardMaterial({map:tex, roughness:.6}));
-  wall.position.set(0, 8.5, -3.4);
+  tex.repeat.set(16,8);
+  tex.anisotropy = 8;
+  /* normal map: lechada hundida entre azulejos esmaltados */
+  const ncv = document.createElement('canvas');
+  ncv.width = 256; ncv.height = 256;
+  const ng = ncv.getContext('2d');
+  ng.fillStyle = 'rgb(128,128,255)'; ng.fillRect(0,0,256,256);
+  for(let i=0;i<=4;i++){
+    /* biseles alrededor de cada línea de lechada (horizontal: normal.y; vertical: normal.x) */
+    ng.fillStyle = 'rgb(128,168,235)'; ng.fillRect(0, i*64-4, 256, 3);
+    ng.fillStyle = 'rgb(128,88,235)';  ng.fillRect(0, i*64+1, 256, 3);
+    ng.fillStyle = 'rgb(168,128,235)'; ng.fillRect(i*64-4, 0, 3, 256);
+    ng.fillStyle = 'rgb(88,128,235)';  ng.fillRect(i*64+1, 0, 3, 256);
+  }
+  const ntex = new THREE.CanvasTexture(ncv);
+  ntex.wrapS = ntex.wrapT = THREE.RepeatWrapping;
+  ntex.repeat.set(16,8);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(34,12),
+    new THREE.MeshStandardMaterial({map:tex, normalMap:ntex, normalScale:new THREE.Vector2(.8,.8),
+      roughness:.25, metalness:.02, envMapIntensity:1.1}));
+  wall.position.set(0, 6, -3.4);
   wall.receiveShadow = true;
   scene.add(wall);
+  /* techo oscuro */
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(40,40),
+    new THREE.MeshStandardMaterial({color:0x1a1816, roughness:.95}));
+  ceil.rotation.x = Math.PI/2;
+  ceil.position.y = 12;
+  scene.add(ceil);
+  /* luces de techo fluorescentes */
+  for(let i=-1;i<=1;i++){
+    const fixture = new THREE.Mesh(new THREE.BoxGeometry(2.4,.08,.35),
+      new THREE.MeshStandardMaterial({color:0xe8e4d8, emissive:0xfff2c8, emissiveIntensity:.85, roughness:.4}));
+    fixture.position.set(i*3.2, 11.6, 0.5);
+    scene.add(fixture);
+    const pl = new THREE.PointLight(0xfff0d8, .45, 10, 2);
+    pl.position.set(i*3.2, 11.2, 0.5);
+    scene.add(pl);
+  }
+})();
+
+/* horno conveyor al lado (set dressing) */
+(function(){
+  const oven = new THREE.Group();
+  oven.position.set(3.6, 0, -.2);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.35, 2.2),
+    new THREE.MeshStandardMaterial({color:0x3a4048, metalness:.75, roughness:.5, envMapIntensity:1.2}));
+  body.position.y = .68; body.castShadow = true; body.receiveShadow = true;
+  oven.add(body);
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(1.5, .06, 2.4),
+    new THREE.MeshStandardMaterial({color:0x2a2e34, metalness:.5, roughness:.55}));
+  belt.position.set(0, 1.05, 0); oven.add(belt);
+  const glow = new THREE.Mesh(new THREE.BoxGeometry(1.4, .35, .08),
+    new THREE.MeshStandardMaterial({color:0xff6020, emissive:0xff4010, emissiveIntensity:2.6, roughness:.28}));
+  glow.position.set(0, 1.05, 1.12); oven.add(glow);
+  const ovenLight = new THREE.PointLight(0xff6020, 1.05, 5.5, 2);
+  ovenLight.position.set(0, 1.2, 1.0);
+  oven.add(ovenLight);
+  scene.add(oven);
 })();
 
 const fridge = new THREE.Group();
@@ -523,7 +881,7 @@ function hexToRgb(hex){
 }
 function rgbStr(r,g,b){ return `rgb(${r|0},${g|0},${b|0})`; }
 
-/* ---------- texturas procedurales de comida (calidad visual) ---------- */
+/* ---------- texturas procedurales remaster (comida más realista) ---------- */
 const TEX = {};
 function makeTex(key, size, draw){
   if(TEX[key]) return TEX[key];
@@ -532,147 +890,375 @@ function makeTex(key, size, draw){
   draw(cv.getContext('2d'), size);
   const t = new THREE.CanvasTexture(cv);
   t.encoding = THREE.sRGBEncoding;
-  t.anisotropy = 4;
+  t.anisotropy = 8;
+  t.generateMipmaps = true;
   TEX[key] = t;
   return t;
 }
 function noiseDots(g,n,size,fn){
   for(let i=0;i<n;i++) fn(Math.random()*size, Math.random()*size, Math.random());
 }
+function grain(g,s,amt,base){
+  for(let i=0;i<amt;i++){
+    const k=Math.random(), x=Math.random()*s, y=Math.random()*s;
+    g.fillStyle = `rgba(${base},${base*.85|0},${base*.55|0},${.04+k*.12})`;
+    g.fillRect(x,y,1+k*2.5,1+k*2);
+  }
+}
 
 function texPepperoni(){
-  return makeTex('pep', 128, (g,s)=>{
-    const grd = g.createRadialGradient(s*.5,s*.5,s*.15, s*.5,s*.5,s*.5);
-    grd.addColorStop(0,'#c43828'); grd.addColorStop(.55,'#a82818'); grd.addColorStop(.82,'#8a2010'); grd.addColorStop(1,'#6a180c');
-    g.fillStyle = grd; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
-    g.fillStyle = 'rgba(90,20,10,.55)'; g.beginPath(); g.arc(s/2,s/2,s*.48,0,7); g.strokeStyle='rgba(60,12,8,.7)'; g.lineWidth=s*.06; g.stroke();
-    noiseDots(g,28,s,(x,y,r)=>{
-      g.fillStyle = r>.5 ? 'rgba(240,180,100,.55)' : 'rgba(70,18,10,.45)';
-      g.beginPath(); g.arc(x,y,1.2+r*2.8,0,7); g.fill();
+  return makeTex('pep2', 256, (g,s)=>{
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx,cy,s*.08, cx,cy,s*.5);
+    grd.addColorStop(0,'#d84838'); grd.addColorStop(.35,'#c03020');
+    grd.addColorStop(.7,'#9a2014'); grd.addColorStop(.9,'#78180c'); grd.addColorStop(1,'#4a1008');
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s/2,0,7); g.fill();
+    /* borde tostado ondulado */
+    g.strokeStyle='rgba(40,10,6,.75)'; g.lineWidth=s*.07;
+    g.beginPath();
+    for(let i=0;i<=48;i++){
+      const a=i/48*Math.PI*2, wob=1+Math.sin(i*1.7)*.035;
+      const x=cx+Math.cos(a)*s*.46*wob, y=cy+Math.sin(a)*s*.46*wob;
+      i?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    g.closePath(); g.stroke();
+    /* manchas de grasa */
+    noiseDots(g,55,s,(x,y,r)=>{
+      if(Math.hypot(x-cx,y-cy)>s*.42) return;
+      g.fillStyle = r>.55 ? 'rgba(255,210,140,.5)' : 'rgba(90,22,12,.4)';
+      g.beginPath(); g.ellipse(x,y,1.5+r*4,1+r*2.5,r*4,0,7); g.fill();
     });
+    /* brillo húmedo */
+    g.fillStyle='rgba(255,255,255,.1)';
+    g.beginPath(); g.ellipse(cx-s*.12,cy-s*.14,s*.14,s*.08,-.5,0,7); g.fill();
   });
 }
 function texCanadian(){
-  return makeTex('can', 128, (g,s)=>{
-    const grd = g.createRadialGradient(s*.45,s*.4,s*.1, s*.5,s*.5,s*.5);
-    grd.addColorStop(0,'#e87888'); grd.addColorStop(.7,'#c84858'); grd.addColorStop(1,'#a83848');
-    g.fillStyle = grd; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
-    g.strokeStyle='rgba(160,60,70,.5)'; g.lineWidth=2;
-    for(let i=0;i<5;i++){ g.beginPath(); g.arc(s*.3+i*8,s*.35+i*6,s*.35, .2, 1.8); g.stroke(); }
+  return makeTex('can2', 256, (g,s)=>{
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx*.9,cy*.85,s*.05, cx,cy,s*.5);
+    grd.addColorStop(0,'#f09098'); grd.addColorStop(.45,'#d85868');
+    grd.addColorStop(.85,'#b84050'); grd.addColorStop(1,'#8a2838');
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s/2,0,7); g.fill();
+    g.strokeStyle='rgba(180,70,80,.45)'; g.lineWidth=2.2;
+    for(let i=0;i<7;i++){
+      g.beginPath();
+      g.arc(s*.28+i*12, s*.32+i*9, s*.38, .15+i*.05, 1.9-i*.08);
+      g.stroke();
+    }
+    grain(g,s,120,220);
+    g.fillStyle='rgba(255,220,200,.18)';
+    g.beginPath(); g.ellipse(cx-s*.1,cy-s*.12,s*.16,s*.1,0,0,7); g.fill();
   });
 }
 function texTomato(){
-  return makeTex('tom', 128, (g,s)=>{
-    const grd = g.createRadialGradient(s*.5,s*.5,s*.08, s*.5,s*.5,s*.5);
-    grd.addColorStop(0,'#e85830'); grd.addColorStop(.45,'#d03818'); grd.addColorStop(1,'#a02810');
-    g.fillStyle = grd; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
-    g.fillStyle = '#f0c878';
-    for(let i=0;i<8;i++){
-      const a = i/8*Math.PI*2;
-      g.beginPath(); g.ellipse(s/2+Math.cos(a)*s*.18, s/2+Math.sin(a)*s*.18, s*.05, s*.09, a, 0, 7); g.fill();
+  return makeTex('tom2', 256, (g,s)=>{
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx,cy,s*.04, cx,cy,s*.5);
+    grd.addColorStop(0,'#ff7048'); grd.addColorStop(.4,'#e03820');
+    grd.addColorStop(.75,'#c02814'); grd.addColorStop(1,'#8a180c');
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s/2,0,7); g.fill();
+    /* lóculos / semillas */
+    for(let i=0;i<6;i++){
+      const a = i/6*Math.PI*2 + .2;
+      g.fillStyle='rgba(255,220,120,.85)';
+      g.beginPath();
+      g.ellipse(cx+Math.cos(a)*s*.2, cy+Math.sin(a)*s*.2, s*.055, s*.1, a, 0, 7);
+      g.fill();
+      g.fillStyle='rgba(255,240,180,.7)';
+      for(let k=0;k<4;k++){
+        g.beginPath();
+        g.arc(cx+Math.cos(a)*s*(.14+k*.03), cy+Math.sin(a)*s*(.14+k*.03), 1.6, 0, 7);
+        g.fill();
+      }
     }
-    g.fillStyle='#f8e8b0'; g.beginPath(); g.arc(s/2,s/2,s*.07,0,7); g.fill();
+    g.fillStyle='#fff0c0'; g.beginPath(); g.arc(cx,cy,s*.06,0,7); g.fill();
+    g.strokeStyle='rgba(80,20,10,.35)'; g.lineWidth=s*.04;
+    g.beginPath(); g.arc(cx,cy,s*.46,0,7); g.stroke();
   });
 }
 function texPotato(){
-  return makeTex('pot', 96, (g,s)=>{
-    g.fillStyle='#e0c860'; g.beginPath(); g.arc(s/2,s/2,s/2,0,7); g.fill();
-    g.fillStyle='rgba(180,140,40,.35)';
-    noiseDots(g,40,s,(x,y,r)=>{ g.beginPath(); g.arc(x,y,r*2,0,7); g.fill(); });
-    g.strokeStyle='rgba(120,90,20,.4)'; g.lineWidth=3; g.beginPath(); g.arc(s/2,s/2,s*.42,0,7); g.stroke();
+  return makeTex('pot2', 192, (g,s)=>{
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx*.85,cy*.8,0, cx,cy,s*.5);
+    grd.addColorStop(0,'#f0dc78'); grd.addColorStop(.5,'#d8b848');
+    grd.addColorStop(1,'#a88828');
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s/2,0,7); g.fill();
+    noiseDots(g,70,s,(x,y,r)=>{
+      if(Math.hypot(x-cx,y-cy)>s*.44) return;
+      g.fillStyle=`rgba(160,120,30,${.15+r*.3})`;
+      g.beginPath(); g.arc(x,y,1+r*3,0,7); g.fill();
+    });
+    g.strokeStyle='rgba(120,90,20,.5)'; g.lineWidth=4;
+    g.beginPath(); g.arc(cx,cy,s*.42,0,7); g.stroke();
   });
 }
 function texMushroom(){
-  return makeTex('mush', 96, (g,s)=>{
-    const grd = g.createRadialGradient(s*.4,s*.35,s*.05, s*.5,s*.5,s*.5);
-    grd.addColorStop(0,'#ebe0c8'); grd.addColorStop(.6,'#d0c0a0'); grd.addColorStop(1,'#b8a888');
-    g.fillStyle=grd; g.fillRect(0,0,s,s);
-    g.strokeStyle='rgba(140,120,90,.45)'; g.lineWidth=1.5;
-    for(let i=0;i<10;i++){ g.beginPath(); g.moveTo(s/2,s/2); g.lineTo(s/2+Math.cos(i*.63)*s*.45, s/2+Math.sin(i*.63)*s*.45); g.stroke(); }
+  return makeTex('mush2', 192, (g,s)=>{
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx*.75,cy*.7,s*.04, cx,cy,s*.55);
+    grd.addColorStop(0,'#f4ecda'); grd.addColorStop(.45,'#dcc8a8');
+    grd.addColorStop(1,'#a89070');
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s/2,0,7); g.fill();
+    g.strokeStyle='rgba(120,100,75,.5)'; g.lineWidth=1.8;
+    for(let i=0;i<14;i++){
+      const a=i/14*Math.PI*2;
+      g.beginPath(); g.moveTo(cx,cy);
+      g.quadraticCurveTo(
+        cx+Math.cos(a+0.2)*s*.25, cy+Math.sin(a+0.2)*s*.25,
+        cx+Math.cos(a)*s*.45, cy+Math.sin(a)*s*.45);
+      g.stroke();
+    }
+    g.fillStyle='rgba(90,70,50,.25)'; g.beginPath(); g.arc(cx,cy,s*.1,0,7); g.fill();
   });
 }
 function texCheese(hex){
-  const key = 'ch_'+hex.toString(16);
-  return makeTex(key, 64, (g,s)=>{
+  const key = 'ch2_'+hex.toString(16);
+  return makeTex(key, 128, (g,s)=>{
     const {r,g:gg,b} = hexToRgb(hex);
-    g.fillStyle = rgbStr(r,gg,b); g.fillRect(0,0,s,s);
-    for(let i=0;i<80;i++){
-      g.fillStyle = rgbStr(r+rnd(-25,20), gg+rnd(-20,15), b+rnd(-15,10));
-      g.fillRect(Math.random()*s, Math.random()*s, 1+Math.random()*3, 1+Math.random()*2);
+    const grd = g.createLinearGradient(0,0,s,s);
+    grd.addColorStop(0, rgbStr(Math.min(255,r+25), Math.min(255,gg+15), Math.min(255,b+8)));
+    grd.addColorStop(.5, rgbStr(r,gg,b));
+    grd.addColorStop(1, rgbStr(r*.75, gg*.75, b*.7));
+    g.fillStyle=grd; g.fillRect(0,0,s,s);
+    for(let i=0;i<140;i++){
+      g.fillStyle = rgbStr(
+        Math.max(0,Math.min(255,r+rnd(-30,28))),
+        Math.max(0,Math.min(255,gg+rnd(-22,20))),
+        Math.max(0,Math.min(255,b+rnd(-18,12))));
+      const w=1+Math.random()*4, h=1+Math.random()*2.5;
+      g.fillRect(Math.random()*s, Math.random()*s, w, h);
     }
+    /* poros suaves */
+    noiseDots(g,18,s,(x,y,k)=>{
+      g.fillStyle=`rgba(255,255,255,${.06+k*.08})`;
+      g.beginPath(); g.arc(x,y,1+k*2,0,7); g.fill();
+    });
   });
 }
 function texSauce(hex){
-  const key = 'sa_'+hex.toString(16);
-  return makeTex(key, 128, (g,s)=>{
+  const key = 'sa2_'+hex.toString(16);
+  return makeTex(key, 256, (g,s)=>{
     const {r,g:gg,b} = hexToRgb(hex);
-    const grd = g.createRadialGradient(s*.4,s*.35,0, s*.5,s*.5,s*.7);
-    grd.addColorStop(0, rgbStr(Math.min(255,r+30), Math.min(255,gg+15), b));
-    grd.addColorStop(.5, rgbStr(r,gg,b));
-    grd.addColorStop(1, rgbStr(r*.55, gg*.55, b*.55));
+    const grd = g.createRadialGradient(s*.42,s*.38,0, s*.5,s*.5,s*.72);
+    grd.addColorStop(0, rgbStr(Math.min(255,r+40), Math.min(255,gg+20), Math.min(255,b+10)));
+    grd.addColorStop(.4, rgbStr(r,gg,b));
+    grd.addColorStop(1, rgbStr(r*.45, gg*.42, b*.4));
     g.fillStyle=grd; g.fillRect(0,0,s,s);
-    noiseDots(g,60,s,(x,y,k)=>{
-      g.fillStyle = `rgba(${r*.4|0},${gg*.3|0},${b*.2|0},${.15+k*.25})`;
-      g.beginPath(); g.ellipse(x,y,4+k*8,2+k*4,k*6,0,7); g.fill();
+    noiseDots(g,90,s,(x,y,k)=>{
+      g.fillStyle = `rgba(${r*.35|0},${gg*.25|0},${b*.2|0},${.12+k*.28})`;
+      g.beginPath(); g.ellipse(x,y,5+k*10,2+k*5,k*5,0,7); g.fill();
+    });
+    /* brillos de aceite */
+    noiseDots(g,25,s,(x,y,k)=>{
+      g.fillStyle=`rgba(255,230,180,${.05+k*.1})`;
+      g.beginPath(); g.ellipse(x,y,3+k*6,1.5+k*3,k*3,0,7); g.fill();
     });
   });
 }
 function texLeaf(hex){
-  const key = 'lf_'+hex.toString(16);
-  return makeTex(key, 64, (g,s)=>{
+  const key = 'lf2_'+hex.toString(16);
+  return makeTex(key, 128, (g,s)=>{
     const {r,g:gg,b} = hexToRgb(hex);
     g.clearRect(0,0,s,s);
-    g.fillStyle = rgbStr(r,gg,b);
-    g.beginPath(); g.ellipse(s/2,s/2,s*.28,s*.48,0,0,7); g.fill();
-    g.strokeStyle = rgbStr(r*.5,gg*.55,b*.5); g.lineWidth=2;
+    const grd = g.createLinearGradient(s*.3,0,s*.7,s);
+    grd.addColorStop(0, rgbStr(Math.min(255,r+35), Math.min(255,gg+30), b+10));
+    grd.addColorStop(.5, rgbStr(r,gg,b));
+    grd.addColorStop(1, rgbStr(r*.55, gg*.6, b*.5));
+    g.fillStyle=grd;
+    g.beginPath();
+    g.moveTo(s/2, s*.06);
+    g.bezierCurveTo(s*.92,s*.25, s*.88,s*.7, s/2,s*.96);
+    g.bezierCurveTo(s*.12,s*.7, s*.08,s*.25, s/2,s*.06);
+    g.fill();
+    g.strokeStyle = rgbStr(r*.4,gg*.45,b*.35); g.lineWidth=2;
     g.beginPath(); g.moveTo(s/2,s*.1); g.lineTo(s/2,s*.9); g.stroke();
-    for(let i=0;i<4;i++){
-      g.beginPath(); g.moveTo(s/2,s*.25+i*10); g.quadraticCurveTo(s*.25,s*.3+i*10,s*.2,s*.35+i*8); g.stroke();
-      g.beginPath(); g.moveTo(s/2,s*.25+i*10); g.quadraticCurveTo(s*.75,s*.3+i*10,s*.8,s*.35+i*8); g.stroke();
+    g.lineWidth=1.2;
+    for(let i=0;i<5;i++){
+      const y=s*.22+i*s*.12;
+      g.beginPath(); g.moveTo(s/2,y);
+      g.quadraticCurveTo(s*.28,y+4, s*.16,y+s*.06); g.stroke();
+      g.beginPath(); g.moveTo(s/2,y);
+      g.quadraticCurveTo(s*.72,y+4, s*.84,y+s*.06); g.stroke();
     }
   });
 }
 function texOnion(){
-  return makeTex('oni', 64, (g,s)=>{
+  return makeTex('oni2', 128, (g,s)=>{
     g.clearRect(0,0,s,s);
-    g.strokeStyle='#a040b8'; g.lineWidth=5; g.lineCap='round';
-    g.beginPath(); g.arc(s/2,s/2,s*.32, .2, Math.PI*1.4); g.stroke();
-    g.strokeStyle='#c060d0'; g.lineWidth=3;
-    g.beginPath(); g.arc(s/2,s/2,s*.22, .4, Math.PI*1.3); g.stroke();
+    for(let i=0;i<3;i++){
+      g.strokeStyle = i%2 ? 'rgba(200,100,210,.85)' : 'rgba(140,50,170,.9)';
+      g.lineWidth = 4.5 - i;
+      g.lineCap='round';
+      g.beginPath();
+      g.arc(s/2, s/2, s*(.38-i*.08), .15+i*.1, Math.PI*1.45-i*.08);
+      g.stroke();
+    }
+    g.strokeStyle='rgba(255,200,255,.25)'; g.lineWidth=1.5;
+    g.beginPath(); g.arc(s/2,s/2,s*.3,.3,1.2); g.stroke();
+  });
+}
+function texPepper(){
+  return makeTex('pepG', 128, (g,s)=>{
+    g.clearRect(0,0,s,s);
+    g.strokeStyle='#3a9830'; g.lineWidth=6; g.lineCap='round';
+    g.beginPath(); g.arc(s/2,s/2,s*.34,.1,Math.PI*1.5); g.stroke();
+    g.strokeStyle='#58b848'; g.lineWidth=3.5;
+    g.beginPath(); g.arc(s/2,s/2,s*.24,.25,Math.PI*1.35); g.stroke();
   });
 }
 function texOlive(dark){
-  return makeTex(dark?'olvB':'olvG', 64, (g,s)=>{
+  return makeTex(dark?'olvB2':'olvG2', 128, (g,s)=>{
     g.clearRect(0,0,s,s);
-    g.fillStyle = dark ? '#1a1a1a' : '#6a8030';
-    g.beginPath(); g.arc(s/2,s/2,s*.4,0,7); g.fill();
-    g.fillStyle = dark ? '#0a0a0a' : '#4a6020';
-    g.beginPath(); g.arc(s/2,s/2,s*.18,0,7); g.fill();
-    g.fillStyle='rgba(255,255,255,.12)'; g.beginPath(); g.arc(s*.38,s*.35,s*.1,0,7); g.fill();
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx*.8,cy*.75,s*.05, cx,cy,s*.45);
+    if(dark){
+      grd.addColorStop(0,'#3a3a3a'); grd.addColorStop(.5,'#1a1a1a'); grd.addColorStop(1,'#050505');
+    } else {
+      grd.addColorStop(0,'#8aaa40'); grd.addColorStop(.5,'#5a7828'); grd.addColorStop(1,'#2a4010');
+    }
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s*.42,0,7); g.fill();
+    g.fillStyle = dark ? '#080808' : '#2a4010';
+    g.beginPath(); g.arc(cx,cy,s*.16,0,7); g.fill();
+    g.fillStyle='rgba(255,255,255,.22)';
+    g.beginPath(); g.ellipse(cx-s*.1,cy-s*.12,s*.1,s*.06,-.4,0,7); g.fill();
+  });
+}
+function texJalapeno(){
+  return makeTex('jal2', 128, (g,s)=>{
+    g.clearRect(0,0,s,s);
+    const cx=s/2, cy=s/2;
+    const grd = g.createRadialGradient(cx*.85,cy*.8,0, cx,cy,s*.45);
+    grd.addColorStop(0,'#6aaa38'); grd.addColorStop(.5,'#3a7820'); grd.addColorStop(1,'#1a4010');
+    g.fillStyle=grd; g.beginPath(); g.arc(cx,cy,s*.4,0,7); g.fill();
+    g.fillStyle='#0a2808'; g.beginPath(); g.arc(cx,cy,s*.14,0,7); g.fill();
+    g.strokeStyle='rgba(200,255,120,.2)'; g.lineWidth=2;
+    g.beginPath(); g.arc(cx,cy,s*.28,.8,2.2); g.stroke();
+  });
+}
+function texBacon(){
+  return makeTex('bac2', 128, (g,s)=>{
+    g.fillStyle='#a04020'; g.fillRect(0,0,s,s);
+    for(let y=0;y<s;y+=7){
+      const fat = (y/7)%2===0;
+      g.fillStyle = fat ? '#e8c8a8' : '#8a3018';
+      g.fillRect(0,y,s,3+Math.sin(y)*.8);
+      if(!fat){
+        g.fillStyle='#c05028';
+        g.fillRect(0,y+2,s,1.5);
+      }
+    }
+    grain(g,s,40,180);
+  });
+}
+function texSausage(){
+  return makeTex('sau2', 128, (g,s)=>{
+    const {r,g:gg,b}={r:92,g:48,b:24};
+    g.fillStyle=rgbStr(r,gg,b); g.fillRect(0,0,s,s);
+    for(let i=0;i<100;i++){
+      g.fillStyle = Math.random()>.5 ? '#3a2010' : '#7a4828';
+      g.beginPath(); g.arc(Math.random()*s, Math.random()*s, .8+Math.random()*2.5, 0, 7); g.fill();
+    }
+    noiseDots(g,30,s,(x,y,k)=>{
+      g.fillStyle=`rgba(200,160,100,${.1+k*.2})`;
+      g.beginPath(); g.arc(x,y,k*2,0,7); g.fill();
+    });
+  });
+}
+function texPineapple(){
+  return makeTex('pin2', 128, (g,s)=>{
+    const grd = g.createLinearGradient(0,0,s,s);
+    grd.addColorStop(0,'#ffe070'); grd.addColorStop(.5,'#e8b028'); grd.addColorStop(1,'#c08010');
+    g.fillStyle=grd; g.fillRect(0,0,s,s);
+    g.strokeStyle='rgba(180,120,20,.45)'; g.lineWidth=1.5;
+    for(let i=-4;i<8;i++){
+      g.beginPath(); g.moveTo(i*20,0); g.lineTo(i*20+s,s); g.stroke();
+      g.beginPath(); g.moveTo(i*20,s); g.lineTo(i*20+s,0); g.stroke();
+    }
+    grain(g,s,50,200);
+  });
+}
+function texChicken(){
+  return makeTex('ckn2', 128, (g,s)=>{
+    const grd = g.createLinearGradient(0,0,s,s);
+    grd.addColorStop(0,'#f0d8a8'); grd.addColorStop(.5,'#d4a868'); grd.addColorStop(1,'#b88848');
+    g.fillStyle=grd; g.fillRect(0,0,s,s);
+    g.strokeStyle='rgba(160,110,50,.35)'; g.lineWidth=1.5;
+    for(let i=0;i<8;i++){
+      g.beginPath();
+      g.moveTo(0, i*16+4); g.bezierCurveTo(s*.3,i*16, s*.6,i*16+10, s,i*16+2);
+      g.stroke();
+    }
+    grain(g,s,40,210);
   });
 }
 function texCrust(){
-  return makeTex('crust', 256, (g,s)=>{
-    g.fillStyle='#e8c98a'; g.fillRect(0,0,s,s);
-    for(let i=0;i<900;i++){
+  return makeTex('crust2', 512, (g,s)=>{
+    const grd = g.createRadialGradient(s*.45,s*.4,s*.1, s*.5,s*.5,s*.75);
+    grd.addColorStop(0,'#f2d8a0'); grd.addColorStop(.55,'#e0c080'); grd.addColorStop(1,'#c8a060');
+    g.fillStyle=grd; g.fillRect(0,0,s,s);
+    for(let i=0;i<1600;i++){
       const k=Math.random();
-      g.fillStyle = k>.6 ? 'rgba(200,150,70,.25)' : 'rgba(240,210,150,.3)';
-      g.fillRect(Math.random()*s, Math.random()*s, 1+Math.random()*3, 1+Math.random()*3);
+      g.fillStyle = k>.55 ? 'rgba(190,140,60,.22)' : 'rgba(255,230,180,.2)';
+      g.fillRect(Math.random()*s, Math.random()*s, 1+Math.random()*3.5, 1+Math.random()*3);
     }
-    for(let i=0;i<40;i++){
-      g.fillStyle='rgba(180,120,50,.2)';
-      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,2+Math.random()*5,0,7); g.fill();
+    for(let i=0;i<80;i++){
+      g.fillStyle='rgba(170,110,40,.18)';
+      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,2+Math.random()*7,0,7); g.fill();
+    }
+    /* borde ligeramente tostado */
+    g.strokeStyle='rgba(140,80,30,.25)'; g.lineWidth=s*.08;
+    g.beginPath(); g.arc(s/2,s/2,s*.46,0,7); g.stroke();
+  });
+}
+function texCrustNormal(){
+  return makeTex('crustN', 512, (g,s)=>{
+    /* base flat normal */
+    g.fillStyle = '#8080ff'; g.fillRect(0,0,s,s);
+    for(let i=0;i<900;i++){
+      const x=Math.random()*s, y=Math.random()*s, r=1+Math.random()*4;
+      const bump = 110 + Math.random()*50;
+      g.fillStyle = `rgb(${bump*.55|0},${bump*.55|0},${200+Math.random()*40|0})`;
+      g.beginPath(); g.arc(x,y,r,0,7); g.fill();
+    }
+    /* anillos de amasado */
+    g.strokeStyle = 'rgba(90,90,200,.35)'; g.lineWidth = 2;
+    for(let i=0;i<7;i++){
+      g.beginPath(); g.arc(s/2,s/2, s*.12+i*s*.05, 0, 7); g.stroke();
     }
   });
 }
 
 function foodMat(map, opts){
-  return new THREE.MeshStandardMaterial(Object.assign({
-    map, roughness:.7, metalness:0, flatShading:false
-  }, opts||{}));
+  const o = Object.assign({
+    map, roughness:.58, metalness:0, flatShading:false, envMapIntensity:0.85
+  }, opts||{});
+  if(map && map.anisotropy !== undefined){
+    try{ map.anisotropy = Math.min(16, renderer.capabilities.getMaxAnisotropy()); }catch(e){}
+  }
+  /* Physical cuando hay clearcoat / sheen (comida húmeda / derretida) */
+  if(o.clearcoat != null || o.transmission != null || o.reflectivity != null){
+    return new THREE.MeshPhysicalMaterial(o);
+  }
+  return new THREE.MeshStandardMaterial(o);
 }
 
-/* piezas de topping con aspecto realista */
+function cheeseMat(map, color, baked){
+  return new THREE.MeshPhysicalMaterial({
+    map,
+    color: color || 0xf0c85a,
+    roughness: baked ? .22 : .48,
+    metalness: .04,
+    clearcoat: baked ? .65 : .22,
+    clearcoatRoughness: baked ? .25 : .5,
+    reflectivity: baked ? .55 : .28,
+    envMapIntensity: 1.2,
+    emissive: baked ? new THREE.Color(0x2a1408) : new THREE.Color(0x000000),
+    emissiveIntensity: baked ? .14 : 0,
+  });
+}
+
+/* piezas de topping remasterizadas */
 function makeFoodPiece(id, scale){
   const ing = ING[id];
   const s = scale || ing.s || .03;
@@ -680,84 +1266,149 @@ function makeFoodPiece(id, scale){
   let mesh;
 
   if(id==='pepperoni'){
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.98,.0032,28),
-      foodMat(texPepperoni(), {roughness:.42, metalness:.04}));
-    mesh.rotation.y = rnd(0,Math.PI*2);
+    const g = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.97,.0032,40),
+      foodMat(texPepperoni(), {roughness:.32, metalness:.08, clearcoat:.45, clearcoatRoughness:.35, reflectivity:.4}));
+    /* borde ligeramente curvado (cup) */
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(s*.92, .0024, 8, 40),
+      mat(0x6a180c,{roughness:.4, metalness:.05}));
+    rim.position.y = .0018;
+    g.add(top, rim);
+    g.rotation.y = rnd(0,Math.PI*2);
+    g.rotation.x = rnd(-.05,.05);
+    mesh = g;
   } else if(id==='canad_bacon'){
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.96,.0028,22),
-      foodMat(texCanadian(), {roughness:.55}));
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.95,.0026,28),
+      foodMat(texCanadian(), {roughness:.52}));
     mesh.rotation.y = rnd(0,Math.PI*2);
+    mesh.scale.set(rnd(.92,1.08), 1, rnd(.9,1.1));
   } else if(id==='tomatoes'){
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s,.0025,22),
-      foodMat(texTomato(), {roughness:.4, metalness:.02}));
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.98,.0024,28),
+      foodMat(texTomato(), {roughness:.36, metalness:.03}));
     mesh.rotation.y = rnd(0,Math.PI*2);
   } else if(id==='potatoes'){
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.95,.0035,16),
-      foodMat(texPotato(), {roughness:.75}));
-  } else if(id==='mushrooms'){
-    /* rodaja plana de champiñón, no un hongo alto */
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.9,.003,16),
-      foodMat(texMushroom(), {roughness:.82}));
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.94,.0032,20),
+      foodMat(texPotato(), {roughness:.72}));
     mesh.rotation.y = rnd(0,Math.PI*2);
-  } else if(id==='black_olives' || id==='green_olives' || id==='jalapenos'){
+  } else if(id==='mushrooms'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s*.88,.0028,20),
+      foodMat(texMushroom(), {roughness:.78}));
+    mesh.rotation.y = rnd(0,Math.PI*2);
+    mesh.scale.set(rnd(.85,1.15),1,rnd(.85,1.15));
+  } else if(id==='black_olives' || id==='green_olives'){
     const dark = id==='black_olives';
-    const col = id==='jalapenos' ? 0x3a6820 : (dark?0x1a1a1a:0x6a8030);
-    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.011,10,22),
-      id==='jalapenos'
-        ? mat(col,{roughness:.5})
-        : foodMat(texOlive(dark), {roughness:.5}));
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.012,12,28),
+      foodMat(texOlive(dark), {roughness:.42, metalness:.04}));
     mesh.rotation.x = Math.PI/2;
     mesh.rotation.z = rnd(0,Math.PI);
-  } else if(id==='red_onions' || id==='caram_onions' || id==='bell_peppers'){
-    const col = id==='bell_peppers' ? 0x2e8028 : (id==='caram_onions'?0x8a4818:0x9030a8);
-    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.011,8,18,Math.PI*rnd(1.0,1.5)),
-      id==='red_onions'
-        ? foodMat(texOnion(), {roughness:.55, transparent:true, opacity:.92, side:THREE.DoubleSide})
-        : mat(col,{roughness:.55, side:THREE.DoubleSide}));
+  } else if(id==='jalapenos'){
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.013,10,24),
+      foodMat(texJalapeno(), {roughness:.48}));
+    mesh.rotation.x = Math.PI/2;
+    mesh.rotation.z = rnd(0,Math.PI);
+  } else if(id==='red_onions'){
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.01,8,20,Math.PI*rnd(1.05,1.55)),
+      foodMat(texOnion(), {roughness:.5, transparent:true, opacity:.9, side:THREE.DoubleSide}));
+    mesh.rotation.x = Math.PI/2;
+    mesh.rotation.z = rnd(0,Math.PI*2);
+  } else if(id==='caram_onions'){
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.01,8,18,Math.PI*rnd(1.0,1.5)),
+      mat(jitterColor(0x8a4818),{roughness:.58, side:THREE.DoubleSide}));
+    mesh.rotation.x = Math.PI/2;
+    mesh.rotation.z = rnd(0,Math.PI*2);
+  } else if(id==='bell_peppers'){
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s,.011,8,18,Math.PI*rnd(1.0,1.45)),
+      foodMat(texPepper(), {roughness:.52, side:THREE.DoubleSide}));
     mesh.rotation.x = Math.PI/2;
     mesh.rotation.z = rnd(0,Math.PI*2);
   } else if(id==='spinach' || id==='basil' || id==='cilantro' || id==='lettuce' || id==='chives'){
-    mesh = new THREE.Mesh(new THREE.PlaneGeometry(s*1.4, s*2.1),
-      foodMat(texLeaf(ing.color), {roughness:.85, side:THREE.DoubleSide, transparent:true, alphaTest:.15}));
-    mesh.rotation.x = -Math.PI/2 + rnd(-.15,.25);
-    mesh.rotation.z = rnd(0,Math.PI*2);
-  } else if(id==='chicken' || id==='feta'){
-    mesh = new THREE.Mesh(new THREE.BoxGeometry(s*rnd(.9,1.2), s*.45, s*rnd(.7,1.1)),
-      foodMat(texCheese(ing.color), {roughness:.8, color:c}));
+    const g = new THREE.Group();
+    const n = id==='chives' ? 1 : (id==='cilantro' ? 2 : 1);
+    for(let i=0;i<n;i++){
+      const leaf = new THREE.Mesh(
+        new THREE.PlaneGeometry(s*(id==='chives'?0.6:1.5), s*(id==='chives'?2.4:2.2)),
+        foodMat(texLeaf(ing.color), {roughness:.8, side:THREE.DoubleSide, transparent:true, alphaTest:.12}));
+      leaf.rotation.x = -Math.PI/2 + rnd(-.2,.3);
+      leaf.rotation.z = rnd(0,Math.PI*2);
+      leaf.position.set(rnd(-s*.2,s*.2), rnd(0,.002), rnd(-s*.2,s*.2));
+      g.add(leaf);
+    }
+    mesh = g;
+  } else if(id==='chicken'){
+    mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(s*rnd(1.0,1.4), s*.38, s*rnd(.7,1.15)),
+      foodMat(texChicken(), {roughness:.7, color:c}));
+    mesh.rotation.y = rnd(0,Math.PI);
+    mesh.rotation.z = rnd(-.15,.15);
+  } else if(id==='feta'){
+    mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(s*rnd(.85,1.15), s*.42, s*rnd(.7,1.05)),
+      foodMat(texCheese(ing.color), {roughness:.76, color:c}));
     mesh.rotation.y = rnd(0,Math.PI);
   } else if(id==='bacon'){
-    mesh = new THREE.Mesh(new THREE.BoxGeometry(s*1.8, s*.35, s*.7),
-      mat(c,{roughness:.65}));
-    /* franjas de grasa */
-    const fat = new THREE.Mesh(new THREE.BoxGeometry(s*1.8, s*.36, s*.18), mat(0xe8c8a0,{roughness:.7}));
-    fat.position.z = s*.15;
-    const g = new THREE.Group(); g.add(mesh, fat); mesh = g;
-    mesh.rotation.y = rnd(0,Math.PI);
-  } else if(id==='pineapple' || id==='artichoke'){
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s*.7,s,.012,3),
-      mat(c,{roughness:.7}));
+    const g = new THREE.Group();
+    const strip = new THREE.Mesh(
+      new THREE.BoxGeometry(s*2.1, s*.28, s*.55),
+      foodMat(texBacon(), {roughness:.58}));
+    strip.rotation.z = rnd(-.2,.2);
+    g.add(strip);
+    g.rotation.y = rnd(0,Math.PI);
+    mesh = g;
+  } else if(id==='pineapple'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s*.55,s*.85,.01,4),
+      foodMat(texPineapple(), {roughness:.62}));
+    mesh.rotation.y = rnd(0,Math.PI*2);
+    mesh.rotation.z = rnd(-.1,.1);
+  } else if(id==='artichoke'){
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s*.5,s*.9,.011,5),
+      foodMat(texCheese(0x708840), {roughness:.7, color:c}));
     mesh.rotation.y = rnd(0,Math.PI*2);
   } else if(id==='cranberries'){
-    mesh = new THREE.Mesh(new THREE.SphereGeometry(s,12,10),
-      mat(c,{roughness:.35, metalness:.05}));
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(s,14,12),
+      mat(c,{roughness:.32, metalness:.08}));
+  } else if(id==='cashews'){
+    mesh = new THREE.Mesh(new THREE.TorusGeometry(s*.7,.012,6,12,Math.PI*1.2),
+      mat(jitterColor(0xc8a060),{roughness:.55}));
+    mesh.rotation.x = Math.PI/2 + rnd(-.2,.2);
+    mesh.rotation.z = rnd(0,Math.PI);
+  } else if(id==='sausage' || id==='taco_meat'){
+    mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(s*rnd(.7,1.1), 8, 6),
+      foodMat(texSausage(), {roughness:.68, color:c}));
+    mesh.scale.set(rnd(1.1,1.6), rnd(.5,.75), rnd(1.0,1.4));
+    mesh.rotation.set(rnd(-.3,.3), rnd(0,Math.PI), rnd(-.3,.3));
   } else if(id==='bigdons_mix'){
-    /* mezcla: salami + Italian sausage + bacon */
-    const cols = [0xa02828, 0x5c3018, 0xa84820];
-    const col = cols[Math.floor(Math.random()*3)];
-    mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(s*rnd(.7,1.4), s*rnd(.35,.6), s*rnd(.7,1.3)),
-      mat(jitterColor(col), {roughness:.7}));
+    const roll = Math.random();
+    if(roll < .34){
+      mesh = new THREE.Mesh(new THREE.CylinderGeometry(s*.9,s*.88,.0024,20),
+        foodMat(texPepperoni(), {roughness:.4}));
+      mesh.scale.set(.55,.55,.55);
+    } else if(roll < .67){
+      mesh = new THREE.Mesh(new THREE.SphereGeometry(s*.85,8,6),
+        foodMat(texSausage(), {roughness:.68}));
+      mesh.scale.set(1.3,.55,1.1);
+    } else {
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(s*1.6, s*.25, s*.45),
+        foodMat(texBacon(), {roughness:.58}));
+    }
     mesh.rotation.set(rnd(-.2,.2), rnd(0,Math.PI), rnd(-.2,.2));
-  } else if(ing.piece==='crumb' || ['sausage','cheddar','romano','taco_meat','garlic','cashews','pineapple_salsa','bacon'].includes(id)){
+  } else if(id==='cheddar' || id==='romano' || id==='parmesan' || id==='garlic' || id==='pineapple_salsa'){
     mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(s*rnd(.7,1.4), s*rnd(.4,.7), s*rnd(.7,1.3)),
-      foodMat(texCheese(ing.color), {roughness:.75, color:c}));
+      new THREE.BoxGeometry(s*rnd(.6,1.3), s*rnd(.25,.55), s*rnd(.5,1.1)),
+      foodMat(texCheese(ing.color), {roughness:.7, color:c}));
+    mesh.rotation.set(rnd(-.25,.25), rnd(0,Math.PI), rnd(-.25,.25));
+  } else if(ing.piece==='crumb'){
+    mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(s*rnd(.7,1.4), s*rnd(.35,.65), s*rnd(.7,1.3)),
+      foodMat(texCheese(ing.color), {roughness:.72, color:c}));
     mesh.rotation.set(rnd(-.2,.2), rnd(0,Math.PI), rnd(-.2,.2));
   } else {
-    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s,.01,16), mat(c,{roughness:.65}));
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(s,s,.008,20),
+      foodMat(texCheese(ing.color), {roughness:.65, color:c}));
   }
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+  mesh.traverse?.(ch=>{ if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; }});
   return mesh;
 }
 
@@ -844,38 +1495,59 @@ function makeSauceLayer(id, innerR, half){
   const ing = ING[id];
   const theta0 = half==='L' ? Math.PI : 0;
   const len = half ? Math.PI : Math.PI*2;
+  const oily = id==='olive_oil' || id==='ranch_driz' || id==='bbq_driz';
   const layer = new THREE.Mesh(
-    new THREE.CylinderGeometry(innerR, innerR, .0018, 56, 1, false, theta0, len),
+    new THREE.CylinderGeometry(innerR, innerR, oily ? .0012 : .0022, 72, 1, false, theta0, len),
     foodMat(texSauce(ing.color), {
-      roughness: id==='olive_oil' ? .12 : .28,
-      metalness: .06,
+      roughness: oily ? .08 : .22,
+      metalness: oily ? .12 : .05,
+      clearcoat: oily ? .7 : .35,
+      clearcoatRoughness: oily ? .18 : .4,
+      reflectivity: oily ? .6 : .35,
       transparent: true,
-      opacity: ing.opacity || .92,
+      opacity: oily ? (ing.opacity || .55) : (ing.opacity || .94),
       emissive: new THREE.Color(ing.color),
-      emissiveIntensity: .03
+      emissiveIntensity: .045
     }));
   layer.receiveShadow = true;
   return layer;
 }
 
-/* queso solo en hebras / trozos — nunca un bloque sólido */
+/* queso en hebras irregulares (más realista) */
 function sprinkleCheese(id, innerR, half, y){
   const ing = ING[id];
   const t = texCheese(ing.color);
-  const n = half ? 55 : 95;
+  const isBaked = !!window.__ptBaked;
+  const n = half ? 85 : 150;
   for(let i=0;i<n;i++){
     let a;
     if(half==='L') a = rnd(Math.PI/2+.08, Math.PI*1.5-.08);
     else if(half==='R') a = rnd(-Math.PI/2+.08, Math.PI/2-.08);
     else a = rnd(0, Math.PI*2);
-    const r = Math.sqrt(Math.random())*innerR*.9;
+    const r = Math.sqrt(Math.random())*innerR*.92;
+    const len = rnd(.035,.1), thick = rnd(.004,.014);
     const shred = new THREE.Mesh(
-      new THREE.BoxGeometry(rnd(.035,.07), .0035, rnd(.008,.016)),
-      foodMat(t, {roughness:.68, color:jitterColor(ing.color)}));
-    shred.position.set(Math.cos(a)*r, y + rnd(0,.004), Math.sin(a)*r);
-    shred.rotation.set(rnd(-.15,.15), rnd(0,Math.PI), rnd(-.25,.25));
+      new THREE.BoxGeometry(len, rnd(.0022,.0045), thick),
+      cheeseMat(t, jitterColor(ing.color), isBaked));
+    shred.position.set(Math.cos(a)*r, y + rnd(0,.006), Math.sin(a)*r);
+    shred.rotation.set(rnd(-.25,.25), rnd(0,Math.PI), rnd(-.5,.5));
     shred.castShadow = true;
+    shred.userData.cheese = true;
     placedGroup.add(shred);
+  }
+  /* algunos trocitos más cortos para densidad */
+  for(let i=0;i<(half?28:48);i++){
+    let a = rnd(0, Math.PI*2);
+    if(half==='L') a = rnd(Math.PI/2+.08, Math.PI*1.5-.08);
+    if(half==='R') a = rnd(-Math.PI/2+.08, Math.PI/2-.08);
+    const r = Math.sqrt(Math.random())*innerR*.88;
+    const crumb = new THREE.Mesh(
+      new THREE.BoxGeometry(rnd(.01,.03), rnd(.0018,.0035), rnd(.007,.02)),
+      cheeseMat(t, jitterColor(ing.color), isBaked));
+    crumb.position.set(Math.cos(a)*r, y + rnd(0,.004), Math.sin(a)*r);
+    crumb.rotation.set(rnd(-.35,.35), rnd(0,Math.PI), rnd(-.35,.35));
+    crumb.userData.cheese = true;
+    placedGroup.add(crumb);
   }
 }
 
@@ -894,22 +1566,124 @@ function panLabel(name, accent){
   return new THREE.CanvasTexture(cv);
 }
 
-function fillCheeseShreds(id, x, z, w, d){
-  const ing = ING[id];
-  const t = texCheese(ing.color);
-  for(let i=0;i<42;i++){
-    const shred = new THREE.Mesh(
-      new THREE.BoxGeometry(rnd(.025,.052), .006, rnd(.006,.012)),
-      foodMat(t, {roughness:.72, color:jitterColor(ing.color)}));
-    const rx = rnd(-w/2+.035, w/2-.035), rz = rnd(-d/2+.035, d/2-.035);
-    shred.rotation.y = rnd(0, Math.PI);
-    shred.rotation.z = rnd(-.35,.35);
-    shred.position.set(x+rx, railH+.055+rnd(0,.03), z+rz);
-    shred.castShadow = true;
-    rail.add(shred);
-    shred.userData.ing = id;
-    clickPans.push(shred);
+/* ---------- Fase 2: bandejas llenas con InstancedMesh ----------
+   Una sola InstancedMesh por ingrediente (cada ingrediente vive en una bandeja).
+   Variación por instancia: rotación Y aleatoria, escala ±8%, tinte ±5%,
+   posición por dart-throwing (Poisson) y montículo hacia el centro. */
+
+function poissonInPan(n, w, d, minDist){
+  const pts = [];
+  let tries = 0;
+  while(pts.length < n && tries < n*30){
+    tries++;
+    const px = rnd(-w/2, w/2), pz = rnd(-d/2, d/2);
+    let ok = true;
+    for(let j=0;j<pts.length;j++){
+      const dx = px-pts[j][0], dz = pz-pts[j][1];
+      if(dx*dx+dz*dz < minDist*minDist){ ok = false; break; }
+    }
+    if(ok) pts.push([px,pz]);
   }
+  /* lo que no cupo con separación se apila encima: bandeja desordenada */
+  while(pts.length < n) pts.push([rnd(-w/2,w/2), rnd(-d/2,d/2), true]);
+  return pts;
+}
+
+/* pepperoni: disco con borde curvado hacia arriba (cup), no cilindro plano */
+function cupDiscGeo(segs){
+  const g = new THREE.CylinderGeometry(1, .96, .12, segs||28);
+  const pos = g.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const px = pos.getX(i), py = pos.getY(i), pz = pos.getZ(i);
+    const r = Math.hypot(px, pz);
+    if(py > 0 && r > .78) pos.setY(i, py + (r-.78)*1.1);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+const PAN_GEO_CACHE = {};
+function panPieceSpec(id){
+  if(PAN_GEO_CACHE[id]) return PAN_GEO_CACHE[id];
+  const ing = ING[id];
+  const s = ing.s || .03;
+  let geo, mtl, flat = true, y0 = .06, n = ing.type==='count' ? 34 : 26;
+  const flatGeo = h => { const g = new THREE.CylinderGeometry(1,.95,h,20); return g; };
+  const torusFlat = (tube,arc) => { const g = new THREE.TorusGeometry(1,tube,8,20,arc||Math.PI*2); g.rotateX(Math.PI/2); return g; };
+
+  if(id==='pepperoni'){ geo = cupDiscGeo(); mtl = foodMat(texPepperoni(), {roughness:.4, metalness:.05}); y0 = .1; }
+  else if(id==='canad_bacon'){ geo = flatGeo(.1); mtl = foodMat(texCanadian(), {roughness:.5}); }
+  else if(id==='tomatoes'){ geo = flatGeo(.09); mtl = foodMat(texTomato(), {roughness:.35, metalness:.03}); }
+  else if(id==='potatoes'){ geo = flatGeo(.12); mtl = foodMat(texPotato(), {roughness:.7}); }
+  else if(id==='mushrooms'){ geo = flatGeo(.11); mtl = foodMat(texMushroom(), {roughness:.78}); }
+  else if(id==='black_olives' || id==='green_olives'){ geo = torusFlat(.34); mtl = foodMat(texOlive(id==='black_olives'), {roughness:.3, metalness:.04}); y0 = .34; }
+  else if(id==='jalapenos'){ geo = torusFlat(.36); mtl = foodMat(texJalapeno(), {roughness:.45}); y0 = .36; }
+  else if(id==='red_onions'){ geo = torusFlat(.24, Math.PI*1.35); mtl = foodMat(texOnion(), {roughness:.5, transparent:true, opacity:.9, side:THREE.DoubleSide}); y0 = .24; }
+  else if(id==='caram_onions'){ geo = torusFlat(.24, Math.PI*1.3); mtl = mat(0x8a4818,{roughness:.58, side:THREE.DoubleSide}); y0 = .24; }
+  else if(id==='bell_peppers'){ geo = torusFlat(.26, Math.PI*1.25); mtl = foodMat(texPepper(), {roughness:.5, side:THREE.DoubleSide}); y0 = .26; }
+  else if(id==='spinach'||id==='basil'||id==='cilantro'||id==='lettuce'||id==='chives'){
+    const wl = id==='chives' ? .6 : 1.5, hl = id==='chives' ? 2.4 : 2.2;
+    geo = new THREE.PlaneGeometry(wl, hl); geo.rotateX(-Math.PI/2);
+    mtl = foodMat(texLeaf(ing.color), {roughness:.8, side:THREE.DoubleSide, transparent:true, alphaTest:.12});
+    n = 30; y0 = .04;
+  }
+  else if(id==='chicken'){ geo = new THREE.BoxGeometry(1.2,.38,.9); mtl = foodMat(texChicken(), {roughness:.7}); flat = false; y0 = .2; }
+  else if(id==='feta'){ geo = new THREE.BoxGeometry(1,.42,.85); mtl = foodMat(texCheese(ing.color), {roughness:.76}); flat = false; y0 = .21; }
+  else if(id==='bacon'){ geo = new THREE.BoxGeometry(2.1,.28,.55); mtl = foodMat(texBacon(), {roughness:.55}); flat = false; y0 = .15; }
+  else if(id==='pineapple'){ geo = new THREE.CylinderGeometry(.55,.85,.32,4); mtl = foodMat(texPineapple(), {roughness:.6}); y0 = .16; }
+  else if(id==='artichoke'){ geo = new THREE.CylinderGeometry(.5,.9,.36,5); mtl = foodMat(texCheese(0x708840), {roughness:.7}); y0 = .18; }
+  else if(id==='cranberries'){ geo = new THREE.SphereGeometry(1,12,10); mtl = mat(ing.color,{roughness:.3, metalness:.08}); flat = false; y0 = .8; }
+  else if(id==='cashews'){ geo = torusFlat(.28, Math.PI*1.2); mtl = mat(0xc8a060,{roughness:.55}); y0 = .28; }
+  else if(id==='sausage'||id==='taco_meat'||id==='bigdons_mix'){
+    geo = new THREE.SphereGeometry(1,9,7); geo.scale(1.3,.58,1.1);
+    mtl = foodMat(texSausage(), {roughness:.68}); flat = false; y0 = .5; n = 40;
+  }
+  else if(CHEESE_IDS.includes(id) || id==='smoked_mozz'){
+    geo = new THREE.BoxGeometry(1.9,.24,.44);
+    mtl = foodMat(texCheese(ing.color), {roughness:.68});
+    flat = false; y0 = .12; n = 95;
+  }
+  else { geo = new THREE.SphereGeometry(1,10,8); mtl = mat(ing.color,{roughness:.6}); flat = false; y0 = .8; }
+
+  const spec = {geo, mtl, s, flat, y0, n};
+  PAN_GEO_CACHE[id] = spec;
+  return spec;
+}
+
+const _iM = new THREE.Matrix4(), _iQ = new THREE.Quaternion(), _iP = new THREE.Vector3(),
+      _iS = new THREE.Vector3(), _iE = new THREE.Euler(), _iC = new THREE.Color();
+
+function fillPanInstanced(id, x, z, w, d, opts){
+  opts = opts || {};
+  const spec = panPieceSpec(id);
+  const s = opts.s || spec.s;
+  const n = opts.n || spec.n;
+  const yBase = opts.y != null ? opts.y : railH + .052;
+  const iw = Math.max(w-.07, .08), idp = Math.max(d-.07, .08);
+  const im = new THREE.InstancedMesh(spec.geo, spec.mtl, n);
+  im.castShadow = true;
+  im.receiveShadow = true;
+  const pts = poissonInPan(n, iw, idp, s*1.05);
+  for(let i=0;i<n;i++){
+    const px = pts[i][0], pz = pts[i][1], stacked = !!pts[i][2];
+    const edge = Math.max(Math.abs(px)/(iw/2), Math.abs(pz)/(idp/2));
+    const mound = .03*(1 - edge*edge) + rnd(0,.014) + (stacked ? rnd(.008,.03) : 0);
+    const tilt = spec.flat ? .14 : .5;
+    _iE.set(rnd(-tilt,tilt), rnd(0,Math.PI*2), rnd(-tilt,tilt));
+    const sc = s * rnd(.92,1.08);
+    _iS.set(sc*rnd(.95,1.05), sc, sc*rnd(.95,1.05));
+    _iP.set(x+px, yBase + spec.y0*sc + mound, z+pz);
+    _iM.compose(_iP, _iQ.setFromEuler(_iE), _iS);
+    im.setMatrixAt(i, _iM);
+    _iC.setRGB(1,1,1).offsetHSL(rnd(-.012,.012), rnd(-.04,.04), rnd(-.05,.02));
+    im.setColorAt(i, _iC);
+  }
+  im.instanceMatrix.needsUpdate = true;
+  if(im.instanceColor) im.instanceColor.needsUpdate = true;
+  im.userData.ing = id;
+  rail.add(im);
+  clickPans.push(im);
+  return im;
 }
 
 function makePan(id, x, z, w, d){
@@ -959,18 +1733,9 @@ function makePan(id, x, z, w, d){
       clickPans.push(swirl);
     }
   } else if(isCheese){
-    fillCheeseShreds(id, x, z, w, d);
+    fillPanInstanced(id, x, z, w, d, {s:.024});
   } else if(ing.piece){
-    const n = ing.type==='count' ? 26 : 18;
-    for(let i=0;i<n;i++){
-      const p = makeFoodPiece(id, (ing.s||.03)*rnd(.9,1.2));
-      const rx = rnd(-w/2+.04, w/2-.04), rz = rnd(-d/2+.04, d/2-.04);
-      const mound = .016*(1 - (Math.abs(rx)/(w/2) + Math.abs(rz)/(d/2))/2);
-      p.position.set(x+rx, railH+.056+mound+rnd(0,.014), z+rz);
-      rail.add(p);
-      clickPans.push(p);
-      p.traverse(o=>o.userData.ing=id);
-    }
+    fillPanInstanced(id, x, z, w, d);
   }
 
   /* etiqueta oscura con barra de color del ingrediente */
@@ -1011,18 +1776,7 @@ LAYOUT_LARGE.forEach(([id,w])=>{
   clickPans.push(base, frame, rim);
   frame.userData.ing = 'smoked_mozz';
   regHighlight('smoked_mozz', base.material);
-  const smT = texCheese(ING.smoked_mozz.color);
-  for(let i=0;i<32;i++){
-    const shred = new THREE.Mesh(
-      new THREE.BoxGeometry(rnd(.02,.04), .006, rnd(.006,.01)),
-      foodMat(smT, {roughness:.72, color:jitterColor(ING.smoked_mozz.color)}));
-    shred.rotation.y = rnd(0, Math.PI);
-    shred.position.set(pepX+rnd(-.09,.09), railH+.175+rnd(0,.02), -.18+rnd(-.09,.09));
-    shred.userData.ing = 'smoked_mozz';
-    shred.castShadow = true;
-    rail.add(shred);
-    clickPans.push(shred);
-  }
+  fillPanInstanced('smoked_mozz', pepX, -.18, fw, fd, {s:.02, n:60, y:railH+.172});
   const lbl = new THREE.Mesh(new THREE.PlaneGeometry(.24, .24*56/256),
     new THREE.MeshStandardMaterial({map:panLabel('Smoked Mozz', ING.smoked_mozz.css), roughness:.55}));
   lbl.position.set(pepX, railH+.18, -.02);
@@ -1048,8 +1802,8 @@ BOTTLES.forEach((b,i)=>{
   const bx = W/2 - .12 - Math.floor(i/4)*.16, bz = .38 - (i%4)*.16;
   const y0 = COUNTER_Y+.06;
   const body = new THREE.Mesh(new THREE.CylinderGeometry(.048,.054,.24,16),
-    new THREE.MeshStandardMaterial({color:b.color, roughness:.32, transparent:true, opacity:.95,
-      emissive:b.color, emissiveIntensity:.05}));
+    new THREE.MeshPhysicalMaterial({color:b.color, roughness:.2, transparent:true, opacity:.94,
+      transmission:.3, envMapIntensity:1.2, emissive:b.color, emissiveIntensity:.05}));
   body.position.set(bx, y0+.12, bz);
   body.castShadow = true;
   fridge.add(body);
@@ -1071,16 +1825,133 @@ BOTTLES.forEach((b,i)=>{
   clickPans.push(body, label);
 });
 
-/* ---------- pizza ---------- */
+/* ---------- pizza + peel + plato cerámico + VFX ---------- */
 const workspace = new THREE.Group();
 workspace.position.set(-.5, COUNTER_Y+.065, .45);
 scene.add(workspace);
 
+/* plato de servicio (look moderno AAA) */
+(function makePlate(){
+  const plateMat = new THREE.MeshPhysicalMaterial({
+    color: 0xf4eee4, roughness: 0.28, metalness: 0.05,
+    clearcoat: 0.85, clearcoatRoughness: 0.18, reflectivity: 0.55,
+    envMapIntensity: 1.35,
+  });
+  const rimMat = new THREE.MeshPhysicalMaterial({
+    color: 0xe8e0d4, roughness: 0.22, metalness: 0.08,
+    clearcoat: 0.9, clearcoatRoughness: 0.15, envMapIntensity: 1.4,
+  });
+  const dish = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.22, 0.035, 64), plateMat);
+  dish.position.y = -0.038;
+  dish.receiveShadow = true; dish.castShadow = true;
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(1.26, 0.028, 12, 64), rimMat);
+  lip.rotation.x = Math.PI/2; lip.position.y = -0.018;
+  lip.castShadow = true;
+  const well = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.08, 0.012, 48),
+    new THREE.MeshStandardMaterial({color:0xebe4da, roughness:0.45}));
+  well.position.y = -0.022; well.receiveShadow = true;
+  /* anillo de brillo especular (look servicio moderno) */
+  const gloss = new THREE.Mesh(
+    new THREE.RingGeometry(0.72, 1.02, 64),
+    new THREE.MeshBasicMaterial({
+      color:0xffffff, transparent:true, opacity:0.07,
+      depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide
+    }));
+  gloss.rotation.x = -Math.PI/2; gloss.position.y = -0.014;
+  window.__ptPlate = new THREE.Group();
+  window.__ptPlate.add(dish, lip, well, gloss);
+  workspace.add(window.__ptPlate);
+})();
+
+/* tabla / peel de madera sobre el plato */
+const peel = new THREE.Mesh(new THREE.CylinderGeometry(1.12, 1.15, .014, 56),
+  new THREE.MeshStandardMaterial({color:0x8a6238, roughness:.78, map:null, envMapIntensity:0.4}));
+peel.position.y = -.006;
+peel.receiveShadow = true; peel.castShadow = true;
+workspace.add(peel);
+(function(){
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 512;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#9a6e3c'; g.fillRect(0,0,512,512);
+  for(let i=0;i<70;i++){
+    g.strokeStyle = `rgba(50,28,10,${.06+Math.random()*.14})`;
+    g.lineWidth = 1+Math.random()*2;
+    g.beginPath(); g.moveTo(0, i*8+Math.random()*5); g.lineTo(512, i*8+Math.random()*8); g.stroke();
+  }
+  for(let i=0;i<200;i++){
+    g.fillStyle = `rgba(255,220,160,${Math.random()*.08})`;
+    g.fillRect(Math.random()*512, Math.random()*512, 2, 2);
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.encoding = THREE.sRGBEncoding;
+  peel.material.map = t; peel.material.needsUpdate = true;
+})();
+
+/* sombra de contacto bajo la pizza */
+const contactShadow = new THREE.Mesh(
+  new THREE.CircleGeometry(1.12, 64),
+  new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:.38, depthWrite:false}));
+contactShadow.rotation.x = -Math.PI/2;
+contactShadow.position.y = -.001;
+workspace.add(contactShadow);
+
 let PIZZA_R = .54;
-const crust = new THREE.Mesh(new THREE.CylinderGeometry(1,1.02,.028,64),
-  foodMat(texCrust(), {roughness:.88, color:0xe8c98a}));
+const crustN = texCrustNormal();
+crustN.encoding = THREE.LinearEncoding;
+crustN.wrapS = crustN.wrapT = THREE.RepeatWrapping;
+const crust = new THREE.Mesh(
+  new THREE.CylinderGeometry(1,1.02,.032,96, 3),
+  foodMat(texCrust(), {
+    roughness:.86,
+    color:0xe8c98a,
+    normalMap: crustN,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    envMapIntensity: 0.55,
+  }));
 crust.castShadow = true; crust.receiveShadow = true;
 workspace.add(crust);
+
+/* borde elevado (cornicione) */
+const crustRim = new THREE.Mesh(
+  new THREE.TorusGeometry(1.0, .048, 16, 96),
+  foodMat(texCrust(), {
+    roughness:.88,
+    color:0xd4b070,
+    normalMap: crustN,
+    normalScale: new THREE.Vector2(0.7, 0.7),
+    envMapIntensity: 0.5,
+  }));
+crustRim.rotation.x = Math.PI/2;
+crustRim.position.y = .02;
+crustRim.castShadow = true;
+workspace.add(crustRim);
+
+/* Fase 4: contorno no circular perfecto (±3%) y superficie con relieve leve.
+   El disco y el cornicione comparten la misma función de ruido angular
+   para que el borde siga el contorno de la masa. */
+(function(){
+  const ph1 = rnd(0,7), ph2 = rnd(0,7), ph3 = rnd(0,7);
+  const wob = a => 1 + .016*Math.sin(3*a+ph1) + .009*Math.sin(7*a+ph2) + .005*Math.sin(11*a+ph3);
+  const cp = crust.geometry.attributes.position;
+  for(let i=0;i<cp.count;i++){
+    const px = cp.getX(i), py = cp.getY(i), pz = cp.getZ(i);
+    if(Math.hypot(px,pz) > .2){
+      const f = wob(Math.atan2(pz,px));
+      cp.setX(i, px*f); cp.setZ(i, pz*f);
+    }
+    if(py > .01) cp.setY(i, py + Math.sin(px*21+pz*17)*.0016 + Math.sin(px*9-pz*13)*.0012);
+  }
+  crust.geometry.computeVertexNormals();
+  const rp = crustRim.geometry.attributes.position;
+  for(let i=0;i<rp.count;i++){
+    const px = rp.getX(i), py = rp.getY(i);
+    const a = Math.atan2(py,px);
+    const f = wob(a) * (1 + Math.sin(a*13+ph2)*.02);
+    rp.setX(i, px*f); rp.setY(i, py*f);
+  }
+  crustRim.geometry.computeVertexNormals();
+})();
 
 /* divisor mitad y mitad */
 const divider = new THREE.Mesh(new THREE.BoxGeometry(.01,.002,1),
@@ -1091,6 +1962,10 @@ workspace.add(divider);
 function setPizzaSize(inch){
   PIZZA_R = inch===10 ? .40 : .54;
   crust.scale.set(PIZZA_R, 1, PIZZA_R);
+  crustRim.scale.set(PIZZA_R, PIZZA_R, 1);
+  peel.scale.set(PIZZA_R, 1, PIZZA_R);
+  contactShadow.scale.set(PIZZA_R, PIZZA_R, 1);
+  if(window.__ptPlate) window.__ptPlate.scale.set(PIZZA_R, 1, PIZZA_R);
   divider.scale.z = PIZZA_R*2*.98;
 }
 setPizzaSize(14);
@@ -1098,6 +1973,140 @@ setPizzaSize(14);
 const placedGroup = new THREE.Group();
 workspace.add(placedGroup);
 let layerY = .018; /* superficie de la masa — todo queda plano encima */
+
+/* VFX pool — partículas de topping / vapor / corte */
+const vfxGroup = new THREE.Group();
+workspace.add(vfxGroup);
+const vfxPool = [];
+const vfxActive = [];
+
+/* soft particle texture */
+const softTex = (()=>{
+  const cv = document.createElement('canvas'); cv.width=cv.height=64;
+  const g = cv.getContext('2d');
+  const grd = g.createRadialGradient(32,32,2,32,32,30);
+  grd.addColorStop(0,'rgba(255,255,255,1)');
+  grd.addColorStop(.45,'rgba(255,255,255,.45)');
+  grd.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=grd; g.fillRect(0,0,64,64);
+  const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; return t;
+})();
+
+function spawnVfx(kind, x, z, color){
+  const n = kind==='steam' ? 22 : (kind==='cut' ? 18 : (kind==='flour' ? 14 : 10));
+  for(let i=0;i<n;i++){
+    let mesh = vfxPool.pop();
+    if(!mesh){
+      mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(.05, .05),
+        new THREE.MeshBasicMaterial({map:softTex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
+    }
+    mesh.visible = true;
+    mesh.material.color.set(color || (kind==='flour' ? 0xf5efe4 : 0xffe8a0));
+    mesh.material.opacity = kind==='steam' ? .55 : (kind==='flour' ? .35 : .9);
+    mesh.material.blending = kind==='flour' ? THREE.NormalBlending : THREE.AdditiveBlending;
+    mesh.position.set(x+rnd(-.08,.08), layerY+.02+rnd(0,.04), z+rnd(-.08,.08));
+    mesh.scale.setScalar(kind==='steam' ? rnd(1.2,2.4) : (kind==='cut' ? rnd(.8,1.6) : rnd(.6,1.4)));
+    mesh.userData.vx = rnd(-.25,.25);
+    mesh.userData.vy = kind==='steam' ? rnd(.35,.9) : (kind==='flour' ? rnd(.05,.2) : rnd(.2,.55));
+    mesh.userData.vz = rnd(-.25,.25);
+    mesh.userData.life = kind==='steam' ? rnd(1.0,2.0) : (kind==='flour' ? rnd(.8,1.6) : rnd(.28,.6));
+    mesh.userData.age = 0;
+    mesh.userData.steam = kind==='steam';
+    mesh.userData.flour = kind==='flour';
+    mesh.lookAt(camera.position);
+    vfxGroup.add(mesh);
+    vfxActive.push(mesh);
+  }
+}
+function tickVfx(dt){
+  for(let i=vfxActive.length-1;i>=0;i--){
+    const m = vfxActive[i];
+    m.userData.age += dt;
+    const t = m.userData.age / m.userData.life;
+    if(t>=1){
+      m.visible = false;
+      vfxGroup.remove(m);
+      vfxPool.push(m);
+      vfxActive.splice(i,1);
+      continue;
+    }
+    m.position.x += m.userData.vx * dt;
+    m.position.y += m.userData.vy * dt;
+    m.position.z += m.userData.vz * dt;
+    m.userData.vy -= (m.userData.steam ? .12 : (m.userData.flour ? .08 : .55)) * dt;
+    m.material.opacity = Math.max(0, (1-t) * (m.userData.steam ? .5 : (m.userData.flour ? .3 : .85)));
+    const s = 1 + dt * (m.userData.steam ? 1.4 : .6);
+    m.scale.multiplyScalar(s);
+    m.quaternion.copy(camera.quaternion); /* billboard */
+  }
+}
+
+/* atmósfera continua: vapor del horno + harina en aire */
+const atmoGroup = new THREE.Group();
+scene.add(atmoGroup);
+let atmoAcc = 0;
+function tickAtmosphere(dt){
+  atmoAcc += dt;
+  if(atmoAcc > 0.28){
+    atmoAcc = 0;
+    /* vapor desde boca del horno (aprox mundo) */
+    if(gfxLevel !== 'MED'){
+      const ox = 1.55 + rnd(-.15,.15), oy = COUNTER_Y + 1.1, oz = 1.35 + rnd(-.1,.1);
+      const p = new THREE.Vector3(ox, oy, oz);
+      workspace.worldToLocal(p);
+      spawnVfx('steam', p.x, p.z, 0xffc898);
+    }
+    if(window.__ptBaked && Math.random() < 0.75){
+      spawnVfx('steam', rnd(-.25,.25), rnd(-.25,.25), 0xffe8c8);
+      if(Math.random() < 0.45) spawnVfx('steam', rnd(-.15,.15), rnd(-.15,.15), 0xffd0a0);
+    }
+    if(gfxLevel === 'ULTRA' && Math.random() < 0.4){
+      spawnVfx('flour', rnd(-.5,.5), rnd(-.4,.4), 0xf7f1e6);
+    }
+  }
+}
+
+/* heat haze planes near oven */
+const heatHaze = (()=>{
+  const mats = [];
+  const group = new THREE.Group();
+  for(let i=0;i<3;i++){
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.55, 0.9),
+      new THREE.MeshBasicMaterial({
+        color:0xffaa66, transparent:true, opacity:0.04 + i*0.015,
+        depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide
+      }));
+    m.position.set(1.55 + i*0.05, COUNTER_Y + 1.15, 1.25 - i*0.08);
+    m.rotation.y = -0.35;
+    group.add(m); mats.push(m);
+  }
+  scene.add(group);
+  return mats;
+})();
+
+let camShake = 0;
+let hitStop = 0;
+function impulseCam(amt){ camShake = Math.max(camShake, amt||0); }
+function punchFeel(amt){
+  impulseCam(amt || .04);
+  hitStop = Math.max(hitStop, .06);
+}
+
+function tickCheeseMelt(dt){
+  const target = window.__ptBaked ? 1 : 0;
+  meltT += (target - meltT) * Math.min(1, dt * 2.2);
+  placedGroup.traverse(o=>{
+    if(!o.isMesh || !o.userData.cheese) return;
+    const base = o.userData.meltBaseY || (o.userData.meltBaseY = o.scale.y);
+    o.scale.y = base * (1 - meltT * 0.55);
+    if(o.material && 'clearcoat' in o.material){
+      o.material.clearcoat = 0.2 + meltT * 0.55;
+      o.material.roughness = 0.48 - meltT * 0.26;
+    }
+  });
+}
 
 /* half: null = completa | 'L' = mitad izquierda (x<0) | 'R' = derecha (x>0)
    devuelve: true | 'out' (fuera de la pizza) */
@@ -1109,6 +2118,7 @@ function applyIngredient(id, point, half){
     if(CHEESE_IDS.includes(id)){
       /* queso = solo trozos/hebras con textura (nada de cilindro sólido) */
       sprinkleCheese(id, innerR, half, layerY);
+      spawnVfx('top', 0, 0, ing.color);
       layerY += .0025;
       return true;
     }
@@ -1116,6 +2126,7 @@ function applyIngredient(id, point, half){
     const layer = makeSauceLayer(id, innerR, half);
     layer.position.y = layerY;
     placedGroup.add(layer);
+    spawnVfx('top', 0, 0, ing.color);
     layerY += .002;
     return true;
   }
@@ -1140,22 +2151,29 @@ function applyIngredient(id, point, half){
     const local = workspace.worldToLocal(point.clone());
     if(Math.hypot(local.x, local.z) > innerR*.94) return 'out';
     const p = makeFoodPiece(id, (ing.s||.03)*1.15);
-    p.position.set(local.x, layerY + .004, local.z);
+    /* hundido parcial en el queso: asienta bajo el tope de la capa, contacto irregular */
+    p.position.set(local.x, layerY + rnd(.0005,.0025), local.z);
+    p.rotation.x += rnd(-.05,.05); p.rotation.z += rnd(-.05,.05);
     placedGroup.add(p);
+    spawnVfx('top', local.x, local.z, ing.color);
     return true;
   }
   if(ing.type==='scatter'){
     const n = half ? Math.max(6, Math.round(ing.n*.7)) : Math.round(ing.n*1.25);
+    let lx=0, lz=0;
     for(let i=0;i<n;i++){
       let a;
       if(half==='L') a = rnd(Math.PI/2+.12, Math.PI*1.5-.12);
       else if(half==='R') a = rnd(-Math.PI/2+.12, Math.PI/2-.12);
       else a = rnd(0, Math.PI*2);
       const r = Math.sqrt(Math.random())*innerR*.9;
+      lx = Math.cos(a)*r; lz = Math.sin(a)*r;
       const p = makeFoodPiece(id, (ing.s||.03)*rnd(1.0,1.25));
-      p.position.set(Math.cos(a)*r, layerY + .004 + rnd(0,.003), Math.sin(a)*r);
+      p.position.set(lx, layerY + rnd(.0005,.003), lz);
+      p.rotation.x += rnd(-.06,.06); p.rotation.z += rnd(-.06,.06);
       placedGroup.add(p);
     }
+    spawnVfx('top', lx, lz, ing.color);
     layerY += .0015;
     return true;
   }
@@ -1180,15 +2198,15 @@ function stepsFromRecipe(recipe, size, half){
 }
 
 function finishOrder(o){
-  /* 14 min de entrega: 4 armar + 8 horno + 2 cortar/terminar */
-  o.timeLimit = 14*60;
-  o.timeLeft = o.timeLimit;
+  /* Reloj de espera ilimitado; a los 8 min la comanda se marca "tardando" (rojo) */
+  o.waitSec = 0;
+  o.late = false;
   o.num = orderNum++;
   o.cut = Math.random() < .6 ? 'square' : 'triangle';
   o.afterCut = o.afterCut || [];
   o.afterCutDone = {};
   o.afterCut.forEach(id=>{ o.afterCutDone[id] = false; });
-  o.stage = 'build';   /* build | baking | cut | ready */
+  o.stage = 'build';   /* build | cut | ready */
   o.bakeLeft = 0;
   o.baked = false;
   o.cutsDone = [];
@@ -1253,8 +2271,7 @@ let mode = 'rush';
 let baked = false;
 let selected = null;
 let trainOrder = null;
-const BAKE_RUSH = 8*60;
-const BAKE_TRAIN = 45;
+const LATE_SEC = 8*60; /* aviso en rojo: comanda tardando */
 const MAX_QUEUE = 7;
 const bakedCrust = new THREE.Color(0xb8823f);
 const rawCrust = new THREE.Color(0xe8c98a);
@@ -1270,7 +2287,11 @@ function currentOrder(){
   if(mode==='train') return trainOrder;
   return null;
 }
-function bakeSeconds(){ return mode==='rush' ? BAKE_RUSH : BAKE_TRAIN; }
+function isLate(o){ return !!o && (o.waitSec||0) >= LATE_SEC; }
+function waitLabel(o){
+  const t = fmtTime(o.waitSec||0);
+  return isLate(o) ? '⚠ TARDANDO '+t : '⏱ '+t;
+}
 function fmtTime(sec){
   const t = Math.max(0, Math.ceil(sec));
   return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
@@ -1414,6 +2435,8 @@ function applyAfterCut(id){
   applyIngredient(id, null, null);
   /* scatter/layer don't need point — count would, but afterCut are scatter */
   o.afterCutDone[id] = true;
+  if(hintIng===id) hintIng = null;
+  sfx('top');
   renderFinishChips();
   renderCutUI();
   renderTicket();
@@ -1514,9 +2537,23 @@ function applyGuideCut(g, silent){
   });
   const line = drawCutLine(g.a, g.b, 0x1a1208, .02);
   cutsGroup.add(line);
+  /* hilos de queso ocasionales cruzando la zona de corte */
+  const strands = 2 + Math.floor(Math.random()*3);
+  for(let i=0;i<strands;i++){
+    const t = rnd(.18,.82);
+    const strand = new THREE.Mesh(
+      new THREE.CylinderGeometry(.0016,.0022,rnd(.03,.07),5),
+      new THREE.MeshStandardMaterial({color:0xf0d890, roughness:.3, emissive:0x201005, emissiveIntensity:.12}));
+    strand.position.set(g.a.x+(g.b.x-g.a.x)*t + rnd(-.01,.01), layerY+.003, g.a.z+(g.b.z-g.a.z)*t + rnd(-.01,.01));
+    strand.rotation.set(Math.PI/2 + rnd(-.15,.15), 0, rnd(0,Math.PI));
+    cutsGroup.add(strand);
+  }
   cuts.push({ang:g.ang, dev:g.dev, dCenter:g.dCenter, mesh:line, guideIdx:g.idx});
   const o = currentOrder();
   if(o) o.cutsDone = cuts.map(c=>c.guideIdx).filter(i=>i!=null);
+  sfx('cut');
+  spawnVfx('cut', (g.a.x+g.b.x)*.5, (g.a.z+g.b.z)*.5, 0xfff0d0);
+  impulseCam(.02);
   renderCutUI();
   if(silent) return;
   const left = cutGuides.filter(x=>!x.done).length;
@@ -1557,6 +2594,32 @@ function undoLastCut(){
   toast('↩ Corte deshecho');
 }
 
+/* transición de material al hornear: queso derretido (clearcoat + brillo),
+   masa más seca y tostada */
+function applyBakeLook(b){
+  window.__ptBaked = !!b;
+  if(b) meltT = Math.max(meltT, 0.15);
+  else meltT = 0;
+  crust.material.roughness = b ? .68 : .86;
+  crustRim.material.roughness = b ? .72 : .88;
+  if(crust.material.normalScale) crust.material.normalScale.set(b ? .35 : .55, b ? .35 : .55);
+  if(crustRim.material.normalScale) crustRim.material.normalScale.set(b ? .4 : .7, b ? .4 : .7);
+  placedGroup.traverse(o=>{
+    if(o.isMesh && o.userData.cheese && o.material){
+      o.material.roughness = b ? .2 : .48;
+      if('clearcoat' in o.material){
+        o.material.clearcoat = b ? .7 : .22;
+        o.material.clearcoatRoughness = b ? .22 : .5;
+      }
+      if('reflectivity' in o.material) o.material.reflectivity = b ? .6 : .28;
+      o.material.emissive.setHex(b ? 0x2a1408 : 0x000000);
+      o.material.emissiveIntensity = b ? .16 : 0;
+      o.material.needsUpdate = true;
+    }
+  });
+  bloomBoost = b ? 0.22 : 0;
+}
+
 function clearPizzaVisual(){
   while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
   while(cutsGroup.children.length) cutsGroup.remove(cutsGroup.children[0]);
@@ -1565,6 +2628,8 @@ function clearPizzaVisual(){
   layerY = .018;
   baked = false;
   crust.material.color.copy(rawCrust);
+  crustRim.material.color.copy(rawCrust);
+  applyBakeLook(false);
 }
 
 function clearPizza(){
@@ -1589,6 +2654,7 @@ function rebuildPizza(o){
   divider.visible = !!(o.split!=null);
   baked = !!o.baked;
   crust.material.color.copy(baked ? bakedCrust : rawCrust);
+  crustRim.material.color.copy(baked ? bakedCrust : rawCrust);
   layerY = .018;
   (o.placed||[]).forEach(p=>{
     const half = p.half==='L'||p.half==='R' ? p.half : null;
@@ -1598,6 +2664,7 @@ function rebuildPizza(o){
     }
     applyIngredient(p.id, point, half);
   });
+  applyBakeLook(baked);
   if(baked){
     const ci = cutInfo(o);
     showCutGuides();
@@ -1625,13 +2692,12 @@ function syncButtons(){
   const o = currentOrder();
   if(mode==='free'){
     $('#btnBake').disabled = baked;
-    $('#btnBake').textContent = baked ? '🔥 Horneada' : '🔥 Hornear (8 min)';
+    $('#btnBake').textContent = baked ? '🔥 Horneada' : '🔥 Hornear';
     return;
   }
-  const baking = o && o.stage==='baking';
-  $('#btnBake').disabled = !o || baked || baking || (o && o.stage!=='build');
-  $('#btnBake').textContent = baking ? '🔥 En horno…' : '🔥 Hornear (8 min)';
-  $('#btnServe').disabled = !o || baking;
+  $('#btnBake').disabled = !o || baked || (o && o.stage!=='build');
+  $('#btnBake').textContent = baked ? '🔥 Horneada' : '🔥 Hornear';
+  $('#btnServe').disabled = !o;
 }
 
 function activateOrder(o){
@@ -1647,8 +2713,7 @@ function activateOrder(o){
     $('#tSize').textContent = 'esperando comandas…';
     $('#tNum').textContent = '';
     $('#tItems').innerHTML = '';
-    $('#tBar').style.width = '100%';
-    $('#tTime').textContent = '';
+    updateWaitUI(null);
     syncButtons();
     renderQueue();
     renderOvenBar();
@@ -1659,20 +2724,10 @@ function activateOrder(o){
 
   $('#tNum').textContent = '#'+String(o.num).padStart(3,'0');
   $('#tBase').textContent = '🍕 '+o.name;
-  if(o.stage==='baking'){
-    $('#tSize').textContent = o.size+'" · 🔥 EN HORNO · queda '+fmtTime(o.bakeLeft);
-    clearPizzaVisual();
-    setPizzaSize(o.size);
-    divider.visible = o.split!=null;
-    crust.material.color.lerpColors(rawCrust, bakedCrust, 1-Math.min(1,o.bakeLeft/bakeSeconds()));
-    baked = false;
-    syncButtons();
-    renderTicket();
-  } else {
-    $('#tSize').textContent = o.size+'" · entrega ⏱ '+fmtTime(o.timeLeft)+' · '+o.steps.length+' pasos';
-    rebuildPizza(o);
-    renderTicket();
-  }
+  $('#tSize').textContent = o.size+'" · '+o.steps.length+' pasos';
+  rebuildPizza(o);
+  renderTicket();
+  updateWaitUI(o);
   const tk = $('#ticket');
   tk.classList.add('pop');
   setTimeout(()=>tk.classList.remove('pop'), 300);
@@ -1683,46 +2738,46 @@ function activateOrder(o){
 function switchToOrder(o){
   if(!o || currentOrder()===o) return;
   activateOrder(o);
-  toast(o.stage==='baking'
-    ? '🔥 '+o.name+' sigue en el horno ('+fmtTime(o.bakeLeft)+')'
-    : '📋 Comanda #'+String(o.num).padStart(3,'0')+' — '+o.name);
+  toast('📋 Comanda #'+String(o.num).padStart(3,'0')+' — '+o.name);
 }
 
 function startBake(){
+  unlockAudio();
   if(mode==='free'){
     if(baked) return;
     baked = true;
     crust.material.color.copy(bakedCrust);
+    crustRim.material.color.copy(bakedCrust);
+    applyBakeLook(true);
     syncButtons();
     enterCutMode();
+    sfx('bake');
+    spawnVfx('steam', 0, 0, 0xffe8c8);
+    punchFeel(.05);
     toast('🔥 Lista — córtala');
     return;
   }
   const o = currentOrder();
-  if(!o || baked || o.stage==='baking') return;
-  if(o.stage!=='build') return;
+  if(!o || baked || o.stage!=='build') return;
   persistActive();
-  o.stage = 'baking';
-  o.bakeLeft = bakeSeconds();
-  toast('🔥 Al horno '+fmtTime(o.bakeLeft)+' — mientras tanto arma otra pizza');
-  if(mode==='rush'){
-    const next = rush.queue.find(x=>x!==o && x.stage==='build');
-    if(next) activateOrder(next);
-    else activateOrder(o);
-  } else {
-    activateOrder(o);
-  }
-  renderOvenBar();
+  onBakeDone(o);
 }
 
 function onBakeDone(o){
   o.stage = 'cut';
   o.baked = true;
   o.bakeLeft = 0;
-  toast('🍕 #'+String(o.num).padStart(3,'0')+' '+o.name+' lista del horno — ¡córtala!');
+  hintIng = null;
+  sfx('bake');
+  spawnVfx('steam', 0, 0, 0xffe8c8);
+  spawnVfx('steam', .15, -.1, 0xffd0a0);
+  punchFeel(.05);
+  crustRim.material.color.copy(bakedCrust);
+  toast('🔥 Horneada — ¡córtala!');
   if(currentOrder()===o){
     baked = true;
     crust.material.color.copy(bakedCrust);
+    applyBakeLook(true);
     enterCutMode();
     syncButtons();
   }
@@ -1731,20 +2786,29 @@ function onBakeDone(o){
 }
 
 function renderOvenBar(){
+  /* horneado instantáneo: no hay cola de horno */
   const bar = $('#ovenBar');
-  if(mode!=='rush' || !rush.running){ bar.classList.remove('show'); bar.innerHTML=''; return; }
-  const baking = rush.queue.filter(o=>o.stage==='baking');
-  if(!baking.length){ bar.classList.remove('show'); bar.innerHTML=''; return; }
-  bar.classList.add('show');
-  bar.innerHTML = baking.map(o=>
-    `<div class="ovenSlot" data-num="${o.num}"><b>🔥 HORNO</b>${o.name}<div class="ot">${fmtTime(o.bakeLeft)}</div></div>`
-  ).join('');
-  bar.querySelectorAll('.ovenSlot').forEach(el=>{
-    el.onclick = ()=>{
-      const o = rush.queue.find(x=>x.num===Number(el.dataset.num));
-      if(o) switchToOrder(o);
-    };
-  });
+  bar.classList.remove('show');
+  bar.innerHTML = '';
+}
+
+function updateWaitUI(o){
+  const tk = $('#ticket');
+  if(!o || mode!=='rush'){
+    tk.classList.remove('late');
+    $('#tBar').style.width = '100%';
+    $('#tBar').style.background = 'var(--basil)';
+    $('#tTime').textContent = '';
+    return;
+  }
+  const late = isLate(o);
+  o.late = late;
+  tk.classList.toggle('late', late);
+  const pct = Math.min(100, ((o.waitSec||0)/LATE_SEC)*100);
+  const bar = $('#tBar');
+  bar.style.width = pct+'%';
+  bar.style.background = late ? '#d92e2e' : (pct>70 ? '#d9a92e' : 'var(--basil)');
+  $('#tTime').textContent = waitLabel(o);
 }
 
 /* asigna lo colocado a cada paso del chart (en orden, para mozzarella repetida etc.) */
@@ -1768,24 +2832,25 @@ function renderTicket(){
   const o = currentOrder();
   if(!o){ $('#tItems').innerHTML=''; return; }
   const {counts} = stepCounts(o);
+  const hint = (mode==='train') ? nextHintStep(o) : null;
   let html = '';
   o.steps.forEach((s,i)=>{
     if(o.split!=null){
       if(i===0) html += `<li class="sec">◐ Mitad izq — ${o.nameA}</li>`;
       if(i===o.split) html += `<li class="sec">◑ Mitad der — ${o.nameB}</li>`;
     }
-    const cls = counts[i]>=s.need ? 'done' : '';
+    let cls = counts[i]>=s.need ? 'done' : '';
+    if(hint && hint.index===i) cls = (cls+' hint').trim();
     html += `<li class="${cls}"><span>${ING[s.id].name}</span><span>${counts[i]}/${s.need}</span></li>`;
   });
   html += `<li class="sec">🔪 ${cutInfo(o).label}</li>`;
   if(o.afterCut && o.afterCut.length){
-    const doneAll = o.afterCut.every(id=>o.afterCutDone && o.afterCutDone[id]);
     html += `<li class="sec">🧀 Después del corte</li>`;
     o.afterCut.forEach(id=>{
       const ok = o.afterCutDone && o.afterCutDone[id];
-      html += `<li class="${ok?'done':''}"><span>Top ${ING[id].name}</span><span>${ok?'✔':'0/1'}</span></li>`;
+      const hintFin = mode==='train' && o.baked && !ok && hintIng===id;
+      html += `<li class="${ok?'done':''}${hintFin?' hint':''}"><span>Top ${ING[id].name}</span><span>${ok?'✔':'0/1'}</span></li>`;
     });
-    if(doneAll) {/* noop */}
   }
   $('#tItems').innerHTML = html;
 }
@@ -1833,6 +2898,41 @@ function shortName(name){
     .replace("Big Don's Mix","Big Don's");
 }
 
+let hintIng = null;
+function nextHintStep(o){
+  if(!o || o.baked) return null;
+  const {counts} = stepCounts(o);
+  for(let i=0;i<o.steps.length;i++){
+    if(counts[i] < o.steps[i].need) return {index:i, id:o.steps[i].id, need:o.steps[i].need, done:counts[i]};
+  }
+  return null;
+}
+function applyHint(){
+  const o = currentOrder();
+  if(mode!=='train' || !o){ toast('Las pistas solo están en Entrenar'); return; }
+  if(o.baked){
+    const pend = afterCutPending(o);
+    if(pend.length){
+      hintIng = pend[0];
+      toast('💡 Después del corte: '+ING[pend[0]].name);
+      sfx('hint');
+      renderFinishChips();
+      return;
+    }
+    toast('💡 Ya está completa — córtala y entrégala');
+    sfx('hint');
+    return;
+  }
+  const next = nextHintStep(o);
+  if(!next){ toast('💡 Todos los toppings del chart están listos — hornea'); sfx('hint'); return; }
+  hintIng = next.id;
+  selectIng(next.id);
+  renderTicket();
+  renderTray();
+  toast('💡 Siguiente: '+ING[next.id].name+' ('+(next.done+1)+'/'+next.need+')');
+  sfx('hint');
+}
+
 function renderTray(){
   const tray = $('#tray');
   tray.innerHTML = '';
@@ -1856,7 +2956,7 @@ function renderTray(){
     if(!ING[id]) return;
     const c = document.createElement('button');
     c.type = 'button';
-    c.className = 'chip'+(id===selected?' sel':'');
+    c.className = 'chip'+(id===selected?' sel':'')+(id===hintIng?' hint':'');
     c.dataset.ing = id;
     c.innerHTML = `<span class="dot" style="background:${ING[id].css}"></span>${shortName(ING[id].name)}`;
     c.onclick = ()=> selectIng(id);
@@ -1879,7 +2979,6 @@ function selectIng(id){
 function tapPizza(point){
   const o = currentOrder();
   if(mode!=='free' && !o){ toast('No hay comandas activas'); return; }
-  if(o && o.stage==='baking'){ toast('🔥 Está en el horno — toca otra comanda para armar'); return; }
   if(baked){ toast('Ya salió del horno — córtala'); return; }
   if(!selected){ toast('Primero elige un ingrediente (bandeja o línea)'); return; }
   let half = null;
@@ -1890,13 +2989,19 @@ function tapPizza(point){
   }
   const res = applyIngredient(selected, point, half);
   if(res==='out'){ toast('Coloca dentro de la pizza'); return; }
+  sfx('top');
   if(mode==='free') return;
   const entry = {id:selected, half: half||'F'};
   if(local && ING[selected].type==='count'){ entry.x = local.x; entry.z = local.z; }
   o.placed.push(entry);
   const hk = half||'F';
   if(!o.seq[hk].includes(selected)) o.seq[hk].push(selected);
+  if(hintIng && selected===hintIng){
+    const next = nextHintStep(o);
+    hintIng = next ? next.id : null;
+  }
   renderTicket();
+  if(mode==='train') renderTray();
 }
 
 function renderQueue(){
@@ -1904,17 +3009,14 @@ function renderQueue(){
   if(mode!=='rush' || !rush.running){ q.innerHTML=''; return; }
   q.innerHTML = rush.queue.map(o=>{
     const active = rush.active===o;
+    const late = isLate(o);
     let st = '', cls = active?' on':'';
-    let pct = Math.max(0, o.timeLeft/o.timeLimit*100);
-    let barCls = pct<30?'warn':'';
-    if(o.stage==='baking'){
-      st = '🔥 '+fmtTime(o.bakeLeft);
-      cls += ' bake';
-      pct = Math.max(0, (1-o.bakeLeft/bakeSeconds())*100);
-      barCls = 'oven';
-    } else if(o.stage==='cut'){ st = '🔪 cortar'; cls += ' ready'; }
+    if(late) cls += ' late';
+    const pct = Math.min(100, ((o.waitSec||0)/LATE_SEC)*100);
+    let barCls = late ? 'warn' : '';
+    if(o.stage==='cut'){ st = '🔪 cortar'; cls += ' ready'; }
     else if(o.stage==='ready'){ st = '✔ entregar'; cls += ' ready'; }
-    else st = '⏱ '+fmtTime(o.timeLeft);
+    else st = waitLabel(o);
     return `<div class="mini${cls}" data-num="${o.num}"><b>${o.name}</b><span class="sz">${o.size}" · ${st}</span>
       <div class="tbar"><i class="${barCls}" style="width:${pct}%"></i></div></div>`;
   }).join('');
@@ -1953,7 +3055,9 @@ function startRush(){
   activateOrder(first);
   renderQueue();
   renderOvenBar();
-  toast('🔔 ¡Servicio abierto! '+first.name+' '+first.size+'" · 14 min de entrega');
+  renderRecordsUI();
+  sfx('new');
+  toast('🔔 ¡Servicio abierto! '+first.name+' '+first.size+'" — sin límite de tiempo');
 }
 
 function loseOrder(o, reason){
@@ -1977,9 +3081,23 @@ function endRush(){
   rush.active = null;
   exitCutMode();
   $('#ovenBar').classList.remove('show');
+  const prev = loadRecords();
+  const beat = rush.score > (prev.bestScore||0);
+  const rec = saveRecords({
+    bestScore: Math.max(prev.bestScore||0, rush.score),
+    bestStreak: Math.max(prev.bestStreak||0, rush.bestStreak),
+    mostServed: Math.max(prev.mostServed||0, rush.served),
+    games: (prev.games||0)+1,
+    lastScore: rush.score
+  });
   $('#finalScore').textContent = rush.score;
   $('#finalServed').textContent = rush.served;
   $('#finalStreak').textContent = rush.bestStreak;
+  $('#finalRecords').innerHTML = beat
+    ? '🏆 ¡Nuevo récord! Mejor: <b>'+rec.bestScore+'</b>'
+    : 'Récord guardado: <b>'+rec.bestScore+'</b> pts · racha '+rec.bestStreak;
+  renderRecordsUI();
+  sfx(beat ? 'ok' : 'bad');
   $('#overOverlay').classList.remove('hiddenX');
 }
 
@@ -1989,9 +3107,7 @@ function evaluate(o){
   const sideTxt = h => o.split==null ? '' : (h==='L' ? ' en la mitad izquierda' : (h==='R' ? ' en la mitad derecha' : ''));
 
   if(!o.baked && !baked){
-    complaints.push(o.stage==='baking'
-      ? '¡La sacaste del horno a medias! Está a medio cocer'
-      : '¡Está CRUDA! Ni siquiera pasó por el horno');
+    complaints.push('¡Está CRUDA! Ni siquiera pasó por el horno');
   } else {
     const ci = cutInfo(o);
     const cutName = ci.style==='triangle' ? 'triangle cut' : 'corte cuadrado';
@@ -2059,6 +3175,9 @@ function evaluate(o){
     if(seq.join('|') !== expect.join('|')) orderOk = false;
   });
   if(!orderOk) complaints.push('No seguiste el orden del building chart (salsa → queso → toppings)');
+  if(mode==='rush' && isLate(o)){
+    complaints.push('Tardó demasiado — llevaba más de 8 minutos en la comanda');
+  }
 
   return complaints;
 }
@@ -2066,7 +3185,6 @@ function evaluate(o){
 function serveActive(){
   const o = currentOrder();
   if(!o) return;
-  if(o.stage==='baking'){ toast('Todavía está en el horno'); return; }
   persistActive();
   exitCutMode();
   const complaints = evaluate(o);
@@ -2078,7 +3196,8 @@ function serveActive(){
       rush.streak = 0;
       renderLives();
     } else if(complaints.length===0){
-      pts = 120 + Math.round(o.timeLeft/o.timeLimit*100) + (o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0));
+      const speed = Math.round(Math.max(0, 1 - (o.waitSec||0)/LATE_SEC) * 100);
+      pts = 120 + speed + (o.kind==='half' ? 50 : (o.kind==='custom' ? 25 : 0));
       rush.streak++;
       rush.bestStreak = Math.max(rush.bestStreak, rush.streak);
       rush.served++;
@@ -2091,6 +3210,8 @@ function serveActive(){
     $('#scoreVal').textContent = rush.score;
     rush.paused = true;
   }
+  if(rejected || complaints.length) sfx('bad');
+  else sfx('ok');
   showEval(o, complaints, pts, rejected);
 }
 
@@ -2153,7 +3274,7 @@ $('#btnSkip').onclick = ()=>{
 };
 $('#btnReset').onclick = ()=>{
   const o = currentOrder();
-  if(o && o.stage==='baking'){ toast('No puedes limpiar mientras está en el horno'); return; }
+  if(o && o.baked){ toast('Ya está horneada — córtala o entrégala'); return; }
   if(o){
     o.placed = []; o.seq = {F:[],L:[],R:[]}; o.cutsDone = [];
     o.baked = false; o.stage = 'build';
@@ -2171,8 +3292,16 @@ $('#btnReset').onclick = ()=>{
   }
   toast('Pizza reiniciada'+(mode==='rush'&&rush.running?' — ¡el reloj sigue!':''));
 };
-$('#btnStart').onclick = startRush;
-$('#btnAgain').onclick = startRush;
+$('#btnStart').onclick = ()=>{ unlockAudio(); startRush(); };
+$('#btnAgain').onclick = ()=>{ unlockAudio(); startRush(); };
+$('#btnHint').onclick = ()=>{ unlockAudio(); applyHint(); };
+$('#muteBtn').onclick = ()=>{
+  soundOn = !soundOn;
+  try{ localStorage.setItem('pizza3d_sound', soundOn?'1':'0'); }catch(e){}
+  unlockAudio();
+  renderRecordsUI();
+  if(soundOn) sfx('hint');
+};
 
 $('#btnRush').onclick  = ()=> setMode('rush');
 $('#btnTrain').onclick = ()=> setMode('train');
@@ -2193,18 +3322,21 @@ function setMode(m){
   $('#tBarWrap').style.display = m==='rush' ? '' : 'none';
   $('#tTime').style.display = m==='rush' ? '' : 'none';
   $('#btnSkip').style.display = m==='train' ? '' : 'none';
+  $('#btnHint').style.display = m==='train' ? '' : 'none';
   $('#btnServe').style.display = m==='free' ? 'none' : '';
   $('#livesRow').style.display = m==='rush' ? '' : 'none';
   $('#startOverlay').classList.toggle('hiddenX', m!=='rush');
   $('#overOverlay').classList.add('hiddenX');
   $('#evalOverlay').classList.add('hiddenX');
+  hintIng = null;
   exitCutMode();
   divider.visible = false;
   renderTray();
+  renderRecordsUI();
   if(m==='train'){
     trainOrder = makeOrder();
     activateOrder(trainOrder);
-    toast('Entrenamiento — horno 45s · sin reloj de entrega');
+    toast('Entrenamiento — usa 💡 Pista si te atoras');
   } else if(m==='free'){
     clearPizza();
     setPizzaSize(14);
@@ -2330,7 +3462,11 @@ let pulse = 0, queueRefresh = 0;
 
 function animate(){
   requestAnimationFrame(animate);
-  const dt = Math.min(.1, clock.getDelta());
+  let dt = Math.min(.1, clock.getDelta());
+  if(hitStop > 0){
+    hitStop -= dt;
+    dt *= 0.15; /* hit-stop breve (game-feel) */
+  }
   pulse += dt*4;
 
   const glow = (Math.sin(pulse)*.5+.5)*.8;
@@ -2343,27 +3479,6 @@ function animate(){
     cutGuides.forEach(g=>{
       if(!g.done && g.mesh) g.mesh.material.emissiveIntensity = gGlow;
     });
-  }
-
-  /* hornos en segundo plano (8 min) */
-  if(mode==='rush' && rush.running){
-    rush.queue.forEach(o=>{
-      if(o.stage==='baking'){
-        o.bakeLeft -= dt;
-        if(currentOrder()===o){
-          crust.material.color.lerpColors(rawCrust, bakedCrust, 1-Math.min(1, Math.max(0,o.bakeLeft)/bakeSeconds()));
-          $('#tSize').textContent = o.size+'" · 🔥 EN HORNO · queda '+fmtTime(o.bakeLeft);
-        }
-        if(o.bakeLeft<=0){ o.bakeLeft = 0; if(o.stage==='baking') onBakeDone(o); }
-      }
-    });
-  } else {
-    const o = currentOrder();
-    if(o && o.stage==='baking'){
-      o.bakeLeft -= dt;
-      crust.material.color.lerpColors(rawCrust, bakedCrust, 1-Math.min(1, Math.max(0,o.bakeLeft)/bakeSeconds()));
-      if(o.bakeLeft<=0){ o.bakeLeft = 0; if(o.stage==='baking') onBakeDone(o); }
-    }
   }
 
   if(mode==='rush' && rush.running && !rush.paused){
@@ -2379,41 +3494,91 @@ function animate(){
         const o = makeOrder();
         rush.queue.push(o);
         if(!rush.active) activateOrder(o);
+        sfx('new');
         toast('🔔 Nueva comanda: '+o.name+' '+o.size+'"');
       }
       renderQueue();
     }
 
-    const expired = [];
+    /* tiempo ilimitado: solo cuenta espera; a los 8 min = tardando (rojo) */
     rush.queue.forEach(o=>{
-      o.timeLeft -= dt;
-      if(o.timeLeft<=0) expired.push(o);
+      const wasLate = isLate(o);
+      o.waitSec = (o.waitSec||0) + dt;
+      if(!wasLate && isLate(o)){
+        o.late = true;
+        sfx('late');
+        toast('⚠ #'+String(o.num).padStart(3,'0')+' '+o.name+' va TARDANDO (+8 min)');
+      }
     });
-    expired.forEach(o=> loseOrder(o, 'se acabó el tiempo de entrega'));
-
-    const o = rush.active;
-    if(o && o.stage!=='baking'){
-      const pct = Math.max(0, o.timeLeft/o.timeLimit*100);
-      const bar = $('#tBar');
-      bar.style.width = pct+'%';
-      bar.style.background = pct<30 ? '#d92e2e' : (pct<55 ? '#d9a92e' : 'var(--basil)');
-      $('#tTime').textContent = '⏱ entrega '+fmtTime(o.timeLeft);
-    }
+    updateWaitUI(rush.active);
 
     queueRefresh += dt;
-    if(queueRefresh > .4){ queueRefresh = 0; renderQueue(); renderOvenBar(); }
+    if(queueRefresh > .4){ queueRefresh = 0; renderQueue(); }
   }
 
-  renderer.render(scene, camera);
+  tickVfx(dt);
+  tickAtmosphere(dt);
+  tickCheeseMelt(dt);
+  gradePass.uniforms.time.value = clock.elapsedTime;
+  heatHaze.forEach((m,i)=>{
+    const on = gfxLevel !== 'MED';
+    m.visible = on;
+    if(!on) return;
+    m.material.opacity = 0.03 + (0.5+0.5*Math.sin(pulse*1.4+i))*0.04;
+    m.position.y = COUNTER_Y + 1.1 + Math.sin(pulse*2+i)*.04;
+  });
+  if(camShake > 0){
+    camera.position.x += (Math.random()-.5) * camShake;
+    camera.position.y += (Math.random()-.5) * camShake * .6;
+    camShake *= Math.max(0, 1 - dt*8);
+    if(camShake < .001) camShake = 0;
+  }
+
+  const highBloom = (gfxLevel === 'HIGH' || gfxLevel === 'ULTRA') && !IS_MOBILE;
+  bloomPass.strength = (gfxLevel === 'MED' ? 0.22 : (highBloom ? 0.48 : 0.32)) + bloomBoost + meltT * 0.08;
+  composer.render();
 }
 animate();
+
+/* HUD dinámico: el ticket/cola/switch se colocan debajo de los paneles del header,
+   midiendo su altura real (evita solapes en cualquier resolución) */
+function layoutHud(){
+  const brand = document.querySelector('header .brand');
+  const score = document.querySelector('header .score');
+  const root = document.documentElement.style;
+  if(brand) root.setProperty('--hud-top', Math.ceil(brand.getBoundingClientRect().bottom + 10)+'px');
+  if(score) root.setProperty('--hud-top-r', Math.ceil(score.getBoundingClientRect().bottom + 10)+'px');
+}
+layoutHud();
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(layoutHud);
+addEventListener('load', layoutHud);
 
 addEventListener('resize', ()=>{
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
+  composer.setSize(innerWidth,innerHeight);
+  if(ssaoPass) ssaoPass.setSize(innerWidth, innerHeight);
+  const pr = renderer.getPixelRatio();
+  fxaaPass.material.uniforms['resolution'].value.set(1/(innerWidth*pr), 1/(innerHeight*pr));
+  bloomPass.setSize(innerWidth, innerHeight);
+  layoutHud();
 });
 
+/* GFX quality toggle */
+(function wireGfx(){
+  const btn = document.getElementById('gfxBtn');
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    const i = GFX_LEVELS.indexOf(gfxLevel);
+    applyGfxLevel(GFX_LEVELS[(i+1)%GFX_LEVELS.length]);
+    toast('Gráficos: '+gfxLevel);
+  });
+  applyGfxLevel(gfxLevel);
+})();
+
+try{ const ms = localStorage.getItem('pizza3d_sound'); if(ms==='0') soundOn = false; }catch(e){}
+renderRecordsUI();
 setMode('rush');
 </script>
 </body>

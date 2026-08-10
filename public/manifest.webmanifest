@@ -4,8 +4,8 @@
   "description": "Aprende a armar las 14 pizzas de la Sección 1: repaso, tarjetas, examen y más.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#161616",
-  "theme_color": "#161616",
+  "background_color": "#12100E",
+  "theme_color": "#12100E",
   "lang": "es",
   "icons": [
     {

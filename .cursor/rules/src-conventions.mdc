@@ -1,0 +1,14 @@
+---
+description: Conventions when editing Pizza Trainer React source
+globs: src/**/*.{js,jsx}
+alwaysApply: false
+---
+
+# src/ conventions
+
+- Data (pizzas, menu, ICON/ES) lives in `src/data/` — UI modes import it; don't duplicate charts.
+- Shared UI: `src/components/`. Study modes: `src/modes/`.
+- Themes/tokens: `src/theme.js`. Storage/audio helpers: `src/lib/`.
+- Prefer inline styles + existing theme tokens over new CSS frameworks.
+- When adding a pizza: update `PIZZAS`, verify `sec`/`afterCut`, both sizes `"10"` and `"14"`.
+- Keep `estudio-pizzas.jsx` as a thin re-export of `App` if external imports still point there.
