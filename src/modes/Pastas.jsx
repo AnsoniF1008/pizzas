@@ -103,6 +103,13 @@ export function Pastas() {
       <p className="mb-3" style={{ color: t.muted, fontSize: 13 }}>
         Toca un plato para ver sus cantidades y cómo se arma.
       </p>
+      <a href="/line/" className="block rounded-2xl p-3 mb-3 text-left" style={{
+        background: t.surface, border: `1px solid ${t.line}`, textDecoration: "none", color: t.ink,
+      }}>
+        <div style={{ fontFamily: DISPLAY, fontSize: 12, letterSpacing: 1.4, color: ACCENT }}>JUEGO 3D</div>
+        <div className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 18 }}>Línea pasta · ensaladas · entradas</div>
+        <div style={{ color: t.muted, fontSize: 12, marginTop: 2 }}>Rail frío + pasta + horno EDGE, mismas recetas del chart.</div>
+      </a>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {items.map(({ p, i }) => (
           <button key={i} onClick={() => setOpen(i)}

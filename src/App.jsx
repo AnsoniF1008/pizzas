@@ -222,7 +222,26 @@ export default function App() {
                   justifyContent: "center",
                 }}
               >
-                Juego 3D
+                Pizza 3D
+              </a>
+              <a
+                href="/line/"
+                className="pt-tab flex-1 py-3.5 px-2.5 font-bold whitespace-nowrap text-center"
+                style={{
+                  fontFamily: DISPLAY,
+                  fontSize: 15,
+                  letterSpacing: 0.8,
+                  minWidth: 78,
+                  minHeight: 48,
+                  color: CHEESE,
+                  borderBottom: "3px solid transparent",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                Línea 3D
               </a>
             </nav>
 

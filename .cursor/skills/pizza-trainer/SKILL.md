@@ -13,7 +13,8 @@ App de estudio para armar las pizzas de la Sección 1 (más menú y cortes). Sta
 
 ## Producto
 
-Modos: **Repaso**, **Tarjetas**, **Orden**, **Examen**, **Menú** (pastas/ensaladas/sándwiches), **Cortes**, **Progreso**. Enlace a juego 3D en `/3d/`.
+Modos: **Repaso**, **Tarjetas**, **Orden**, **Examen**, **Menú** (pastas/ensaladas/sándwiches), **Cortes**, **Progreso**.
+Juegos 3D: pizzas en `/3d/`, línea pasta/ensaladas/entradas en `/line/` (porciones de `src/data/menu.js`).
 
 Tamaños: `"10"` y `"14"`. Persistencia localStorage: `pt-theme`, `pt-sound`, `pt-stats`.
 

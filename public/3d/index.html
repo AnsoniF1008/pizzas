@@ -141,6 +141,16 @@
     border:1px solid rgba(0,0,0,.12);box-shadow:0 10px 28px rgba(0,0,0,.45);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  #pickBadge{position:fixed;left:50%;bottom:calc(210px + env(safe-area-inset-bottom));transform:translateX(-50%);
+    z-index:15;display:none;align-items:center;gap:10px;pointer-events:none;
+    background:rgba(20,24,28,.92);border:1px solid var(--hud-line);border-radius:12px;
+    padding:8px 14px 8px 8px;backdrop-filter:blur(10px);box-shadow:0 10px 28px rgba(0,0,0,.4);
+    font-family:'Barlow Condensed',sans-serif;max-width:92vw}
+  #pickBadge.on{display:flex}
+  #pickBadge .sw{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.35);flex:0 0 auto}
+  #pickBadge b{font-size:18px;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
+  #pickBadge span{display:block;font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.65;margin-top:2px}
+
   .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
     background:rgba(12,10,8,.88);backdrop-filter:blur(8px)}
   .panel{background:linear-gradient(165deg,#fff8ee 0%,#efe4d4 100%);color:var(--ink);width:min(430px,92vw);
@@ -205,6 +215,7 @@
 <header>
   <div class="brand">
     <a id="backLink" href="/">‹ Volver a la app</a>
+    <a href="/line/" style="margin-left:10px;color:var(--cheese);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;text-decoration:none">Línea pasta ›</a>
     <h1>Pizza Trainer 3D</h1>
     <p>building chart · modo servicio</p>
   </div>
@@ -257,6 +268,7 @@
 
 <div id="tray"></div>
 <div id="toast"></div>
+<div id="pickBadge"><i class="sw"></i><div><b>—</b><span></span></div></div>
 
 <div class="overlay" id="startOverlay">
   <div class="panel">
@@ -401,21 +413,21 @@ const ING = {
   cashews:       {name:'Cashews',        css:'#c8a060', type:'scatter', color:0xc8a060, piece:'arc',  n:9, s:.02},
   black_olives:  {name:'Black Olives',   css:'#1a1a1a', type:'scatter', color:0x1a1a1a, piece:'ring', n:9, s:.02},
   green_olives:  {name:'Green Olives',   css:'#6a8030', type:'scatter', color:0x6a8030, piece:'ring', n:9, s:.02},
-  jalapenos:     {name:'Jalapeños',      css:'#3a6820', type:'scatter', color:0x3a6820, piece:'ring', n:8, s:.024},
-  red_onions:    {name:'Red Onions',     css:'#9030a8', type:'scatter', color:0x9030a8, piece:'arc',  n:7, s:.045},
-  bell_peppers:  {name:'Bell Peppers',   css:'#2e8028', type:'scatter', color:0x2e8028, piece:'arc',  n:7, s:.045},
-  mushrooms:     {name:'Mushrooms',      css:'#c8b090', type:'scatter', color:0xc8b090, piece:'mush', n:7, s:.038},
-  tomatoes:      {name:'Tomatoes',       css:'#c83018', type:'scatter', color:0xc83018, piece:'disc', n:6, s:.05},
-  spinach:       {name:'Spinach',        css:'#1e5820', type:'scatter', color:0x1e5820, piece:'leaf', n:9, s:.04},
-  basil:         {name:'Basil',          css:'#2e6828', type:'scatter', color:0x2e6828, piece:'leaf', n:6, s:.045},
-  cilantro:      {name:'Cilantro',       css:'#3a9030', type:'scatter', color:0x3a9030, piece:'leaf', n:12, s:.02},
-  caram_onions:  {name:'Caram. Onions',  css:'#8a4818', type:'scatter', color:0x8a4818, piece:'arc',  n:7, s:.04},
-  garlic:        {name:'Garlic',         css:'#d8c8a0', type:'scatter', color:0xd8c8a0, piece:'crumb', n:12, s:.012},
-  artichoke:     {name:'Artichoke',      css:'#708840', type:'count',  color:0x708840, piece:'wedge', s:.05},
+  jalapenos:     {name:'Jalapeños',      css:'#5aad28', type:'scatter', color:0x5aad28, piece:'ring', n:8, s:.028},
+  red_onions:    {name:'Red Onions',     css:'#a038c0', type:'scatter', color:0xa038c0, piece:'arc',  n:7, s:.048},
+  bell_peppers:  {name:'Bell Peppers',   css:'#2ecc40', type:'scatter', color:0x2ecc40, piece:'arc',  n:7, s:.048},
+  mushrooms:     {name:'Mushrooms',      css:'#c8b090', type:'scatter', color:0xc8b090, piece:'mush', n:7, s:.04},
+  tomatoes:      {name:'Tomatoes',       css:'#e02818', type:'scatter', color:0xe02818, piece:'disc', n:6, s:.052},
+  spinach:       {name:'Spinach',        css:'#145018', type:'scatter', color:0x145018, piece:'leaf', n:9, s:.042},
+  basil:         {name:'Basil',          css:'#3d9b3a', type:'scatter', color:0x3d9b3a, piece:'leaf', n:6, s:.048},
+  cilantro:      {name:'Cilantro',       css:'#58c040', type:'scatter', color:0x58c040, piece:'leaf', n:12, s:.022},
+  caram_onions:  {name:'Caram. Onions',  css:'#8a4818', type:'scatter', color:0x8a4818, piece:'arc',  n:7, s:.042},
+  garlic:        {name:'Garlic',         css:'#d8c8a0', type:'scatter', color:0xd8c8a0, piece:'crumb', n:12, s:.014},
+  artichoke:     {name:'Artichoke',      css:'#708840', type:'count',  color:0x708840, piece:'wedge', s:.052},
 
   greengo:        {name:'Garlicky Greengo', css:'#6a9828', type:'layer',   color:0x6a9828},
-  taco_meat:      {name:'Taco Meat',        css:'#5a2810', type:'scatter', color:0x5a2810, piece:'crumb', n:12, s:.024},
-  lettuce:        {name:'Shredded Lettuce', css:'#58a028', type:'scatter', color:0x58a028, piece:'leaf', n:12, s:.03},
+  taco_meat:      {name:'Taco Meat',        css:'#5a2810', type:'scatter', color:0x5a2810, piece:'crumb', n:12, s:.026},
+  lettuce:        {name:'Shredded Lettuce', css:'#7ed957', type:'scatter', color:0x7ed957, piece:'leaf', n:12, s:.032},
   pineapple_salsa:{name:'Pineapple Salsa',  css:'#d49818', type:'scatter', color:0xd49818, piece:'crumb', n:10, s:.02},
   ranch_driz:     {name:'Ranch (drizzle)',  css:'#e8d8b0', type:'drizzle', color:0xe8d8b0},
   parmesan:       {name:'Parmesan',         css:'#e8dcc0', type:'scatter', color:0xe8dcc0, piece:'crumb', n:16, s:.012},
@@ -513,7 +525,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.physicallyCorrectLights = true;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-const EXPOSURE = 1.12;
+const EXPOSURE = 0.98;
 renderer.toneMappingExposure = EXPOSURE;
 container.appendChild(renderer.domElement);
 
@@ -582,9 +594,9 @@ try{
 
 const bloomPass = new THREE.UnrealBloomPass(
   new THREE.Vector2(innerWidth, innerHeight),
-  IS_MOBILE ? 0.28 : 0.48,
-  0.6,
-  0.78
+  IS_MOBILE ? 0.14 : 0.22,
+  0.45,
+  0.92
 );
 composer.addPass(bloomPass);
 
@@ -610,11 +622,12 @@ function applyGfxLevel(level){
   } else {
     renderPass.enabled = true;
   }
-  bloomPass.strength = (level === 'MED' ? 0.22 : (high && !IS_MOBILE ? 0.48 : 0.32)) + bloomBoost;
-  gradePass.uniforms.grain.value = ultra ? 0.05 : (high ? 0.035 : 0.02);
-  gradePass.uniforms.vignette.value = ultra ? 0.48 : 0.36;
-  gradePass.uniforms.contrast.value = ultra ? 1.1 : 1.05;
-  gradePass.uniforms.saturation.value = ultra ? 1.14 : 1.06;
+  bloomPass.strength = (level === 'MED' ? 0.12 : (high && !IS_MOBILE ? 0.24 : 0.16)) + bloomBoost;
+  bloomPass.threshold = ultra ? 0.9 : 0.93;
+  gradePass.uniforms.grain.value = ultra ? 0.04 : (high ? 0.028 : 0.016);
+  gradePass.uniforms.vignette.value = ultra ? 0.42 : 0.32;
+  gradePass.uniforms.contrast.value = ultra ? 1.06 : 1.03;
+  gradePass.uniforms.saturation.value = ultra ? 1.08 : 1.04;
   const pr = Math.min(devicePixelRatio, level === 'MED' ? 1.25 : (IS_MOBILE ? 1.5 : 2));
   renderer.setPixelRatio(pr);
   renderer.setSize(innerWidth, innerHeight);
@@ -646,8 +659,8 @@ function updateCamera(){
 updateCamera();
 
 /* Rig PBR (threejs-materials-lighting): hemisphere + key + fill + rim + IBL */
-scene.add(new THREE.HemisphereLight(0xfff2e4, 0x2a241c, 0.7));
-const key = new THREE.DirectionalLight(0xfff4e4, 2.55);
+scene.add(new THREE.HemisphereLight(0xfff2e4, 0x2a241c, 0.55));
+const key = new THREE.DirectionalLight(0xfff4e4, 1.85);
 key.position.set(4,7.2,5);
 key.castShadow = true;
 key.shadow.mapSize.set(IS_MOBILE ? 1536 : 3072, IS_MOBILE ? 1536 : 3072);
@@ -660,15 +673,15 @@ key.shadow.bias = -0.0002;
 key.shadow.normalBias = 0.018;
 key.shadow.radius = 2.2;
 scene.add(key);
-const fill = new THREE.DirectionalLight(0xa8bdd8, 0.62);
+const fill = new THREE.DirectionalLight(0xa8bdd8, 0.48);
 fill.position.set(-5,4,-3);
 scene.add(fill);
-const rim = new THREE.DirectionalLight(0xffd8a0, 0.55);
+const rim = new THREE.DirectionalLight(0xffd8a0, 0.32);
 rim.position.set(0, 3.5, 6);
 scene.add(rim);
-const spotPizza = new THREE.SpotLight(0xfff0d8, 0.85, 8, Math.PI/7, 0.45, 1.4);
+const spotPizza = new THREE.SpotLight(0xfff0d8, 0.55, 8, Math.PI/7, 0.5, 1.6);
 spotPizza.position.set(0.2, 4.2, 1.4);
-spotPizza.target.position.set(1.55, 1.15, 0.15);
+spotPizza.target.position.set(-0.4, 1.15, 0.35);
 scene.add(spotPizza); scene.add(spotPizza.target);
 
 /* Environment map procedural (IBL) — reflejos realistas en acero/vidrio */
@@ -686,16 +699,16 @@ scene.add(spotPizza); scene.add(spotPizza.target);
     grd.addColorStop(.62,'#c09060');
     grd.addColorStop(1,'#1a1410');
     g.fillStyle = grd; g.fillRect(0,0,1024,512);
-    /* luces de cocina / ventanas calientes */
-    for(let i=0;i<14;i++){
-      const x = 30+i*70 + Math.random()*20;
-      const y = 55+Math.random()*50;
-      const glow = g.createRadialGradient(x+20, y+12, 2, x+20, y+12, 40);
-      glow.addColorStop(0, `rgba(255,245,210,${.55+Math.random()*.35})`);
+    /* luces de cocina / ventanas — suaves para no saturar bloom */
+    for(let i=0;i<10;i++){
+      const x = 40+i*90 + Math.random()*20;
+      const y = 70+Math.random()*40;
+      const glow = g.createRadialGradient(x+20, y+12, 2, x+20, y+12, 36);
+      glow.addColorStop(0, `rgba(255,236,200,${.22+Math.random()*.18})`);
       glow.addColorStop(1, 'rgba(255,200,120,0)');
       g.fillStyle = glow; g.fillRect(x-20, y-20, 80, 60);
-      g.fillStyle = `rgba(255,236,190,${.2+Math.random()*.25})`;
-      g.fillRect(x, y, 42, 20);
+      g.fillStyle = `rgba(255,230,190,${.1+Math.random()*.12})`;
+      g.fillRect(x, y, 38, 16);
     }
     /* piso oscuro abajo */
     g.fillStyle = 'rgba(20,16,12,.45)';
@@ -713,14 +726,14 @@ scene.add(spotPizza); scene.add(spotPizza.target);
 /* Tabla PBR del brief: riel metalness .9/roughness .35, mostrador .4,
    baldosas esmaltadas .25, piso .6, horno metal alto/.5. Sin negros ni blancos puros. */
 const M = {
-  steel:     new THREE.MeshStandardMaterial({color:0xa8b0b8, metalness:.9, roughness:.35, envMapIntensity:1.4}),
-  steelDark: new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.85, roughness:.45}),
+  steel:     new THREE.MeshStandardMaterial({color:0x8e969e, metalness:.72, roughness:.45, envMapIntensity:0.8}),
+  steelDark: new THREE.MeshStandardMaterial({color:0x5a626a, metalness:.65, roughness:.52}),
   cabinet:   new THREE.MeshStandardMaterial({color:0x2a2e34, metalness:.25, roughness:.55}),
-  counter:   new THREE.MeshStandardMaterial({color:0xd8d4cc, metalness:.05, roughness:.4, envMapIntensity:1.1}),
-  panSteel:  new THREE.MeshStandardMaterial({color:0x8a929a, metalness:.9, roughness:.28, envMapIntensity:1.3}),
-  panClear:  new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.1, roughness:.15, transparent:true, opacity:.4}),
-  glass:     new THREE.MeshPhysicalMaterial({color:0xd0d8e0, metalness:0, roughness:.2, transparent:true, opacity:.32,
-    transmission:.55, envMapIntensity:1.4, side:THREE.DoubleSide}),
+  counter:   new THREE.MeshStandardMaterial({color:0xb8b3aa, metalness:.02, roughness:.62, envMapIntensity:0.45}),
+  panSteel:  new THREE.MeshStandardMaterial({color:0x7a828a, metalness:.7, roughness:.4, envMapIntensity:0.75}),
+  panClear:  new THREE.MeshStandardMaterial({color:0x6a727a, metalness:.1, roughness:.2, transparent:true, opacity:.35}),
+  glass:     new THREE.MeshPhysicalMaterial({color:0xd0d8e0, metalness:0, roughness:.25, transparent:true, opacity:.28,
+    transmission:.35, envMapIntensity:0.85, side:THREE.DoubleSide}),
   black:     new THREE.MeshStandardMaterial({color:0x1a1d20, roughness:.8}),
   floor:     new THREE.MeshStandardMaterial({color:0x4a5058, roughness:.6}),
   crust:     new THREE.MeshStandardMaterial({color:0xe8c98a, roughness:.85}),
@@ -793,7 +806,7 @@ const M = {
   ntex.repeat.set(16,8);
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(34,12),
     new THREE.MeshStandardMaterial({map:tex, normalMap:ntex, normalScale:new THREE.Vector2(.8,.8),
-      roughness:.25, metalness:.02, envMapIntensity:1.1}));
+      roughness:.45, metalness:.02, envMapIntensity:0.55}));
   wall.position.set(0, 6, -3.4);
   wall.receiveShadow = true;
   scene.add(wall);
@@ -803,13 +816,13 @@ const M = {
   ceil.rotation.x = Math.PI/2;
   ceil.position.y = 12;
   scene.add(ceil);
-  /* luces de techo fluorescentes */
+  /* luces de techo fluorescentes — sin saturar bloom */
   for(let i=-1;i<=1;i++){
     const fixture = new THREE.Mesh(new THREE.BoxGeometry(2.4,.08,.35),
-      new THREE.MeshStandardMaterial({color:0xe8e4d8, emissive:0xfff2c8, emissiveIntensity:.85, roughness:.4}));
+      new THREE.MeshStandardMaterial({color:0xd8d4c8, emissive:0xfff0c8, emissiveIntensity:.28, roughness:.55}));
     fixture.position.set(i*3.2, 11.6, 0.5);
     scene.add(fixture);
-    const pl = new THREE.PointLight(0xfff0d8, .45, 10, 2);
+    const pl = new THREE.PointLight(0xfff0d8, .22, 9, 2);
     pl.position.set(i*3.2, 11.2, 0.5);
     scene.add(pl);
   }
@@ -820,16 +833,16 @@ const M = {
   const oven = new THREE.Group();
   oven.position.set(3.6, 0, -.2);
   const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.35, 2.2),
-    new THREE.MeshStandardMaterial({color:0x3a4048, metalness:.75, roughness:.5, envMapIntensity:1.2}));
+    new THREE.MeshStandardMaterial({color:0x3a4048, metalness:.65, roughness:.55, envMapIntensity:0.8}));
   body.position.y = .68; body.castShadow = true; body.receiveShadow = true;
   oven.add(body);
   const belt = new THREE.Mesh(new THREE.BoxGeometry(1.5, .06, 2.4),
-    new THREE.MeshStandardMaterial({color:0x2a2e34, metalness:.5, roughness:.55}));
+    new THREE.MeshStandardMaterial({color:0x2a2e34, metalness:.4, roughness:.6}));
   belt.position.set(0, 1.05, 0); oven.add(belt);
   const glow = new THREE.Mesh(new THREE.BoxGeometry(1.4, .35, .08),
-    new THREE.MeshStandardMaterial({color:0xff6020, emissive:0xff4010, emissiveIntensity:2.6, roughness:.28}));
+    new THREE.MeshStandardMaterial({color:0xc04818, emissive:0xff4010, emissiveIntensity:0.85, roughness:.4}));
   glow.position.set(0, 1.05, 1.12); oven.add(glow);
-  const ovenLight = new THREE.PointLight(0xff6020, 1.05, 5.5, 2);
+  const ovenLight = new THREE.PointLight(0xff6020, 0.35, 4.2, 2);
   ovenLight.position.set(0, 1.2, 1.0);
   oven.add(ovenLight);
   scene.add(oven);
@@ -868,7 +881,7 @@ box(.66, BODY_H-.12, .04, M.steel, compX, LEG+BODY_H/2, D/2+.021);
 for(let i=0;i<9;i++) box(.5,.02,.01, M.black, compX, LEG+.16+i*.07, D/2+.045);
 box(.24,.1,.02, M.black, compX, LEG+BODY_H-.18, D/2+.05);
 const tempScreen = new THREE.Mesh(new THREE.PlaneGeometry(.14,.05),
-  new THREE.MeshStandardMaterial({color:0x33ff88, emissive:0x22cc66, emissiveIntensity:.9}));
+  new THREE.MeshStandardMaterial({color:0x33ff88, emissive:0x22cc66, emissiveIntensity:.35}));
 tempScreen.position.set(compX-.03, LEG+BODY_H-.18, D/2+.062);
 fridge.add(tempScreen);
 box(W+.3, .06, D+.45, M.counter, 0, COUNTER_Y+.03, .1);
@@ -1193,21 +1206,30 @@ function texChicken(){
   });
 }
 function texCrust(){
-  return makeTex('crust2', 512, (g,s)=>{
-    const grd = g.createRadialGradient(s*.45,s*.4,s*.1, s*.5,s*.5,s*.75);
-    grd.addColorStop(0,'#f2d8a0'); grd.addColorStop(.55,'#e0c080'); grd.addColorStop(1,'#c8a060');
+  return makeTex('crust3', 512, (g,s)=>{
+    const grd = g.createRadialGradient(s*.42,s*.38,s*.08, s*.5,s*.5,s*.78);
+    grd.addColorStop(0,'#f6e0b0'); grd.addColorStop(.4,'#e8c98a'); grd.addColorStop(.75,'#d4b070'); grd.addColorStop(1,'#b88848');
     g.fillStyle=grd; g.fillRect(0,0,s,s);
-    for(let i=0;i<1600;i++){
-      const k=Math.random();
-      g.fillStyle = k>.55 ? 'rgba(190,140,60,.22)' : 'rgba(255,230,180,.2)';
-      g.fillRect(Math.random()*s, Math.random()*s, 1+Math.random()*3.5, 1+Math.random()*3);
+    /* harina espolvoreada */
+    for(let i=0;i<2200;i++){
+      g.fillStyle = `rgba(255,248,235,${.04+Math.random()*.18})`;
+      g.beginPath(); g.arc(Math.random()*s, Math.random()*s, .4+Math.random()*1.8, 0, 7); g.fill();
     }
-    for(let i=0;i<80;i++){
-      g.fillStyle='rgba(170,110,40,.18)';
-      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,2+Math.random()*7,0,7); g.fill();
+    /* poros / burbujas de masa */
+    for(let i=0;i<120;i++){
+      const x=Math.random()*s, y=Math.random()*s, r=1.5+Math.random()*6;
+      g.fillStyle='rgba(160,100,40,.16)';
+      g.beginPath(); g.arc(x,y,r,0,7); g.fill();
+      g.strokeStyle='rgba(255,230,180,.12)'; g.lineWidth=1;
+      g.beginPath(); g.arc(x-.5,y-.5,r*.7,0,7); g.stroke();
     }
-    /* borde ligeramente tostado */
-    g.strokeStyle='rgba(140,80,30,.25)'; g.lineWidth=s*.08;
+    /* marcas de amasado */
+    g.strokeStyle='rgba(150,90,35,.12)'; g.lineWidth=2;
+    for(let i=0;i<9;i++){
+      g.beginPath(); g.arc(s/2+rnd(-8,8), s/2+rnd(-8,8), s*.14+i*s*.035, 0, 7); g.stroke();
+    }
+    /* borde tostado */
+    g.strokeStyle='rgba(120,60,20,.28)'; g.lineWidth=s*.07;
     g.beginPath(); g.arc(s/2,s/2,s*.46,0,7); g.stroke();
   });
 }
@@ -1231,7 +1253,7 @@ function texCrustNormal(){
 
 function foodMat(map, opts){
   const o = Object.assign({
-    map, roughness:.58, metalness:0, flatShading:false, envMapIntensity:0.85
+    map, roughness:.62, metalness:0, flatShading:false, envMapIntensity:0.55
   }, opts||{});
   if(map && map.anisotropy !== undefined){
     try{ map.anisotropy = Math.min(16, renderer.capabilities.getMaxAnisotropy()); }catch(e){}
@@ -1438,12 +1460,18 @@ rail.add(lidGroup);
 
 /* barra LED sobre la línea */
 const led = new THREE.Mesh(new THREE.BoxGeometry(W-.24, .018, .035),
-  new THREE.MeshStandardMaterial({color:0xe8e4d8, emissive:0xd8d0b8, emissiveIntensity:.9}));
+  new THREE.MeshStandardMaterial({color:0xd8d4c8, emissive:0xd8d0b8, emissiveIntensity:.35}));
 led.position.set(0, railH+.035, .455);
 rail.add(led);
-const ledLight = new THREE.PointLight(0xfff0d0, .18, 2.0);
-ledLight.position.set(0, railH+.25, .3);
+const ledLight = new THREE.PointLight(0xfff2dc, .22, 2.2);
+ledLight.position.set(0, railH+.28, .22);
 rail.add(ledLight);
+/* luz suave sobre toppings (sin bloom) */
+const railFill = new THREE.DirectionalLight(0xfff6ea, 0.28);
+railFill.position.set(0, 2.4, 1.2);
+railFill.target.position.set(0, railH, 0);
+rail.add(railFill);
+rail.add(railFill.target);
 
 /* pizza building charts colgados detrás */
 function makePoster(x){
@@ -1551,19 +1579,48 @@ function sprinkleCheese(id, innerR, half, y){
   }
 }
 
+/* etiquetas de bandeja: alto contraste + ES corto + swatch de color (se leen de lejos) */
+const PAN_ES = {
+  'Pizza Sauce':'Salsa','BBQ Sauce':'BBQ','Alfredo Sauce':'Alfredo','Olive Oil':'Aceite',
+  'Buffalo Ranch':'Buffalo','Mozzarella':'Mozza','Smoked Mozz.':'Ahumada','Smoked Mozz':'Ahumada',
+  'Gouda':'Gouda','Cheddar':'Cheddar','Romano':'Romano','Feta':'Feta',"Big Don's Mix":'Big Don',
+  'Canad. Bacon':'Jamón can.','Pepperoni':'Pepperoni','Ital. Sausage':'Salchicha','Chicken':'Pollo',
+  'Bacon':'Tocino','Potatoes':'Papa','Pineapple':'Piña','Cranberries':'Arándanos','Cashews':'Cajú',
+  'Black Olives':'Aceit. negras','Green Olives':'Aceit. verdes','Jalapeños':'Jalapeño',
+  'Red Onions':'Cebolla mor.','Bell Peppers':'Pimiento','Mushrooms':'Champiñón','Tomatoes':'Tomate',
+  'Spinach':'Espinaca','Basil':'Albahaca','Cilantro':'Cilantro','Caram. Onions':'Cebolla cara.',
+  'Garlic':'Ajo','Artichoke':'Alcachofa','Taco Meat':'Carne taco','Shredded Lettuce':'Lechuga',
+  'Pineapple Salsa':'Salsa piña','Parmesan':'Parmesano','Chives':'Cebollín',
+};
 function panLabel(name, accent){
   const cv = document.createElement('canvas');
-  cv.width = 256; cv.height = 56;
+  cv.width = 512; cv.height = 128;
   const g = cv.getContext('2d');
-  g.fillStyle = '#1e2228'; g.fillRect(0,0,256,56);
-  g.fillStyle = accent || '#f0c85a'; g.fillRect(0,0,12,56);
-  g.fillStyle = '#f2efe6'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  let size = 26;
-  g.font = 'bold '+size+'px Arial';
-  const txt = name.toUpperCase();
-  while(g.measureText(txt).width > 220 && size > 11){ size -= 2; g.font = 'bold '+size+'px Arial'; }
-  g.fillText(txt, 134, 30);
-  return new THREE.CanvasTexture(cv);
+  /* placa clara estilo ticket de cocina */
+  g.fillStyle = '#f7f1e6'; g.fillRect(0,0,512,128);
+  g.strokeStyle = '#1a1e24'; g.lineWidth = 6; g.strokeRect(3,3,506,122);
+  const bar = accent || '#f0c85a';
+  g.fillStyle = bar; g.fillRect(0,0,28,128);
+  /* swatch redondo del color del topping */
+  g.beginPath(); g.arc(78, 64, 34, 0, Math.PI*2); g.fill();
+  g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; g.stroke();
+  g.fillStyle = '#14181c';
+  g.textAlign = 'left'; g.textBaseline = 'middle';
+  const en = String(name||'').toUpperCase();
+  const es = PAN_ES[name] || PAN_ES[String(name).replace(/\.$/,'')] || '';
+  let size = 36;
+  g.font = '800 '+size+'px Barlow Condensed, Arial Black, Arial';
+  while(g.measureText(en).width > 360 && size > 18){ size -= 2; g.font = '800 '+size+'px Barlow Condensed, Arial Black, Arial'; }
+  g.fillText(en, 128, es ? 48 : 64);
+  if(es){
+    g.fillStyle = '#5a5044';
+    g.font = '700 26px IBM Plex Mono, monospace';
+    g.fillText(es, 128, 92);
+  }
+  const t = new THREE.CanvasTexture(cv);
+  t.anisotropy = 4;
+  t.encoding = THREE.sRGBEncoding;
+  return t;
 }
 
 /* ---------- Fase 2: bandejas llenas con InstancedMesh ----------
@@ -1606,44 +1663,45 @@ const PAN_GEO_CACHE = {};
 function panPieceSpec(id){
   if(PAN_GEO_CACHE[id]) return PAN_GEO_CACHE[id];
   const ing = ING[id];
-  const s = ing.s || .03;
-  let geo, mtl, flat = true, y0 = .06, n = ing.type==='count' ? 34 : 26;
-  const flatGeo = h => { const g = new THREE.CylinderGeometry(1,.95,h,20); return g; };
-  const torusFlat = (tube,arc) => { const g = new THREE.TorusGeometry(1,tube,8,20,arc||Math.PI*2); g.rotateX(Math.PI/2); return g; };
+  /* piezas más grandes en bandeja para leer silueta de lejos */
+  const s = (ing.s || .03) * 1.35;
+  let geo, mtl, flat = true, y0 = .08, n = ing.type==='count' ? 28 : 22;
+  const flatGeo = h => { const g = new THREE.CylinderGeometry(1,.95,h,24); return g; };
+  const torusFlat = (tube,arc) => { const g = new THREE.TorusGeometry(1,tube,10,24,arc||Math.PI*2); g.rotateX(Math.PI/2); return g; };
 
-  if(id==='pepperoni'){ geo = cupDiscGeo(); mtl = foodMat(texPepperoni(), {roughness:.4, metalness:.05}); y0 = .1; }
-  else if(id==='canad_bacon'){ geo = flatGeo(.1); mtl = foodMat(texCanadian(), {roughness:.5}); }
-  else if(id==='tomatoes'){ geo = flatGeo(.09); mtl = foodMat(texTomato(), {roughness:.35, metalness:.03}); }
-  else if(id==='potatoes'){ geo = flatGeo(.12); mtl = foodMat(texPotato(), {roughness:.7}); }
-  else if(id==='mushrooms'){ geo = flatGeo(.11); mtl = foodMat(texMushroom(), {roughness:.78}); }
-  else if(id==='black_olives' || id==='green_olives'){ geo = torusFlat(.34); mtl = foodMat(texOlive(id==='black_olives'), {roughness:.3, metalness:.04}); y0 = .34; }
-  else if(id==='jalapenos'){ geo = torusFlat(.36); mtl = foodMat(texJalapeno(), {roughness:.45}); y0 = .36; }
-  else if(id==='red_onions'){ geo = torusFlat(.24, Math.PI*1.35); mtl = foodMat(texOnion(), {roughness:.5, transparent:true, opacity:.9, side:THREE.DoubleSide}); y0 = .24; }
-  else if(id==='caram_onions'){ geo = torusFlat(.24, Math.PI*1.3); mtl = mat(0x8a4818,{roughness:.58, side:THREE.DoubleSide}); y0 = .24; }
-  else if(id==='bell_peppers'){ geo = torusFlat(.26, Math.PI*1.25); mtl = foodMat(texPepper(), {roughness:.5, side:THREE.DoubleSide}); y0 = .26; }
+  if(id==='pepperoni'){ geo = cupDiscGeo(32); mtl = foodMat(texPepperoni(), {roughness:.38, metalness:.06}); y0 = .12; n = 36; }
+  else if(id==='canad_bacon'){ geo = flatGeo(.14); mtl = foodMat(texCanadian(), {roughness:.48}); n = 22; }
+  else if(id==='tomatoes'){ geo = flatGeo(.12); mtl = foodMat(texTomato(), {roughness:.32, metalness:.04}); n = 18; }
+  else if(id==='potatoes'){ geo = flatGeo(.16); mtl = foodMat(texPotato(), {roughness:.68}); n = 24; }
+  else if(id==='mushrooms'){ geo = flatGeo(.14); mtl = foodMat(texMushroom(), {roughness:.75}); n = 20; }
+  else if(id==='black_olives' || id==='green_olives'){ geo = torusFlat(.42); mtl = foodMat(texOlive(id==='black_olives'), {roughness:.28, metalness:.05}); y0 = .42; n = 26; }
+  else if(id==='jalapenos'){ geo = torusFlat(.44); mtl = foodMat(texJalapeno(), {roughness:.42}); y0 = .44; n = 24; }
+  else if(id==='red_onions'){ geo = torusFlat(.32, Math.PI*1.35); mtl = foodMat(texOnion(), {roughness:.48, transparent:true, opacity:.92, side:THREE.DoubleSide}); y0 = .32; n = 20; }
+  else if(id==='caram_onions'){ geo = torusFlat(.32, Math.PI*1.3); mtl = mat(0x8a4818,{roughness:.55, side:THREE.DoubleSide}); y0 = .32; n = 20; }
+  else if(id==='bell_peppers'){ geo = torusFlat(.34, Math.PI*1.25); mtl = foodMat(texPepper(), {roughness:.48, side:THREE.DoubleSide}); y0 = .34; n = 20; }
   else if(id==='spinach'||id==='basil'||id==='cilantro'||id==='lettuce'||id==='chives'){
-    const wl = id==='chives' ? .6 : 1.5, hl = id==='chives' ? 2.4 : 2.2;
+    const wl = id==='chives' ? .7 : 1.8, hl = id==='chives' ? 2.6 : 2.5;
     geo = new THREE.PlaneGeometry(wl, hl); geo.rotateX(-Math.PI/2);
-    mtl = foodMat(texLeaf(ing.color), {roughness:.8, side:THREE.DoubleSide, transparent:true, alphaTest:.12});
-    n = 30; y0 = .04;
+    mtl = foodMat(texLeaf(ing.color), {roughness:.78, side:THREE.DoubleSide, transparent:true, alphaTest:.1});
+    n = 36; y0 = .05;
   }
-  else if(id==='chicken'){ geo = new THREE.BoxGeometry(1.2,.38,.9); mtl = foodMat(texChicken(), {roughness:.7}); flat = false; y0 = .2; }
-  else if(id==='feta'){ geo = new THREE.BoxGeometry(1,.42,.85); mtl = foodMat(texCheese(ing.color), {roughness:.76}); flat = false; y0 = .21; }
-  else if(id==='bacon'){ geo = new THREE.BoxGeometry(2.1,.28,.55); mtl = foodMat(texBacon(), {roughness:.55}); flat = false; y0 = .15; }
-  else if(id==='pineapple'){ geo = new THREE.CylinderGeometry(.55,.85,.32,4); mtl = foodMat(texPineapple(), {roughness:.6}); y0 = .16; }
-  else if(id==='artichoke'){ geo = new THREE.CylinderGeometry(.5,.9,.36,5); mtl = foodMat(texCheese(0x708840), {roughness:.7}); y0 = .18; }
-  else if(id==='cranberries'){ geo = new THREE.SphereGeometry(1,12,10); mtl = mat(ing.color,{roughness:.3, metalness:.08}); flat = false; y0 = .8; }
-  else if(id==='cashews'){ geo = torusFlat(.28, Math.PI*1.2); mtl = mat(0xc8a060,{roughness:.55}); y0 = .28; }
+  else if(id==='chicken'){ geo = new THREE.BoxGeometry(1.35,.45,1.0); mtl = foodMat(texChicken(), {roughness:.68}); flat = false; y0 = .24; n = 18; }
+  else if(id==='feta'){ geo = new THREE.BoxGeometry(1.15,.5,.95); mtl = foodMat(texCheese(ing.color), {roughness:.74}); flat = false; y0 = .26; n = 18; }
+  else if(id==='bacon'){ geo = new THREE.BoxGeometry(2.4,.32,.62); mtl = foodMat(texBacon(), {roughness:.52}); flat = false; y0 = .18; n = 16; }
+  else if(id==='pineapple'){ geo = new THREE.CylinderGeometry(.6,.95,.42,4); mtl = foodMat(texPineapple(), {roughness:.58}); y0 = .22; n = 16; }
+  else if(id==='artichoke'){ geo = new THREE.CylinderGeometry(.55,1.0,.42,5); mtl = foodMat(texCheese(0x708840), {roughness:.68}); y0 = .22; n = 14; }
+  else if(id==='cranberries'){ geo = new THREE.SphereGeometry(1,12,10); mtl = mat(ing.color,{roughness:.28, metalness:.1}); flat = false; y0 = .85; n = 28; }
+  else if(id==='cashews'){ geo = torusFlat(.34, Math.PI*1.2); mtl = mat(0xc8a060,{roughness:.52}); y0 = .34; n = 22; }
   else if(id==='sausage'||id==='taco_meat'||id==='bigdons_mix'){
-    geo = new THREE.SphereGeometry(1,9,7); geo.scale(1.3,.58,1.1);
-    mtl = foodMat(texSausage(), {roughness:.68}); flat = false; y0 = .5; n = 40;
+    geo = new THREE.SphereGeometry(1,10,8); geo.scale(1.4,.65,1.2);
+    mtl = foodMat(texSausage(), {roughness:.65}); flat = false; y0 = .55; n = 36;
   }
   else if(CHEESE_IDS.includes(id) || id==='smoked_mozz'){
-    geo = new THREE.BoxGeometry(1.9,.24,.44);
-    mtl = foodMat(texCheese(ing.color), {roughness:.68});
-    flat = false; y0 = .12; n = 95;
+    geo = new THREE.BoxGeometry(2.1,.28,.5);
+    mtl = foodMat(texCheese(ing.color), {roughness:.65});
+    flat = false; y0 = .14; n = 110;
   }
-  else { geo = new THREE.SphereGeometry(1,10,8); mtl = mat(ing.color,{roughness:.6}); flat = false; y0 = .8; }
+  else { geo = new THREE.SphereGeometry(1,10,8); mtl = mat(ing.color,{roughness:.58}); flat = false; y0 = .85; }
 
   const spec = {geo, mtl, s, flat, y0, n};
   PAN_GEO_CACHE[id] = spec;
@@ -1695,14 +1753,14 @@ function makePan(id, x, z, w, d){
   const isSauce = SAUCE_IDS.includes(id);
   const isCheese = CHEESE_IDS.includes(id);
   const baseColor = new THREE.Color(ing.color);
-  if(isSauce) baseColor.offsetHSL(0, .05, -.12);
-  else baseColor.offsetHSL(0, .02, -.18);
+  if(isSauce) baseColor.offsetHSL(0, .08, -.08);
+  else baseColor.offsetHSL(0, .12, -.06); /* base más saturada = se lee el color del topping */
   const base = new THREE.Mesh(new THREE.BoxGeometry(w-.035, .05, d-.035),
     new THREE.MeshStandardMaterial({
       color:baseColor,
-      roughness: isSauce ? .18 : .9,
+      roughness: isSauce ? .18 : .82,
       metalness: isSauce ? .12 : 0,
-      emissive:ing.color, emissiveIntensity:0
+      emissive:ing.color, emissiveIntensity: isSauce ? .04 : .05
     }));
   base.position.set(x, railH+.028, z);
   base.userData.ing = id;
@@ -1716,7 +1774,7 @@ function makePan(id, x, z, w, d){
     const gloss = new THREE.Mesh(new THREE.BoxGeometry(w-.05, .014, d-.05),
       foodMat(texSauce(ing.color), {
         roughness: .14, metalness: .12,
-        emissive: new THREE.Color(ing.color), emissiveIntensity: .06
+        emissive: new THREE.Color(ing.color), emissiveIntensity: .1
       }));
     gloss.position.set(x, railH+.056, z);
     gloss.userData.ing = id;
@@ -1733,17 +1791,18 @@ function makePan(id, x, z, w, d){
       clickPans.push(swirl);
     }
   } else if(isCheese){
-    fillPanInstanced(id, x, z, w, d, {s:.024});
+    fillPanInstanced(id, x, z, w, d, {s:.028});
   } else if(ing.piece){
     fillPanInstanced(id, x, z, w, d);
   }
 
-  /* etiqueta oscura con barra de color del ingrediente */
-  const lw = Math.min(w-.01, .32);
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(lw, lw*56/256),
-    new THREE.MeshStandardMaterial({map:panLabel(ing.name, ing.css), roughness:.55}));
-  label.position.set(x, railH+.05, z+d/2+.038);
-  label.rotation.x = -Math.PI/2 + .58;
+  /* etiqueta grande, clara, MeshBasic = siempre legible sin depender de la luz */
+  const lw = Math.max(Math.min(w - .02, .42), .18);
+  const lh = lw * (128/512);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh),
+    new THREE.MeshBasicMaterial({map:panLabel(ing.name, ing.css), transparent:true}));
+  label.position.set(x, railH + .12, z + d/2 + .02);
+  label.rotation.x = -Math.PI/2 + 1.05;
   label.userData.ing = id;
   rail.add(label);
   clickPans.push(label);
@@ -1776,11 +1835,11 @@ LAYOUT_LARGE.forEach(([id,w])=>{
   clickPans.push(base, frame, rim);
   frame.userData.ing = 'smoked_mozz';
   regHighlight('smoked_mozz', base.material);
-  fillPanInstanced('smoked_mozz', pepX, -.18, fw, fd, {s:.02, n:60, y:railH+.172});
-  const lbl = new THREE.Mesh(new THREE.PlaneGeometry(.24, .24*56/256),
-    new THREE.MeshStandardMaterial({map:panLabel('Smoked Mozz', ING.smoked_mozz.css), roughness:.55}));
-  lbl.position.set(pepX, railH+.18, -.02);
-  lbl.rotation.x = -Math.PI/2 + .58;
+  fillPanInstanced('smoked_mozz', pepX, -.18, fw, fd, {s:.024, n:70, y:railH+.172});
+  const lbl = new THREE.Mesh(new THREE.PlaneGeometry(.28, .28*128/512),
+    new THREE.MeshBasicMaterial({map:panLabel('Smoked Mozz', ING.smoked_mozz.css), transparent:true}));
+  lbl.position.set(pepX, railH+.26, .04);
+  lbl.rotation.x = -Math.PI/2 + 1.05;
   lbl.userData.ing = 'smoked_mozz';
   rail.add(lbl);
   clickPans.push(lbl);
@@ -1830,16 +1889,13 @@ const workspace = new THREE.Group();
 workspace.position.set(-.5, COUNTER_Y+.065, .45);
 scene.add(workspace);
 
-/* plato de servicio (look moderno AAA) */
+/* plato de servicio — cerámica mate (sin flare blanco) */
 (function makePlate(){
-  const plateMat = new THREE.MeshPhysicalMaterial({
-    color: 0xf4eee4, roughness: 0.28, metalness: 0.05,
-    clearcoat: 0.85, clearcoatRoughness: 0.18, reflectivity: 0.55,
-    envMapIntensity: 1.35,
+  const plateMat = new THREE.MeshStandardMaterial({
+    color: 0xe8e2d8, roughness: 0.55, metalness: 0.02, envMapIntensity: 0.45,
   });
-  const rimMat = new THREE.MeshPhysicalMaterial({
-    color: 0xe8e0d4, roughness: 0.22, metalness: 0.08,
-    clearcoat: 0.9, clearcoatRoughness: 0.15, envMapIntensity: 1.4,
+  const rimMat = new THREE.MeshStandardMaterial({
+    color: 0xddd5c8, roughness: 0.42, metalness: 0.04, envMapIntensity: 0.5,
   });
   const dish = new THREE.Mesh(new THREE.CylinderGeometry(1.28, 1.22, 0.035, 64), plateMat);
   dish.position.y = -0.038;
@@ -1848,18 +1904,10 @@ scene.add(workspace);
   lip.rotation.x = Math.PI/2; lip.position.y = -0.018;
   lip.castShadow = true;
   const well = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.08, 0.012, 48),
-    new THREE.MeshStandardMaterial({color:0xebe4da, roughness:0.45}));
+    new THREE.MeshStandardMaterial({color:0xe0d8cc, roughness:0.62}));
   well.position.y = -0.022; well.receiveShadow = true;
-  /* anillo de brillo especular (look servicio moderno) */
-  const gloss = new THREE.Mesh(
-    new THREE.RingGeometry(0.72, 1.02, 64),
-    new THREE.MeshBasicMaterial({
-      color:0xffffff, transparent:true, opacity:0.07,
-      depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide
-    }));
-  gloss.rotation.x = -Math.PI/2; gloss.position.y = -0.014;
   window.__ptPlate = new THREE.Group();
-  window.__ptPlate.add(dish, lip, well, gloss);
+  window.__ptPlate.add(dish, lip, well);
   workspace.add(window.__ptPlate);
 })();
 
@@ -1903,11 +1951,11 @@ crustN.wrapS = crustN.wrapT = THREE.RepeatWrapping;
 const crust = new THREE.Mesh(
   new THREE.CylinderGeometry(1,1.02,.032,96, 3),
   foodMat(texCrust(), {
-    roughness:.86,
+    roughness:.92,
     color:0xe8c98a,
     normalMap: crustN,
-    normalScale: new THREE.Vector2(0.55, 0.55),
-    envMapIntensity: 0.55,
+    normalScale: new THREE.Vector2(0.85, 0.85),
+    envMapIntensity: 0.28,
   }));
 crust.castShadow = true; crust.receiveShadow = true;
 workspace.add(crust);
@@ -2067,19 +2115,19 @@ function tickAtmosphere(dt){
   }
 }
 
-/* heat haze planes near oven */
+/* heat haze planes near oven — muy sutil */
 const heatHaze = (()=>{
   const mats = [];
   const group = new THREE.Group();
-  for(let i=0;i<3;i++){
+  for(let i=0;i<2;i++){
     const m = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.55, 0.9),
+      new THREE.PlaneGeometry(0.4, 0.7),
       new THREE.MeshBasicMaterial({
-        color:0xffaa66, transparent:true, opacity:0.04 + i*0.015,
+        color:0xff8844, transparent:true, opacity:0.018 + i*0.01,
         depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide
       }));
-    m.position.set(1.55 + i*0.05, COUNTER_Y + 1.15, 1.25 - i*0.08);
-    m.rotation.y = -0.35;
+    m.position.set(3.35 + i*0.08, COUNTER_Y + 1.05, 0.85 - i*0.06);
+    m.rotation.y = -0.55;
     group.add(m); mats.push(m);
   }
   scene.add(group);
@@ -2617,7 +2665,7 @@ function applyBakeLook(b){
       o.material.needsUpdate = true;
     }
   });
-  bloomBoost = b ? 0.22 : 0;
+  bloomBoost = b ? 0.06 : 0;
 }
 
 function clearPizzaVisual(){
@@ -2967,6 +3015,14 @@ function renderTray(){
 
 function selectIng(id){
   selected = id;
+  const ing = ING[id];
+  const badge = document.getElementById('pickBadge');
+  if(badge && ing){
+    badge.classList.add('on');
+    badge.querySelector('.sw').style.background = ing.css;
+    badge.querySelector('b').textContent = ing.name;
+    badge.querySelector('span').textContent = PAN_ES[ing.name] || PAN_ES[String(ing.name).replace(/\.$/,'')] || 'Toca la pizza para aplicarlo';
+  }
   const need = catOf(id);
   if(need !== trayCat){ trayCat = need; renderTray(); return; }
   $('#ingGrid')?.querySelectorAll('.chip').forEach(c=>{
@@ -3521,11 +3577,11 @@ function animate(){
   tickCheeseMelt(dt);
   gradePass.uniforms.time.value = clock.elapsedTime;
   heatHaze.forEach((m,i)=>{
-    const on = gfxLevel !== 'MED';
+    const on = gfxLevel === 'ULTRA';
     m.visible = on;
     if(!on) return;
-    m.material.opacity = 0.03 + (0.5+0.5*Math.sin(pulse*1.4+i))*0.04;
-    m.position.y = COUNTER_Y + 1.1 + Math.sin(pulse*2+i)*.04;
+    m.material.opacity = 0.012 + (0.5+0.5*Math.sin(pulse*1.4+i))*0.012;
+    m.position.y = COUNTER_Y + 1.0 + Math.sin(pulse*2+i)*.03;
   });
   if(camShake > 0){
     camera.position.x += (Math.random()-.5) * camShake;
@@ -3535,7 +3591,7 @@ function animate(){
   }
 
   const highBloom = (gfxLevel === 'HIGH' || gfxLevel === 'ULTRA') && !IS_MOBILE;
-  bloomPass.strength = (gfxLevel === 'MED' ? 0.22 : (highBloom ? 0.48 : 0.32)) + bloomBoost + meltT * 0.08;
+  bloomPass.strength = (gfxLevel === 'MED' ? 0.12 : (highBloom ? 0.22 : 0.15)) + bloomBoost + meltT * 0.03;
   composer.render();
 }
 animate();
