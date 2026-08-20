@@ -93,6 +93,7 @@
     background:rgba(28,32,38,.92);min-height:44px}
   .btn:disabled{opacity:.35;pointer-events:none}
   .btn.bake{background:#c44a18}
+  .btn.pack{background:#3d5a80}
   .btn.serve{background:#2f6b38}
   .btn.ghost{background:rgba(20,24,28,.65);border:1px solid rgba(246,241,231,.3)}
   #btnHint{display:none;background:#2f6b38}
@@ -173,6 +174,8 @@
 
 <div id="actions">
   <button class="btn bake" id="btnBake" disabled>🔥 Horno EDGE</button>
+  <button class="btn pack" id="btnPack" disabled>🥣 Pasar a servir</button>
+  <button class="btn ghost" id="btnLid" disabled style="display:none">Tapar to-go</button>
   <button class="btn serve" id="btnServe" disabled>✓ Entregar</button>
   <button class="btn" id="btnHint" type="button">💡 Pista</button>
   <button class="btn ghost" id="btnSkip">Otra orden</button>
@@ -187,7 +190,9 @@
   <div class="panel">
     <h2>🥗 Turno de línea</h2>
     <p>Arma pasta, ensaladas y entradas del chart.<br>
-    Elige toppings del <b>rail frío</b> o de <b>pasta</b>, toca el plato, y si pide horno usa el <b>EDGE</b> (½ / ¾ / completo).<br>
+    Las <b>pastas se mezclan en bowl de aluminio</b>. Marinara y alfredo salen del <b>baño maría</b>.<br>
+    Luego se sirven en <b>plato (dine-in)</b> o <b>contenedor negro (to-go)</b> + tapa.<br>
+    Si pide horno usa el <b>EDGE</b> (½ / ¾ / completo).<br>
     Pasta: pan de queso + pizca de parmesano y perejil.<br>
     Si una comanda lleva <b>más de 8 min</b> se pone roja.<br><br>
     <b>3 platos rechazados = fin del turno</b>.</p>
@@ -295,22 +300,22 @@ const ING = {
 const S = (id, need)=>({id, need: need==null?1:need});
 /* Recetas alineadas a menu.js — no inventar porciones */
 const RECIPES = [
-  {name:'BAKED MAC & CHEESE', tipo:'Pasta', vessel:'casserole', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
+  {name:'BAKED MAC & CHEESE', tipo:'Pasta', vessel:'alum', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
     note:'Penne 6 oz + ⅛ cheddar/smoked/gouda + 1.5 oz sausage + 3 oz alfredo + breadcrumbs. Full oven.',
     ings:[S('penne'),S('cheddar'),S('smoked_mozz'),S('gouda'),S('sausage'),S('alfredo'),S('breadcrumbs')]},
-  {name:'FETTUCCINE PRIMAVERA', tipo:'Pasta', vessel:'bowl', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
+  {name:'FETTUCCINE PRIMAVERA', tipo:'Pasta', vessel:'alum', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
     note:'Saltea vegetales full oven, luego 2 oz marinara + 2 oz alfredo + 6 oz fettuccine.',
     ings:[S('spinach'),S('artichoke'),S('mushrooms'),S('garlic'),S('olive_oil'),S('marinara'),S('alfredo'),S('fettuccine')]},
-  {name:'CHICKEN ALFREDO', tipo:'Pasta', vessel:'bowl', oven:'half', bread:'cheese_bread', garnish:['parmesan','parsley'],
+  {name:'CHICKEN ALFREDO', tipo:'Pasta', vessel:'alum', oven:'half', bread:'cheese_bread', garnish:['parmesan','parsley'],
     note:'Pollo 3 oz por ½ horno + fettuccine 6 oz + 4 oz alfredo.',
     ings:[S('chicken'),S('fettuccine'),S('alfredo')]},
-  {name:'SPAGHETTI MEATBALLS', tipo:'Pasta', vessel:'bowl', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
+  {name:'SPAGHETTI MEATBALLS', tipo:'Pasta', vessel:'alum', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
     note:'3 albóndigas full oven + spaghetti 6 oz + 4 oz marinara.',
     ings:[S('meatballs',3),S('spaghetti'),S('marinara')]},
-  {name:'SPAGHETTI MARINARA', tipo:'Pasta', vessel:'bowl', oven:null, bread:'cheese_bread', garnish:['parmesan','parsley'],
+  {name:'SPAGHETTI MARINARA', tipo:'Pasta', vessel:'alum', oven:null, bread:'cheese_bread', garnish:['parmesan','parsley'],
     note:'Spaghetti 6 oz + 4 oz marinara, sin albóndigas.',
     ings:[S('spaghetti'),S('marinara')]},
-  {name:'BLACKENED CHICKEN CAPRI', tipo:'Pasta', vessel:'bowl', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
+  {name:'BLACKENED CHICKEN CAPRI', tipo:'Pasta', vessel:'alum', oven:'full', bread:'cheese_bread', garnish:['parmesan','parsley'],
     note:'Pollo ennegrecido 3 oz + 3 alcachofas + ¼ taza mushrooms, full oven. 4 oz alfredo. Cama de espinaca.',
     ings:[S('blackened'),S('artichoke',3),S('mushrooms'),S('olive_oil'),S('fettuccine'),S('alfredo'),S('spinach')]},
   {name:'TOMATO BASIL SOUP', tipo:'Entrada', vessel:'cup', oven:'three_quarter', bread:'cheese_bread', garnish:['basil','romano'],
@@ -415,6 +420,21 @@ container.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1814);
 scene.fog = new THREE.FogExp2(0x1a1814, 0.02);
+(function setupIBL(){
+  try{
+    const pmrem=new THREE.PMREMGenerator(renderer);
+    const cv=document.createElement('canvas'); cv.width=512; cv.height=256;
+    const g=cv.getContext('2d');
+    const grd=g.createLinearGradient(0,0,0,256);
+    grd.addColorStop(0,'#7a8aa0'); grd.addColorStop(.4,'#f0e0c0'); grd.addColorStop(1,'#1a1612');
+    g.fillStyle=grd; g.fillRect(0,0,512,256);
+    const tex=new THREE.CanvasTexture(cv);
+    tex.encoding=THREE.sRGBEncoding;
+    tex.mapping=THREE.EquirectangularReflectionMapping;
+    scene.environment=pmrem.fromEquirectangular(tex).texture;
+    tex.dispose(); pmrem.dispose();
+  }catch(e){}
+})();
 const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, .08, 80);
 const composer = new THREE.EffectComposer(renderer);
 composer.addPass(new THREE.RenderPass(scene, camera));
@@ -455,6 +475,10 @@ const M = {
   counter: new THREE.MeshStandardMaterial({color:0xb8b3aa, metalness:.02, roughness:.62}),
   black: new THREE.MeshStandardMaterial({color:0x1a1d20, roughness:.8}),
   plastic: new THREE.MeshPhysicalMaterial({color:0xd8e0e4, metalness:0, roughness:.18, transparent:true, opacity:.38, transmission:.25}),
+  alum: new THREE.MeshPhysicalMaterial({color:0xc5c9ce, metalness:.96, roughness:.16, envMapIntensity:1.45, clearcoat:.15, clearcoatRoughness:.35}),
+  plate: new THREE.MeshStandardMaterial({color:0xf4f1ea, roughness:.28, metalness:.04, envMapIntensity:.55}),
+  togo: new THREE.MeshStandardMaterial({color:0x141414, roughness:.55, metalness:.08}),
+  lid: new THREE.MeshPhysicalMaterial({color:0xe8f0f4, metalness:0, roughness:.12, transparent:true, opacity:.28, transmission:.45, envMapIntensity:.9}),
 };
 
 function box(w,h,d,mat,x,y,z,parent){
@@ -574,7 +598,7 @@ const COLD = [
 ];
 COLD.forEach(a=>makeBin(...a));
 
-/* rail pasta / caliente */
+/* rail pasta / caliente — salsas van al baño maría */
 const HOT = [
   ['meatballs', -.55,-1.02,.42,.36],
   ['chicken', -.10,-1.02,.42,.36],
@@ -582,16 +606,86 @@ const HOT = [
   ['spaghetti', -.55,-.58,.42,.36],
   ['fettuccine', -.10,-.58,.42,.36],
   ['penne', .35,-.58,.42,.36],
-  ['alfredo', .82,-1.02,.40,.36],
-  ['marinara', .82,-.58,.40,.36],
-  ['cheddar', 1.26,-1.02,.38,.34],
-  ['mozzarella', 1.26,-.58,.38,.34],
-  ['sausage', 1.68,-1.02,.36,.34],
-  ['breadcrumbs', 1.68,-.58,.36,.34],
-  ['smoked_mozz', 2.08,-1.02,.36,.34],
-  ['gouda', 2.08,-.58,.36,.34],
+  ['cheddar', .82,-1.02,.38,.34],
+  ['mozzarella', .82,-.58,.38,.34],
+  ['sausage', 1.24,-1.02,.36,.34],
+  ['breadcrumbs', 1.24,-.58,.36,.34],
+  ['smoked_mozz', 1.64,-1.02,.36,.34],
+  ['gouda', 1.64,-.58,.36,.34],
 ];
 HOT.forEach(a=>makeBin(...a));
+
+/* baño maría 3 pozos — marinara + alfredo (fotos) */
+(function makeBainMarie(){
+  const g=new THREE.Group();
+  g.position.set(1.55, 0, 0.72);
+  scene.add(g);
+  const body=box(1.28, .72, .92, M.steel, 0, .78, 0, g);
+  body.receiveShadow=true;
+  /* top deck */
+  box(1.32, .04, .96, M.steel, 0, 1.16, 0, g);
+  /* legs */
+  [[-.54,-.38],[.54,-.38],[-.54,.38],[.54,.38]].forEach(([x,z])=>{
+    box(.05, .42, .05, M.steelDark, x, .21, z, g);
+  });
+  /* lower shelf + utensil bin */
+  box(1.18, .03, .82, M.steel, 0, .38, 0, g);
+  const bin=box(.28, .1, .18, new THREE.MeshStandardMaterial({color:0xf2f2f0, roughness:.7}), -.38, .46, .12, g);
+  const tong=box(.02, .02, .16, M.black, -.38, .54, .12, g);
+  /* front panel */
+  box(1.24, .38, .06, M.steel, 0, .72, .48, g);
+  /* knobs */
+  [-.42,-.14,.14,.42].forEach((x,i)=>{
+    const kn=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.03,16), M.black);
+    kn.rotation.x=Math.PI/2; kn.position.set(x, .78, .52); g.add(kn);
+    if(i===0){
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.042,.006,8,16),
+        new THREE.MeshStandardMaterial({color:0xb01018, roughness:.4}));
+      ring.position.set(x, .78, .525); g.add(ring);
+    }
+  });
+  /* blue drain valves */
+  [-.38,0,.38].forEach(x=>{
+    const v=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.05,8),
+      new THREE.MeshStandardMaterial({color:0x1e6ad4, roughness:.4}));
+    v.rotation.x=Math.PI/2; v.position.set(x, .58, .52); g.add(v);
+  });
+  /* green / red lights */
+  [{x:.48,c:0x22cc44},{x:.56,c:0x22cc44},{x:.64,c:0xcc2218}].forEach(L=>{
+    const lt=new THREE.Mesh(new THREE.CircleGeometry(.012,12),
+      new THREE.MeshStandardMaterial({color:L.c, emissive:L.c, emissiveIntensity:.7}));
+    lt.position.set(L.x, .88, .512); g.add(lt);
+  });
+  const sauces=[
+    {id:'marinara', x:-.38, color:0xb42014, name:'Marinara'},
+    {id:'alfredo', x:0, color:0xe8d4a0, name:'Alfredo'},
+    {id:'pizza_sauce', x:.38, color:0xc4281a, name:'Pizza Sauce'},
+  ];
+  sauces.forEach(s=>{
+    /* well */
+    const well=box(.36, .16, .52, M.steelDark, s.x, 1.08, -.02, g);
+    /* hotel pan */
+    const pan=new THREE.Mesh(new THREE.BoxGeometry(.33, .14, .48),
+      new THREE.MeshStandardMaterial({color:0x9aa2a8, metalness:.75, roughness:.32}));
+    pan.position.set(s.x, 1.16, -.02); pan.userData.ing=s.id; g.add(pan);
+    const sauce=new THREE.Mesh(new THREE.BoxGeometry(.30, .05, .44),
+      new THREE.MeshStandardMaterial({color:s.color, roughness:.16, metalness:.08, emissive:s.color, emissiveIntensity:.08}));
+    sauce.position.set(s.x, 1.24, -.02); sauce.userData.ing=s.id; g.add(sauce);
+    /* swirl highlight */
+    const swirl=new THREE.Mesh(new THREE.TorusGeometry(.08,.008,8,20),
+      new THREE.MeshStandardMaterial({color:new THREE.Color(s.color).offsetHSL(0,0,.12), roughness:.2}));
+    swirl.rotation.x=Math.PI/2; swirl.position.set(s.x, 1.268, -.02); swirl.userData.ing=s.id; g.add(swirl);
+    const lbl=new THREE.Mesh(new THREE.PlaneGeometry(.32, .08),
+      new THREE.MeshBasicMaterial({map:panLabel(ING[s.id].name, ING[s.id].css)}));
+    lbl.position.set(s.x, 1.30, .28); lbl.rotation.x=-Math.PI/2+.95; lbl.userData.ing=s.id; g.add(lbl);
+    clickPans.push(pan, sauce, swirl, lbl);
+    well.userData.ing=s.id; clickPans.push(well);
+    regHighlight(s.id, sauce.material);
+  });
+  /* steam */
+  const steam=new THREE.PointLight(0xffe0c0, .12, 1.8);
+  steam.position.set(0, 1.45, 0); g.add(steam);
+})();
 
 /* Horno EDGE de dos pisos */
 const ovenGroup = new THREE.Group();
@@ -639,77 +733,139 @@ for(let i=0;i<6;i++){
 const ovenLight=new THREE.PointLight(0xff6020, .28, 4.5, 2);
 ovenLight.position.set(3.4, 1.4, .6); scene.add(ovenLight);
 
-/* estación de trabajo: bowl / cazuela / taza */
+/* estación: bowl aluminio (mezcla) + plato dine-in / to-go */
 const workspace = new THREE.Group();
-workspace.position.set(-0.15, COUNTER_Y+.08, .55);
+workspace.position.set(-0.35, COUNTER_Y+.08, .58);
 scene.add(workspace);
-const board=new THREE.Mesh(new THREE.CylinderGeometry(.62,.64,.02,40),
-  new THREE.MeshStandardMaterial({color:0x8a6238, roughness:.78}));
+const board=new THREE.Mesh(new THREE.BoxGeometry(1.35,.02,.72),
+  new THREE.MeshStandardMaterial({color:0x7a5a38, roughness:.78}));
 board.receiveShadow=true; workspace.add(board);
 
-const vesselGroup=new THREE.Group();
-workspace.add(vesselGroup);
-const placedGroup=new THREE.Group();
-workspace.add(placedGroup);
+const mixGroup=new THREE.Group(); mixGroup.position.set(-.28, 0, 0); workspace.add(mixGroup);
+const serveGroup=new THREE.Group(); serveGroup.position.set(.32, 0, 0); workspace.add(serveGroup);
+const placedGroup=new THREE.Group(); mixGroup.add(placedGroup);
+const packedGroup=new THREE.Group(); serveGroup.add(packedGroup);
 
-function clearVessel(){
-  while(vesselGroup.children.length) vesselGroup.remove(vesselGroup.children[0]);
-  while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
-}
-function makeVessel(kind){
-  clearVessel();
-  let mesh;
-  if(kind==='casserole'){
-    mesh=new THREE.Mesh(new THREE.CylinderGeometry(.42,.46,.09,40),
-      new THREE.MeshStandardMaterial({color:0xd8c8b0, roughness:.45}));
-  } else if(kind==='cup'){
-    mesh=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.16,28),
-      new THREE.MeshStandardMaterial({color:0xe8e0d4, roughness:.4}));
-  } else {
-    mesh=new THREE.Mesh(new THREE.CylinderGeometry(.38,.46,.08,40),
-      new THREE.MeshStandardMaterial({color:0xece6dc, roughness:.5}));
+function alumBowlGeo(){
+  const pts=[];
+  for(let i=0;i<=16;i++){
+    const t=i/16, a=Math.PI*0.52*t;
+    pts.push(new THREE.Vector2(Math.sin(a)*0.23, 0.02-Math.cos(a)*0.15));
   }
-  mesh.position.y=.05; mesh.castShadow=true; mesh.receiveShadow=true;
-  mesh.userData.vessel=true;
-  vesselGroup.add(mesh);
-  return mesh;
+  pts.push(new THREE.Vector2(0.255, 0.085));
+  pts.push(new THREE.Vector2(0.275, 0.092));
+  pts.push(new THREE.Vector2(0.268, 0.1));
+  return new THREE.LatheGeometry(pts, 48);
 }
-makeVessel('bowl');
+function makeAlumBowl(parent){
+  const bowl=new THREE.Mesh(alumBowlGeo(), M.alum.clone());
+  bowl.castShadow=true; bowl.receiveShadow=true; bowl.userData.vessel=true;
+  parent.add(bowl);
+  const inner=new THREE.Mesh(new THREE.CircleGeometry(.20, 32),
+    new THREE.MeshPhysicalMaterial({color:0xd0d4d8, metalness:.9, roughness:.22}));
+  inner.rotation.x=-Math.PI/2; inner.position.y=.03; inner.userData.vessel=true;
+  parent.add(inner);
+  return bowl;
+}
+function makeDinePlate(parent){
+  const dish=new THREE.Mesh(new THREE.CylinderGeometry(.34, .36, .018, 48), M.plate);
+  dish.position.y=.01; dish.receiveShadow=true; dish.userData.serve=true;
+  const well=new THREE.Mesh(new THREE.CylinderGeometry(.22, .24, .01, 40),
+    new THREE.MeshStandardMaterial({color:0xeeeae2, roughness:.4}));
+  well.position.y=.016; well.userData.serve=true;
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.33, .012, 10, 48), M.plate);
+  rim.rotation.x=Math.PI/2; rim.position.y=.018; rim.userData.serve=true;
+  parent.add(dish, well, rim);
+}
+function makeTogo(parent, withLid, closed){
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.26, .22, .09, 32), M.togo);
+  base.position.y=.05; base.castShadow=true; base.userData.serve=true;
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.255, .012, 8, 28),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:.5}));
+  rim.rotation.x=Math.PI/2; rim.position.y=.094; rim.userData.serve=true;
+  parent.add(base, rim);
+  if(withLid){
+    const lid=new THREE.Mesh(new THREE.SphereGeometry(.27, 24, 12, 0, Math.PI*2, 0, Math.PI*0.42), M.lid);
+    lid.position.y = closed ? .10 : .22;
+    lid.userData.serve=true; lid.userData.lid=true;
+    parent.add(lid);
+  }
+}
+
+function clearKids(g){ while(g.children.length) g.remove(g.children[0]); }
+function setupStation(kind, service, packed, lidded){
+  [...mixGroup.children].forEach(c=>{ if(c!==placedGroup) mixGroup.remove(c); });
+  [...serveGroup.children].forEach(c=>{ if(c!==packedGroup) serveGroup.remove(c); });
+  if(!placedGroup.parent) mixGroup.add(placedGroup);
+  if(!packedGroup.parent) serveGroup.add(packedGroup);
+  if(kind==='alum' || kind==='bowl'){
+    makeAlumBowl(mixGroup);
+  } else if(kind==='casserole'){
+    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,.09,36),
+      new THREE.MeshStandardMaterial({color:0xd8c8b0, roughness:.45}));
+    mesh.position.y=.05; mesh.userData.vessel=true; mixGroup.add(mesh);
+  } else if(kind==='cup'){
+    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(.12,.15,.14,24),
+      new THREE.MeshStandardMaterial({color:0xe8e0d4, roughness:.4}));
+    mesh.position.y=.08; mesh.userData.vessel=true; mixGroup.add(mesh);
+  }
+  if(service==='dine'){
+    makeDinePlate(serveGroup);
+  } else if(service==='togo'){
+    makeTogo(serveGroup, true, !!lidded);
+  }
+}
+
+function makeVessel(kind, service){
+  while(placedGroup.children.length) placedGroup.remove(placedGroup.children[0]);
+  while(packedGroup.children.length) packedGroup.remove(packedGroup.children[0]);
+  setupStation(kind||'alum', service||null, false, false);
+}
+makeVessel('alum', 'dine');
 
 let layerY=.09;
+function foodParent(){
+  const o=currentOrder();
+  if(o && o.packed) return packedGroup;
+  return placedGroup;
+}
 function addPiece(id){
   const ing=ING[id]; if(!ing) return;
+  const dest=foodParent();
   const g=new THREE.Group();
-  const n = ing.kind==='sauce'?1 : (ing.kind==='pasta'?8 : (ing.kind==='ball'?1 : 5));
+  const n = ing.kind==='sauce'?1 : (ing.kind==='pasta'?10 : (ing.kind==='ball'?1 : 5));
+  const spread = dest===packedGroup ? .14 : .16;
   for(let i=0;i<n;i++){
     let geo, mat=new THREE.MeshStandardMaterial({color:ing.color, roughness: ing.kind==='sauce'?.2:.6});
     if(ing.kind==='sauce'){
-      geo=new THREE.CylinderGeometry(.28,.32,.012,24);
+      geo=new THREE.CylinderGeometry(.18,.22,.014,24);
     } else if(ing.kind==='ball'){
-      geo=new THREE.SphereGeometry(.045,12,10);
+      geo=new THREE.SphereGeometry(.04,12,10);
     } else if(ing.kind==='pasta'){
-      geo=new THREE.CylinderGeometry(.006,.006,.09,6);
+      geo=new THREE.TorusGeometry(.03,.007,6,10);
     } else if(ing.kind==='leaf'){
-      geo=new THREE.PlaneGeometry(.08,.1);
+      geo=new THREE.PlaneGeometry(.07,.09);
       mat.side=THREE.DoubleSide;
     } else if(ing.kind==='cutlet'){
-      geo=new THREE.BoxGeometry(.12,.02,.07);
+      geo=new THREE.BoxGeometry(.11,.018,.06);
     } else if(ing.kind==='bread'){
-      geo=new THREE.BoxGeometry(.16,.04,.07);
+      geo=new THREE.BoxGeometry(.14,.035,.06);
     } else if(ing.kind==='dressing'){
-      geo=new THREE.CylinderGeometry(.12,.14,.01,16);
+      geo=new THREE.CylinderGeometry(.1,.12,.01,16);
     } else {
-      geo=new THREE.BoxGeometry(.04,.015,.03);
+      geo=new THREE.BoxGeometry(.035,.012,.025);
     }
     const m=new THREE.Mesh(geo, mat);
-    m.position.set(rnd(-.18,.18), layerY+rnd(0,.02), rnd(-.18,.18));
+    m.position.set(rnd(-spread,spread), layerY+rnd(0,.02), rnd(-spread,spread));
     m.rotation.y=rnd(0,6);
     if(ing.kind==='leaf') m.rotation.x=-Math.PI/2+rnd(-.2,.2);
+    if(ing.kind==='pasta') m.rotation.x=rnd(-.6,.6);
     m.castShadow=true;
     g.add(m);
   }
-  placedGroup.add(g);
+  dest.add(g);
   layerY += ing.kind==='sauce'?.012:.01;
+  if(dest===placedGroup) mixGroup.rotation.y += 0.22;
 }
 
 /* conveyor dummy pan */
@@ -737,13 +893,20 @@ function scaledIngs(recipe, lunch){
 function makeOrder(force){
   const recipe = force || RECIPES[Math.floor(Math.random()*RECIPES.length)];
   const lunch = recipe.lunchScale ? Math.random()<.35 : false;
+  const pasta = recipe.tipo==='Pasta';
+  const service = pasta ? (Math.random()<.45 ? 'togo' : 'dine') : null;
   return {
     num: orderNum++,
     name: recipe.name,
     tipo: recipe.tipo,
     recipe,
     lunch,
-    sizeLabel: recipe.tipo==='Ensalada' ? (lunch?'Lunch':'Dinner') : recipe.tipo,
+    service,
+    packed: !pasta,
+    lidded: false,
+    sizeLabel: pasta
+      ? ((service==='togo'?'TO-GO':'DINE-IN')+' · '+recipe.tipo)
+      : (recipe.tipo==='Ensalada' ? (lunch?'Lunch':'Dinner') : recipe.tipo),
     ings: scaledIngs(recipe, lunch),
     placed: [],
     ovenDone: [],
@@ -782,6 +945,7 @@ function ovenComplete(o){
   if(!need.length) return true;
   return need.every((v,i)=>o.ovenDone[i]===v);
 }
+function needsPack(o){ return !!(o && o.tipo==='Pasta'); }
 function nextHint(o){
   if(!o) return null;
   for(const s of o.ings){
@@ -789,17 +953,19 @@ function nextHint(o){
   }
   const need=ovensNeeded(o);
   if(o.ovenDone.length<need.length) return {kind:'oven', id:need[o.ovenDone.length]};
+  if(needsPack(o) && !o.packed) return {kind:'pack'};
   for(const g of (o.recipe.garnish||[])){
     if(!o.garnishDone.includes(g)) return {kind:'ing', id:g, have:0, need:1};
   }
   if(o.recipe.bread && !o.breadDone) return {kind:'ing', id:o.recipe.bread, have:0, need:1};
   if(o.recipe.dressing && !o.dressingDone) return {kind:'ing', id:o.recipe.dressing, have:0, need:1};
+  if(o.service==='togo' && o.packed && !o.lidded) return {kind:'lid'};
   return {kind:'serve'};
 }
 
 function activateOrder(o){
   bakedLook=false; layerY=.09;
-  makeVessel(o.vessel);
+  makeVessel(o.vessel, o.service);
   renderTicket(); renderTray(); updateActions();
 }
 function renderTicket(){
@@ -828,6 +994,11 @@ function renderTicket(){
       html+=`<li class="${ok?'done':''}${hint&&hint.kind==='oven'&&i===o.ovenDone.length?' active':''}"><span>${OVEN_LABEL[v]}</span><span>${ok?'✔':'—'}</span></li>`;
     });
   }
+  if(needsPack(o)){
+    html+=`<li class="sec">${o.service==='togo'?'TO-GO · contenedor':'DINE-IN · plato'}</li>`;
+    html+=`<li class="${o.packed?'done':''}${hint&&hint.kind==='pack'?' active':''}"><span>Mezclar en aluminio y pasar</span><span>${o.packed?'✔':'—'}</span></li>`;
+    if(o.service==='togo') html+=`<li class="${o.lidded?'done':''}${hint&&hint.kind==='lid'?' active':''}"><span>Tapa del contenedor</span><span>${o.lidded?'✔':'—'}</span></li>`;
+  }
   if((o.recipe.garnish||[]).length || o.recipe.bread || o.recipe.dressing){
     html+=`<li class="sec">Terminado</li>`;
     (o.recipe.garnish||[]).forEach(id=>{
@@ -838,8 +1009,10 @@ function renderTicket(){
     if(o.recipe.dressing) html+=`<li class="${o.dressingDone?'done':''}"><span>${ING[o.recipe.dressing].name}</span><span>${o.dressingDone?'✔':'0/1'}</span></li>`;
   }
   $('#tItems').innerHTML=html;
-  const total=o.ings.reduce((a,s)=>a+s.need,0)+ov.length+(o.recipe.garnish||[]).length+(o.recipe.bread?1:0)+(o.recipe.dressing?1:0);
-  const doneN=o.ings.reduce((a,s)=>a+Math.min(countPlaced(o,s.id),s.need),0)+o.ovenDone.length+o.garnishDone.length+(o.breadDone?1:0)+(o.dressingDone?1:0);
+  const packN = needsPack(o)?1:0;
+  const lidN = o.service==='togo'?1:0;
+  const total=o.ings.reduce((a,s)=>a+s.need,0)+ov.length+(o.recipe.garnish||[]).length+(o.recipe.bread?1:0)+(o.recipe.dressing?1:0)+packN+lidN;
+  const doneN=o.ings.reduce((a,s)=>a+Math.min(countPlaced(o,s.id),s.need),0)+o.ovenDone.length+o.garnishDone.length+(o.breadDone?1:0)+(o.dressingDone?1:0)+(o.packed&&needsPack(o)?1:0)+(o.lidded?1:0);
   $('#tBar').style.width=(total?Math.round(100*doneN/total):0)+'%';
 }
 function renderTray(){
@@ -874,7 +1047,7 @@ function selectIng(id){
     badge.classList.add('on');
     badge.querySelector('.sw').style.background=ing.css;
     badge.querySelector('b').textContent=ing.name;
-    badge.querySelector('span').textContent=ing.es+' · toca el plato';
+    badge.querySelector('span').textContent=ing.es+(ing.kind==='sauce'?' · baño maría':' · bowl de aluminio');
   }
   const need=catOf(id);
   if(need!==trayCat){ trayCat=need; renderTray(); return; }
@@ -886,6 +1059,7 @@ function applyIng(id){
   if(baking){ toast('Espera el conveyor'); return; }
   const finishIds=[...(o&&o.recipe.garnish||[]), o&&o.recipe.bread, o&&o.recipe.dressing].filter(Boolean);
   if(o && finishIds.includes(id)){
+    if(needsPack(o) && !o.packed){ toast('Primero mezcla y pasa a plato / to-go'); return; }
     if(id===o.recipe.bread) o.breadDone=true;
     else if(id===o.recipe.dressing) o.dressingDone=true;
     else if(!o.garnishDone.includes(id)) o.garnishDone.push(id);
@@ -893,6 +1067,7 @@ function applyIng(id){
     if(hintIng===id) hintIng=null;
     return;
   }
+  if(o && needsPack(o) && o.packed){ toast('Ya está emplatado — termina garnish / tapa'); return; }
   addPiece(id); sfx('top');
   if(o){
     o.placed.push(id);
@@ -900,10 +1075,35 @@ function applyIng(id){
   }
   renderTicket(); if(mode==='train') renderTray(); updateActions();
 }
+function canPack(o){
+  return o && needsPack(o) && !o.packed && ingsComplete(o) && ovenComplete(o) && !baking;
+}
+function packToServe(){
+  const o=currentOrder();
+  if(!o || !canPack(o)){ toast('Mezcla todos los ings del chart primero'); return; }
+  while(placedGroup.children.length) packedGroup.add(placedGroup.children[0]);
+  o.packed=true; layerY=.11;
+  setupStation(o.vessel, o.service, true, false);
+  sfx('ok');
+  toast(o.service==='togo' ? 'Pasado al contenedor to-go' : 'Pasado al plato dine-in');
+  renderTicket(); updateActions();
+}
+function lidTogo(){
+  const o=currentOrder();
+  if(!o || o.service!=='togo' || !o.packed){ toast('Empaca to-go primero'); return; }
+  o.lidded=true;
+  setupStation(o.vessel, 'togo', true, true);
+  sfx('ok'); toast('Tapa puesta');
+  renderTicket(); updateActions();
+}
 function updateActions(){
   const o=currentOrder();
   const free=mode==='free';
   $('#btnBake').disabled = baking || (!free && (!o || !ovensNeeded(o).length || o.ovenDone.length>=ovensNeeded(o).length));
+  $('#btnPack').disabled = baking || (!free && !canPack(o));
+  const showLid = !!(o && o.service==='togo');
+  $('#btnLid').style.display = showLid ? '' : 'none';
+  $('#btnLid').disabled = baking || !(o && o.packed && !o.lidded);
   $('#btnServe').disabled = baking || (!free && !o);
   $('#btnHint').style.display = mode==='train'?'':'none';
   $('#btnSkip').style.display = mode==='train'?'':'none';
@@ -960,6 +1160,10 @@ function evaluate(o){
   (o.recipe.garnish||[]).forEach(id=>{
     notes.push({ok:o.garnishDone.includes(id), t:(o.garnishDone.includes(id)?'':'Falta ')+ING[id].name});
   });
+  if(needsPack(o)){
+    notes.push({ok:!!o.packed, t:o.packed?(o.service==='togo'?'En contenedor to-go':'En plato dine-in'):'Falta pasar del bowl de aluminio'});
+    if(o.service==='togo') notes.push({ok:!!o.lidded, t:o.lidded?'Tapa puesta':'Falta tapar el to-go'});
+  }
   if(o.recipe.bread) notes.push({ok:o.breadDone, t:o.breadDone?ING[o.recipe.bread].name:'Falta '+ING[o.recipe.bread].name});
   if(o.recipe.dressing) notes.push({ok:o.dressingDone, t:o.dressingDone?ING[o.recipe.dressing].name:'Falta aderezo'});
   const bad=notes.filter(n=>!n.ok).length;
@@ -1040,7 +1244,7 @@ function setMode(m){
   if(m==='rush'){ $('#startOverlay').classList.remove('hiddenX'); rush.running=false; rush.queue=[]; rush.active=null; renderQueue(); }
   else { $('#startOverlay').classList.add('hiddenX'); $('#overOverlay').classList.add('hiddenX'); }
   if(m==='train'){ trainOrder=makeOrder(); activateOrder(trainOrder); toast('Entrenar — usa 💡 Pista'); }
-  if(m==='free'){ makeVessel('bowl'); toast('Libre — arma lo que quieras'); }
+  if(m==='free'){ makeVessel('alum', 'dine'); toast('Libre — mezcla en aluminio'); }
   updateActions(); renderTicket();
 }
 
@@ -1051,14 +1255,17 @@ function applyHint(){
   if(!n){ toast('💡 Entrega el plato'); return; }
   if(n.kind==='serve'){ toast('💡 Listo — entrega'); sfx('hint'); return; }
   if(n.kind==='oven'){ toast('💡 EDGE: '+OVEN_LABEL[n.id]); sfx('hint'); return; }
+  if(n.kind==='pack'){ toast(o.service==='togo'?'💡 Pasa al contenedor to-go':'💡 Pasa al plato dine-in'); sfx('hint'); return; }
+  if(n.kind==='lid'){ toast('💡 Tapa el contenedor'); sfx('hint'); return; }
   hintIng=n.id; selectIng(n.id); renderTicket(); renderTray();
   toast('💡 '+ING[n.id].name+' ('+(n.have+1)+'/'+n.need+')'); sfx('hint');
 }
 
 function resetPlate(){
   const o=currentOrder();
-  layerY=.09; bakedLook=false; makeVessel(o?o.vessel:'bowl');
-  if(o){ o.placed=[]; o.ovenDone=[]; o.garnishDone=[]; o.breadDone=false; o.dressingDone=false; }
+  layerY=.09; bakedLook=false;
+  if(o){ o.placed=[]; o.ovenDone=[]; o.garnishDone=[]; o.breadDone=false; o.dressingDone=false; o.packed=!needsPack(o); o.lidded=false; }
+  makeVessel(o?o.vessel:'alum', o?o.service:null);
   renderTicket(); updateActions(); toast('Estación limpia');
 }
 
@@ -1080,14 +1287,19 @@ addEventListener('pointerup', e=>{
   ray.setFromCamera(ptr, camera);
   const hits=ray.intersectObjects([...clickPans, workspace], true);
   if(!hits.length) return;
-  let obj=hits[0].object, id=null, onPlate=false;
+  let obj=hits[0].object, id=null, onMix=false, onServe=false, onLid=false;
   while(obj){
     if(obj.userData.ing) id=obj.userData.ing;
-    if(obj.userData.vessel || obj===vesselGroup || obj===placedGroup || obj===workspace) onPlate=true;
+    if(obj.userData.lid) onLid=true;
+    if(obj.userData.vessel || obj===mixGroup || obj===placedGroup) onMix=true;
+    if(obj.userData.serve || obj===serveGroup || obj===packedGroup) onServe=true;
     obj=obj.parent;
   }
-  if(onPlate && selected){ applyIng(selected); return; }
-  if(id){ selectIng(id); toast(ING[id].name+' · toca el plato'); }
+  const o=currentOrder();
+  if(onLid && o && o.service==='togo' && o.packed && !o.lidded){ lidTogo(); return; }
+  if(onServe && o && canPack(o)){ packToServe(); return; }
+  if((onMix || onServe) && selected){ applyIng(selected); return; }
+  if(id){ selectIng(id); toast(ING[id].kind==='sauce'?ING[id].name+' · baño maría':ING[id].name+' · bowl de aluminio'); }
 });
 addEventListener('pointermove', e=>{
   if(!dragging) return;
@@ -1109,6 +1321,8 @@ document.querySelectorAll('[data-oven]').forEach(b=>{
   b.onclick=()=>{ $('#ovenOverlay').classList.add('hiddenX'); startBake(b.dataset.oven); };
 });
 $('#btnServe').onclick=serve;
+$('#btnPack').onclick=packToServe;
+$('#btnLid').onclick=lidTogo;
 $('#btnHint').onclick=applyHint;
 $('#btnSkip').onclick=()=>{ trainOrder=makeOrder(); activateOrder(trainOrder); toast(trainOrder.name); };
 $('#btnReset').onclick=resetPlate;
