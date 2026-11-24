@@ -1,5 +1,17 @@
-const CACHE = "pizza-trainer-v23";
-const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/3d/", "/3d/index.html"];
+const CACHE = "pizza-trainer-v27";
+const SHELL = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/icon.svg",
+  "/assets/pbr-kit.js",
+  "/assets/chart-poster.jpg",
+  "/assets/line-chart-poster.jpg",
+  "/3d/",
+  "/3d/index.html",
+  "/line/",
+  "/line/index.html",
+];
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();

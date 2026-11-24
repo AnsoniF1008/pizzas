@@ -39,6 +39,7 @@ function IconTheme({ light }) {
 export default function App() {
   const [mode, setMode] = useState("repaso");
   const [size, setSize] = useState("10");
+  const [practiceIdx, setPracticeIdx] = useState(null);
   const [themeName, setThemeName] = useState(() => load("pt-theme", "light"));
   const [soundOn, setSoundOn] = useState(() => load("pt-sound", true));
   const [stats, setStats] = useState(() => load("pt-stats", { exams: [], misses: {} }));
@@ -49,15 +50,23 @@ export default function App() {
   useEffect(() => { save("pt-sound", soundOn); }, [soundOn]);
   useEffect(() => { save("pt-stats", stats); }, [stats]);
 
-  const recordMiss = (pizzaName) => setStats((s) => ({
-    ...s,
-    misses: { ...s.misses, [pizzaName]: (s.misses[pizzaName] || 0) + 1 },
-  }));
+  const recordMiss = (pizzaName) => {
+    if (!pizzaName) return;
+    setStats((s) => ({
+      ...s,
+      misses: { ...s.misses, [pizzaName]: (s.misses[pizzaName] || 0) + 1 },
+    }));
+  };
   const recordExam = (score, total) => setStats((s) => ({
     ...s,
     exams: [...s.exams, { date: Date.now(), score, total }].slice(-50),
   }));
   const clearStats = () => setStats({ exams: [], misses: {} });
+
+  const openPracticePizza = (idx) => {
+    setPracticeIdx(idx);
+    setMode("orden");
+  };
 
   const tabs = [
     ["repaso", "Repaso"],
@@ -85,8 +94,7 @@ export default function App() {
         }}
       >
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-          button:focus-visible, a:focus-visible { outline: 2px solid ${ACCENT}; outline-offset: 2px; }
+          button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid ${ACCENT}; outline-offset: 2px; }
         `}</style>
 
         <div className="mx-auto w-full max-w-[480px] md:max-w-4xl md:py-10 md:px-6">
@@ -96,7 +104,7 @@ export default function App() {
                 radial-gradient(80% 120% at 100% 0%, ${t.heat}, transparent 55%),
                 linear-gradient(165deg, #1c1815 0%, ${t.header} 48%, #0a0908 100%)
               `,
-              padding: "22px 20px 18px",
+              padding: "20px 18px 14px",
             }}>
               <div className="flex items-start justify-between" style={{ gap: 12 }}>
                 <div className="pt-brand" style={{ minWidth: 0 }}>
@@ -111,28 +119,28 @@ export default function App() {
                   </div>
                   <div style={{
                     fontFamily: DISPLAY,
-                    fontSize: "clamp(40px, 11vw, 56px)",
+                    fontSize: "clamp(38px, 10.5vw, 54px)",
                     lineHeight: 0.92,
                     color: "#FFF6EC",
-                    marginTop: 8,
+                    marginTop: 6,
                     letterSpacing: "0.04em",
                   }}>
                     PIZZA
                     <span style={{ color: ACCENT }}> TRAINER</span>
                   </div>
-                  <div className="flex items-center flex-wrap" style={{ gap: 8, marginTop: 10 }}>
+                  <div className="flex items-center flex-wrap" style={{ gap: 8, marginTop: 8 }}>
                     <span style={{
                       fontFamily: DISPLAY,
-                      fontSize: 14,
+                      fontSize: 13.5,
                       letterSpacing: 1.5,
                       color: t.header,
                       background: CHEESE,
-                      padding: "3px 9px",
+                      padding: "2px 8px",
                       borderRadius: 4,
                     }}>
                       S1
                     </span>
-                    <span style={{ color: t.headerSub, fontSize: 13 }}>
+                    <span style={{ color: t.headerSub, fontSize: 12.5 }}>
                       building chart · cortes · menú
                     </span>
                   </div>
@@ -167,18 +175,62 @@ export default function App() {
                   </button>
                 </div>
               </div>
+
+              {/* Acceso directo siempre visible a los 2 simuladores 3D */}
+              <div className="grid grid-cols-2 mt-4" style={{ gap: 8 }}>
+                <a
+                  href="/3d/index.html"
+                  className="pt-btn flex items-center justify-between px-3 py-2 rounded-xl"
+                  style={{
+                    background: "rgba(255,77,26,.16)",
+                    border: "1px solid rgba(255,77,26,.45)",
+                    color: "#FFF6EC",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span className="leading-tight">
+                    <span className="block font-bold" style={{ fontFamily: DISPLAY, fontSize: 15, letterSpacing: 0.8, color: CHEESE }}>
+                      🍕 PIZZA 3D
+                    </span>
+                    <span className="block" style={{ fontSize: 10.5, color: "#E5D8C5" }}>
+                      Armar, hornear y cortar
+                    </span>
+                  </span>
+                  <span style={{ fontFamily: DISPLAY, fontSize: 16, color: CHEESE }}>›</span>
+                </a>
+
+                <a
+                  href="/line/index.html"
+                  className="pt-btn flex items-center justify-between px-3 py-2 rounded-xl"
+                  style={{
+                    background: "rgba(63,125,58,.22)",
+                    border: "1px solid rgba(127,186,92,.45)",
+                    color: "#FFF6EC",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span className="leading-tight">
+                    <span className="block font-bold" style={{ fontFamily: DISPLAY, fontSize: 15, letterSpacing: 0.8, color: "#A9E07F" }}>
+                      🥗 LÍNEA 3D
+                    </span>
+                    <span className="block" style={{ fontSize: 10.5, color: "#E5D8C5" }}>
+                      Pastas, ensaladas, subs
+                    </span>
+                  </span>
+                  <span style={{ fontFamily: DISPLAY, fontSize: 16, color: "#A9E07F" }}>›</span>
+                </a>
+              </div>
             </header>
 
             <div className="pt-heatbar" />
 
             <nav
-              className="flex overflow-x-auto"
+              className="grid grid-cols-4 sm:flex"
               role="tablist"
               aria-label="Secciones"
               style={{
                 background: t.tabBar,
                 borderBottom: `1px solid ${t.line}`,
-                WebkitOverflowScrolling: "touch",
               }}
             >
               {tabs.map(([key, label]) => {
@@ -189,15 +241,14 @@ export default function App() {
                     role="tab"
                     aria-selected={active}
                     onClick={() => setMode(key)}
-                    className="pt-tab flex-1 py-3.5 px-2.5 font-bold whitespace-nowrap"
+                    className="pt-tab sm:flex-1 py-3 px-2 font-bold whitespace-nowrap"
                     style={{
                       fontFamily: DISPLAY,
-                      fontSize: 15,
+                      fontSize: 14.5,
                       letterSpacing: 0.8,
-                      minWidth: 72,
-                      minHeight: 48,
+                      minHeight: 44,
                       color: active ? "#FFF6EC" : t.tabIdle,
-                      background: active ? "rgba(255,77,26,.16)" : "transparent",
+                      background: active ? "rgba(255,77,26,.18)" : "transparent",
                       borderBottom: active ? `3px solid ${ACCENT}` : "3px solid transparent",
                     }}
                   >
@@ -205,55 +256,17 @@ export default function App() {
                   </button>
                 );
               })}
-              <a
-                href="/3d/"
-                className="pt-tab flex-1 py-3.5 px-2.5 font-bold whitespace-nowrap text-center"
-                style={{
-                  fontFamily: DISPLAY,
-                  fontSize: 15,
-                  letterSpacing: 0.8,
-                  minWidth: 78,
-                  minHeight: 48,
-                  color: CHEESE,
-                  borderBottom: "3px solid transparent",
-                  textDecoration: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                Pizza 3D
-              </a>
-              <a
-                href="/line/"
-                className="pt-tab flex-1 py-3.5 px-2.5 font-bold whitespace-nowrap text-center"
-                style={{
-                  fontFamily: DISPLAY,
-                  fontSize: 15,
-                  letterSpacing: 0.8,
-                  minWidth: 78,
-                  minHeight: 48,
-                  color: CHEESE,
-                  borderBottom: "3px solid transparent",
-                  textDecoration: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                Línea 3D
-              </a>
             </nav>
 
             <main className="p-4 pb-12 md:p-7 md:pb-14" key={mode}>
               <div className="pt-mode">
-                {mode === "repaso" && <Repaso size={size} setSize={setSize} />}
-                {mode === "tarjetas" && <Tarjetas size={size} setSize={setSize} />}
-                {mode === "orden" && <Ordenar size={size} setSize={setSize} soundOn={soundOn} onMiss={recordMiss} />}
+                {mode === "repaso" && <Repaso size={size} setSize={setSize} onPracticePizza={openPracticePizza} />}
+                {mode === "tarjetas" && <Tarjetas size={size} setSize={setSize} misses={stats.misses} />}
+                {mode === "orden" && <Ordenar size={size} setSize={setSize} soundOn={soundOn} onMiss={recordMiss} initialPizzaIdx={practiceIdx} misses={stats.misses} />}
                 {mode === "examen" && <Examen soundOn={soundOn} onMiss={recordMiss} onExamDone={recordExam} />}
-                {mode === "pastas" && <Pastas />}
-                {mode === "cortes" && <Cortes />}
-                {mode === "progreso" && <Progreso stats={stats} onClear={clearStats} />}
+                {mode === "pastas" && <Pastas soundOn={soundOn} />}
+                {mode === "cortes" && <Cortes soundOn={soundOn} />}
+                {mode === "progreso" && <Progreso stats={stats} onClear={clearStats} onPracticePizza={openPracticePizza} />}
               </div>
             </main>
           </div>

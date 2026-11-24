@@ -1,6 +1,6 @@
 # Pizza Trainer
 
-App de estudio para aprender a armar las 14 pizzas de la Sección 1: repaso, tarjetas de memoria y examen.
+App de estudio para aprender a armar las 16 pizzas de la Sección 1: repaso, tarjetas de memoria, práctica de orden, examen, menú, cortes y simuladores 3D (`/3d/` y `/line/`).
 
 ## Desarrollo local
 

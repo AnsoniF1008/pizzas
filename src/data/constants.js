@@ -7,6 +7,15 @@ export const CUP = {
   white: "#FFFFFF",
 };
 
+export const CUP_ES = {
+  blue: "Azul",
+  green: "Verde",
+  red: "Rojo",
+  orange: "Naranja",
+  yellow: "Amarillo",
+  white: "Blanco",
+};
+
 export const BASE_INGS = ["Pizza Sauce", "Mozzarella", "Dough"];
 export const B = null;
 

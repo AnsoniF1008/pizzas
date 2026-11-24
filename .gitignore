@@ -12,3 +12,5 @@ Gemini_Generated_Image*.png
 artifacts/
 skills-lock.json
 .tmp-cursor-skills/
+
+*.zip

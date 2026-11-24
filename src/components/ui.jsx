@@ -1,6 +1,16 @@
 import React from "react";
-import { CUP, BASE_INGS, SECTIONS, ACCENT, DISPLAY, ICON, ES } from "../data/index.js";
+import { CUP, CUP_ES, BASE_INGS, SECTIONS, ACCENT, DISPLAY, ICON, ES } from "../data/index.js";
 import { useT } from "../theme.js";
+
+export function formatAmountText(value) {
+  if (value === null || value === undefined) return "Base (sin medir)";
+  if (typeof value === "number") return `${value} ${value === 1 ? "pieza" : "piezas"}`;
+  if (typeof value === "string") return value;
+  const groups = Array.isArray(value[0]) ? value : [value];
+  return groups
+    .map(([color, n]) => `${n} ${CUP_ES[color] || color}${n > 1 ? "s" : ""}`.replace("Azuls", "Azules"))
+    .join(" + ");
+}
 
 export function MiniPizza({ pizza, size = 56 }) {
   const tops = (pizza.build || []).filter(([n]) => !BASE_INGS.includes(n)).slice(0, 6);
@@ -66,7 +76,7 @@ export function Ing({ name, size = 22 }) {
   return <span style={{ fontSize: size * 0.9, lineHeight: 1 }}>{ic}</span>;
 }
 
-export function Amount({ value, big = false }) {
+export function Amount({ value, big = false, showLabel = false }) {
   const t = useT();
   if (value === null || value === undefined) {
     return (
@@ -100,8 +110,9 @@ export function Amount({ value, big = false }) {
   }
   const groups = Array.isArray(value[0]) ? value : [value];
   const r = big ? 10 : 8;
+  const label = formatAmountText(value);
   return (
-    <span className="inline-flex items-center" style={{ gap: 4 }}>
+    <span className="inline-flex items-center flex-wrap" title={label} aria-label={label} style={{ gap: 5 }}>
       {groups.map(([color, n], gi) => (
         <span key={gi} className="inline-flex items-center" style={{ gap: 3 }}>
           {gi > 0 && <span style={{ color: t.muted, fontSize: 11 }}>+</span>}
@@ -121,7 +132,48 @@ export function Amount({ value, big = false }) {
           ))}
         </span>
       ))}
+      {showLabel && (
+        <span style={{ color: t.muted, fontSize: 11, fontWeight: 600 }}>{label}</span>
+      )}
     </span>
+  );
+}
+
+export function CupLegend() {
+  const t = useT();
+  const entries = [
+    ["blue", "Azul"],
+    ["green", "Verde"],
+    ["white", "Blanco"],
+    ["orange", "Naranja"],
+    ["red", "Rojo"],
+    ["yellow", "Amarillo"],
+  ];
+  return (
+    <div
+      className="flex flex-wrap items-center rounded-xl px-3 py-2 mb-3"
+      style={{ gap: "8px 14px", background: t.zebra, border: `1px solid ${t.line}` }}
+    >
+      <span className="font-bold" style={{ fontFamily: DISPLAY, fontSize: 12, letterSpacing: 1, color: ACCENT }}>
+        VASITOS:
+      </span>
+      {entries.map(([key, name]) => (
+        <span key={key} className="inline-flex items-center" style={{ gap: 5, fontSize: 11.5, color: t.ink }}>
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: CUP[key],
+              border: key === "white" ? "1.5px solid #b9b9b9" : "1px solid rgba(0,0,0,.2)",
+              display: "inline-block",
+            }}
+          />
+          {name}
+        </span>
+      ))}
+      <span style={{ fontSize: 11, color: t.muted }}>· BASE = sin medir</span>
+    </div>
   );
 }
 
